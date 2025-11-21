@@ -1,0 +1,134 @@
+[ {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Sign In\";",
+  "timestamp" : 1763733652334,
+  "title" : "Sign In",
+  "type" : "navigation",
+  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DW%2FfMvYX2XSWCjMLR2aSrQBhu8YGk4bW3ExwYYUF6ECZO7Ws3UqIKpG2y%2Brhh0MmgLa1BqmI4CuGus8O5wxor3b2ol1ntoWXeiagKOdcGTj6I8msvdS6P73sgOR%2FpbWI4i3yd72LZAUCTBTq0NpmrLZDiNyFGHvdqGOchdjal9s2vqdnJNzp%2BkejZQRXWR%2BFNcGCcvIWXIJQwL9qBkLBCxcy5u9A5utZx%2FOxx174p16JINu1oignrKJ9qyW4%2BYHPfiEbI6c3onueU3w4hFjMmtFoUamzaEwjsiBfQq8x%2F0UDn3Zzdvzqu8RF%2FdU1f%2BGI%2BPjgsiwEQ6VlBNn9uiclVqEi37dtard71Ma3VhV2xhgPip7ZzPM5RUALPOkxeN9%2FX3nSWmt0KVvoOtoxd5AgQUHMBHHkj%2B7%2FHWLeERtJqG19Iu6OCjYpeg7tnIdUwoLOHwqKOVka%2FA6CpSyLzIu8Khp4RyMgHnic4D6qZw%2F2aHLbLPo3ttqdZ3spDrEyKPdz0cwlMmjNOW6JWzC8jq9y8TfxgxX2CwypWr9Z6NGFNqnmyEP0walCen50EkGcZFDXQus2kUHZy0fOUTF%2BwsF27cppHkVJbzt%2BjL76qV09PIWka0UztWdfStrCO8oorITnWcTNxgwmniOWjgKehCMe4jtfooRetcOsy4zEVmwWyk7EVjbtUkhbvw4vMs3ZAc6CLBph1cO7eEIpuL9%2FbSn80lPqoSjvr7roKWRtSy3G3yg9vsAxZW5%2FBeFZPk717Wgc7x0lOJS1Jvt3Nlh%2Fxjyu%2B8bxPrNoooBbBdS2PCDmALnT6Gr3P30rsWf%2B1RCsvjfDaCh90qLDm14Dshu9Y8fnXtza4Do2xEczwy2O4f3J81wo5gI1BpCS0nW%2BED8eYFv7PYM5a1fxZnkeekpU89nscMIVpCn0tsrw%2BmOFqGZ8HjsT7d%2FD5e7nVXi0M5cUpmHSyOwh8idZfepAvCvVMiX1nAzCZv1TZ7FyTOh%2FP9FlR%2FoSMcN%2B1AWjuYQIodM152Rvq5qthilSlyjrbzEvPYbdZJ9oFIHSnC68jlcmBR5Gin2f32G0GcvZ7fB1Fduz4FxI8CR6dxMKuIXcVHlxe5a4Fo5%2FoMcDy3yRMojiCSsluWNPWZrcDqJrWEQqUmR4eybE6Iar%2BByMDSZKKYxnQUjnlhzY3inxuoIE%2F%2BDjIyp3deFmhxi6%2Bj0xkFEkEjhEb39ubSP5vSTGhZLOiH51F5TwobQjzaNWrqHaZb3nNJBLutAYdGUWTqK1NByvGuxpl58YlVR7FeEJ4m4Ek6T5zNXf9MfRAnvN8u%2FfPij3mOz3RWDH2vbt0mswPfWfbrSRhzWnL9ggMvtLU9w9fBGD3fP6aV3b8tNRtK6rsrjL94UaJzaOjhPyUXdG22mFoX23v4dvJdbdBTpXX%2FRtvHVdChYYPSYWPIRGFCtIs0kFbitawEoUoYFfi5DNj9%2BvLHVjzmcInKLS0EwZl1V3WN4vtMSsTdG%2Br50r%2BhFKLh4pNSF9ayU373JywVoa6RI5iF7LpnTWtNJIqYqJ6Be3K6PPXp1T50hOfOb07UXpe3ooTM8hw%2B88ZXpy6IC7rbH6TSgcTZeqR7iv%2FipcIE4nkzf7eeLoF7vh0y5gkyI8fHBYCK4yN0%2FNfyn8Qn50XLaVsBPQlXpPYiW6rsS%2BXi192zZh81fLouw%3D%3D%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3Da3880fd0fb1522df37ccac252186bec62efe1c8e&ECID-Context=1.006H1gxn2%5EJ4ykM6yNedMG004WT_0004qk%3BkXjE"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"\";",
+  "timestamp" : 1763733684948,
+  "title" : "",
+  "type" : "navigation",
+  "url" : "https://idcs-9efadc0de91342138a85bc6418b7e0d4.identity.oraclecloud.com/ui/v1/signin"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "idcs-signin-basic-signin-form-username",
+    "primary_name" : "idcs-signin-basic-signin-form-username"
+  },
+  "parsedValue" : "Fatech.user",
+  "raw_gherkin" : "the user enters \"Fatech.user\" into the \"idcs-signin-basic-signin-form-username\";",
+  "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-username\")).sendKeys(\"Fatech.user\");",
+  "selector" : "textbox",
+  "timestamp" : 1763733711356,
+  "title" : "Cloud Sign In",
+  "type" : "change",
+  "value" : "Fatech.user"
+}, {
+  "action" : "click",
+  "options" : {
+    "id" : "idcs-signin-basic-signin-form-password|input",
+    "primary_name" : "idcs-signin-basic-signin-form-password|input"
+  },
+  "raw_gherkin" : "the user clicks the \"idcs-signin-basic-signin-form-password|input\";",
+  "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-password|input\")).click();",
+  "selector" : "textbox",
+  "timestamp" : 1763733711442,
+  "title" : "Cloud Sign In",
+  "type" : "click"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "idcs-signin-basic-signin-form-password|input",
+    "primary_name" : "idcs-signin-basic-signin-form-password|input"
+  },
+  "parsedValue" : "Intercol@2022b",
+  "raw_gherkin" : "the user enters \"Intercol@2022b\" into the \"idcs-signin-basic-signin-form-password|input\";",
+  "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-password|input\")).sendKeys(\"Intercol@2022b\");",
+  "selector" : "textbox",
+  "timestamp" : 1763733718250,
+  "title" : "Cloud Sign In",
+  "type" : "change",
+  "value" : "Intercol@2022b"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Sign In",
+    "primary_name" : "Sign In"
+  },
+  "raw_gherkin" : "the user clicks the \"Sign In\";",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//div[normalize-space(.)='Sign In']\")).click();",
+  "selector" : "div",
+  "timestamp" : 1763733721834,
+  "title" : "Cloud Sign In",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Welcome\";",
+  "timestamp" : 1763733729603,
+  "title" : "Welcome",
+  "type" : "navigation",
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/AtkHomePageWelcome?_adf.ctrl-state=8pxfzu3ty_1&_adf.no-new-window-redirect=true&_afrLoop=26475676613928342&_afrWindowMode=2&_afrWindowId=null&_afrFS=16&_afrMT=screen&_afrMFW=1280&_afrMFH=533&_afrMFDW=1280&_afrMFDH=720&_afrMFC=8&_afrMFCI=0&_afrMFM=0&_afrMFR=144&_afrMFG=0&_afrMFS=0&_afrMFO=0"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Oracle Fusion Cloud Applications\";",
+  "timestamp" : 1763733740344,
+  "title" : "Oracle Fusion Cloud Applications",
+  "type" : "navigation",
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome?_adf.ctrl-state=8pxfzu3ty_5&fnd=%3B%3B%3B%3Bfalse%3B256%3B%3B%3B&_afrLoop=26475685902469831"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Directory",
+    "id" : "PER_HCMPEOPLETOP_FUSE_DIRECTORY_0",
+    "primary_name" : "Directory"
+  },
+  "raw_gherkin" : "the user clicks the \"Directory\";",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//a[normalize-space(.)='Directory']\")).click();",
+  "selector" : "a",
+  "timestamp" : 1763733745765,
+  "title" : "Oracle Fusion Cloud Applications",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Directory - Oracle Fusion Cloud Applications\";",
+  "timestamp" : 1763733754423,
+  "title" : "Directory - Oracle Fusion Cloud Applications",
+  "type" : "navigation",
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/hcmUI/faces/FndOverview?fnd=%3B%3B%3B%3Bfalse%3B256%3B%3B%3B&fndGlobalItemNodeId=PER_HCMPEOPLETOP_FUSE_DIRECTORY&_afrLoop=54763092549125455&_afrWindowMode=0&_afrWindowId=16900bkfli&_adf.ctrl-state=1nhtt2l5j_1&_afrFS=16&_afrMT=screen&_afrMFW=1280&_afrMFH=533&_afrMFDW=1280&_afrMFDH=720&_afrMFC=8&_afrMFCI=0&_afrMFM=0&_afrMFR=144&_afrMFG=0&_afrMFS=0&_afrMFO=0"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Oracle Fusion Cloud Applications\";",
+  "timestamp" : 1763733763709,
+  "title" : "Oracle Fusion Cloud Applications",
+  "type" : "navigation",
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome?fnd=%3B%3B%3B%3Bfalse%3B256%3B%3B%3B&_afrLoop=26475709114806631&_afrWindowMode=0&_afrWindowId=3a90a1gju&_adf.ctrl-state=mtag56d4j_1&_afrFS=16&_afrMT=screen&_afrMFW=1280&_afrMFH=533&_afrMFDW=1280&_afrMFDH=720&_afrMFC=8&_afrMFCI=0&_afrMFM=0&_afrMFR=144&_afrMFG=0&_afrMFS=0&_afrMFO=0"
+}, {
+  "action" : "click",
+  "options" : {
+    "id" : "pt1:_UIScmil2u",
+    "primary_name" : "pt1:_UIScmil2u"
+  },
+  "raw_gherkin" : "the user clicks the \"pt1:_UIScmil2u\";",
+  "raw_selenium" : "driver.findElement(By.id(\"pt1:_UIScmil2u\")).click();",
+  "selector" : "img",
+  "timestamp" : 1763733766824,
+  "title" : "Oracle Fusion Cloud Applications",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Single Sign-Off consent\";",
+  "timestamp" : 1763733774726,
+  "title" : "Single Sign-Off consent",
+  "type" : "navigation",
+  "url" : "https://eits-test.login.em2.oraclecloud.com/fusion_apps/pages/logoutConsent.jsp?logout_done_url=https%3A%2F%2Feits-test.fa.em2.oraclecloud.com%3A443%2FfscmUI%2FadfAuthentication%3F_adf.authenticate%3Dtrue&logoutId=DDEFA52DBC858A7B8F029BD341C622357DAD83E33FF110029F23C962D79BB269"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Sign In\";",
+  "timestamp" : 1763733783462,
+  "title" : "Sign In",
+  "type" : "navigation",
+  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3Do21kdxt5WW4W6AiPZYOuZYXtnpc4%2FXz1UUgiJQr4lCBJ0ZsMj0uQj2B5tWg%2FO2A18CKzufztsfYIDdSLTtINPmqO2XzAC8JfKGAMn%2BjKuhhiIioilj87uW3a%2Fqhag4FuQKzEtiyfORdVXZ0OKQ8WsXav90WiQH7t1UHtNRksl%2FfJZOPvAEujqwPmMapFMMb%2Fs5nJwuNycgNaZUTFtG5rRMLg6Dy%2FThep%2Fda3tuoliKB3gi6Ls1lNOGLSlAsH3c%2FdLNHEOLn6bryQ1haXXXrY8OQ2EZ%2BtZZMmTUffACPNGUwM6XIHOhzPhmJmksfRLKJZ9rSrfk57S6ygqK6qPGVTd36I3flpm2MdvlpkOLMOINb%2FyfBUt0csqbZ5ZO9Z6LWZBKcrvEuL%2Fkv4EHG40iTb0LuWk0uwyY2BVylmyApnan7vV8A6RMdq36xVJapk1Pc0%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3De5def4e61d9cd73c75ba149a8516d31ee26244ae&ECID-Context=1.006H1h5oSBi4ykM6yNedMG004WT_0004sy%3BkXjE"
+} ]

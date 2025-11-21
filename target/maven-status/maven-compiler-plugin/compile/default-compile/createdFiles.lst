@@ -1,0 +1,5 @@
+com\example\FeatureInfo.class
+com\example\UrlOpenerServer.class
+com\example\UrlOpenerServer$Status.class
+com\example\RecordedEvent.class
+com\example\GherkinGenerator.class

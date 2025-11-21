@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Selenium Recorder Control Panel</title>
+    <style>
+        /* --- Styles --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 650px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #172b4d;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 10px;
+        }
+        /* --- Form Elements --- */
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #url-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px 0 0 6px; /* Rounded left side */
+            font-size: 16px;
+        }
+        #launch-btn {
+            padding: 12px 20px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 0 6px 6px 0; /* Rounded right side */
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #launch-btn:hover {
+            background-color: #004085;
+        }
+        /* --- Control & Status --- */
+        #control-panel {
+            padding-top: 20px;
+            border-top: 1px solid #e1e4e8;
+        }
+        #saveQuitBtn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            background-color: #dc3545; /* Red for destructive action */
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+        #saveQuitBtn:hover:not(:disabled) {
+            background-color: #c82333;
+        }
+        #saveQuitBtn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        /* --- Status Box Styles --- */
+        .status-box {
+            margin-top: 15px;
+            padding: 18px;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #1565c0;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #ef9a9a;
+            color: #c62828;
+            font-weight: bold;
+        }
+        .status-box strong { font-weight: 700; color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Web Action Recorder Control Panel</h1>
+
+    <form action="/open" method="post" class="input-group">
+        <input type="text" name="url" id="url-input" placeholder="Enter URL (e.g., example.com)" required>
+        <button type="submit" id="launch-btn">🚀 Launch Browser</button>
+    </form>
+
+    <div id="control-panel">
+        <div class="status-box info" id="status-message">
+            Waiting for browser session...
+        </div>
+
+        <button id="saveQuitBtn" onclick="saveAndQuit()" disabled>
+            💾 Save All Actions & Quit Browser
+        </button>
+
+        <div id="test-generator-card">
+            <h3 style="margin-bottom: 5px;">Generate Gherkin Feature</h3>
+            <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">
+                Define the Feature and Scenario names for the recorded steps.
+            </p>
+
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label for="featureInput" style="font-weight: bold; display: block; margin-bottom: 5px;">Feature
+                    Name:</label>
+                <input
+                        type="text"
+                        id="featureInput"
+                        placeholder="e.g., User Login Flow"
+                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em;"
+                        required
+                >
+            </div>
+
+            <div class="input-group" style="margin-bottom: 25px;">
+                <label for="scenarioInput" style="font-weight: bold; display: block; margin-bottom: 5px;">Scenario
+                    Name:</label>
+                <input
+                        type="text"
+                        id="scenarioInput"
+                        placeholder="e.g., Successful Login"
+                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em;"
+                        required
+                >
+            </div>
+
+            <button
+                    onclick="generateTest()"
+                    style="width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; transition: background-color 0.3s;"
+                    onmouseover="this.style.backgroundColor='#1e7e34'"
+                    onmouseout="this.style.backgroundColor='#28a745'"
+            >
+                💾 Generate Gherkin
+            </button>
+
+            <p id="generatorStatus"
+               style="margin-top: 15px; font-weight: bold; min-height: 1.2em; text-align: center; color: #333;"></p>
+        </div>
+
+<!--        <div id="single-step-execution-card"-->
+<!--             style="max-width: 400px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif; background-color: #f9f9f9;">-->
+<!--            <h3 style="margin-bottom: 10px;">Debug: Execute Single Step</h3>-->
+<!--            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">-->
+<!--                Enter a complete Gherkin step (e.g., `the user clicks the "Sign In"`) to re-run it immediately.-->
+<!--            </p>-->
+
+<!--            <div class="input-group" style="margin-bottom: 25px;">-->
+<!--                <label for="stepToRunInput" style="font-weight: bold; display: block; margin-bottom: 5px;">Gherkin-->
+<!--                    Step:</label>-->
+<!--                <input-->
+<!--                        type="text"-->
+<!--                        id="stepToRunInput"-->
+<!--                        placeholder="the user clicks the 'Sign In' button"-->
+<!--                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em;"-->
+<!--                        required-->
+<!--                >-->
+<!--            </div>-->
+
+<!--            <button-->
+<!--                    onclick="executeStep()"-->
+<!--                    style="width: 100%; padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; transition: background-color 0.3s;"-->
+<!--                    onmouseover="this.style.backgroundColor='#c82333'"-->
+<!--                    onmouseout="this.style.backgroundColor='#dc3545'"-->
+<!--            >-->
+<!--                ▶️ Execute Step Now-->
+<!--            </button>-->
+
+<!--            <p id="executionStatus"-->
+<!--               style="margin-top: 15px; font-weight: bold; min-height: 1.2em; text-align: center; color: #333;"></p>-->
+<!--        </div>-->
+    </div>
+</div>
+
+<script>
+    /* --- JavaScript Logic --- */
+    const saveQuitBtn = document.getElementById('saveQuitBtn');
+    const statusBox = document.getElementById('status-message');
+    let statusInterval;
+
+    // Fetches status from the server and updates the UI
+    function updateStatus() {
+        fetch('/recorder-status')
+            .then(response => {
+                if (response.status === 400) {
+                    throw new Error("No active browser session detected.");
+                }
+                if (!response.ok) {
+                    throw new Error("HTTP Error: " + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const totalActions = data.count || 0;
+                statusBox.className = 'status-box info';
+                statusBox.innerHTML = `
+                    <p>✅ Recorder Status: <strong>${data.installed ? 'ACTIVE' : 'INJECTION PENDING/FAILED'}</strong></p>
+                    <p>📊 Total Recorded Actions: <strong>${totalActions}</strong> events</p>
+                `;
+                saveQuitBtn.disabled = false;
+                saveQuitBtn.innerText = '💾 Save All Actions & Quit Browser';
+            })
+            .catch(error => {
+                statusBox.className = 'status-box error';
+                statusBox.innerHTML = `<p>🛑 Session Status: <strong>${error.message}</strong></p><p>Launch a URL to begin recording.</p>`;
+                saveQuitBtn.disabled = true;
+                saveQuitBtn.innerText = 'Session Closed.';
+            });
+    }
+
+    // Handles the combined Save and Quit operation
+    function saveAndQuit() {
+        if (saveQuitBtn.disabled) return;
+
+        saveQuitBtn.disabled = true;
+        saveQuitBtn.innerText = 'Saving actions...';
+        statusBox.className = 'status-box info';
+        statusBox.innerText = 'Starting save and shutdown process...';
+
+        let savedFileLocation = "";
+
+        // STEP 1: Save recorded actions to JSON file
+        fetch('/save-recorded-actions')
+            .then(response => response.text())
+            .then(message => {
+                savedFileLocation = message;
+                statusBox.innerText = `Saving successful! Closing browser...`;
+
+                // STEP 2: Close the browser session
+                return fetch('/quit');
+            })
+            .then(response => response.text())
+            .then(message => {
+                // Final success message
+                statusBox.className = 'status-box success';
+                statusBox.innerHTML = `
+                    <h3>✅ Operation Complete!</h3>
+                    <p>Browser closed successfully.</p>
+                    <p>Actions saved to: <strong>${savedFileLocation}</strong></p>
+                `;
+                saveQuitBtn.innerText = 'Session Closed.';
+                clearInterval(statusInterval);
+            })
+            .catch(error => {
+                statusBox.className = 'status-box error';
+                statusBox.innerText = `🛑 Fatal Error during shutdown: ${error}`;
+                saveQuitBtn.innerText = 'Error (Check Server Log)';
+            });
+    }
+
+    // Start polling the status every 2 seconds when the page loads
+    window.onload = function() {
+        statusInterval = setInterval(updateStatus, 2000);
+        updateStatus(); // Initial call
+    };
+
+    function generateTest() {
+    const featureName = document.getElementById('featureInput').value;
+    const scenarioName = document.getElementById('scenarioInput').value;
+    const statusDiv = document.getElementById('generatorStatus');
+
+    const payload = JSON.stringify({
+        feature: featureName, // from featureInput
+        scenario: scenarioName // from scenarioInput
+    });
+
+    if (!scenarioName) {
+        statusDiv.textContent = "Please enter a Scenario Name.";
+        statusDiv.style.color = 'red';
+        return;
+    }
+
+    statusDiv.textContent = "Generating...";
+    statusDiv.style.color = 'orange';
+
+    // Send the scenario name to the Java endpoint
+    fetch('http://localhost:4567/generate-test', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'text/plain', // Use text/plain since we're just sending a string
+        },
+        body: payload // The raw scenario name string
+    })
+    .then(response => response.json())
+    .then(data => {
+        statusDiv.textContent = data.message;
+        statusDiv.style.color = data.status === "Success" ? 'green' : 'red';
+    })
+    .catch(error => {
+        statusDiv.textContent = "Error communicating with Java server.";
+        statusDiv.style.color = 'red';
+        console.error('Fetch error:', error);
+    });
+}
+</script>
+
+</body>
+</html>

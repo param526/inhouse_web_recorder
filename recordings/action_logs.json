@@ -1,0 +1,80 @@
+[ {
+  "action" : "navigate",
+  "raw_gherkin" : "I visit \"Cryoport - Cryoportal® 2\" page",
+  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/session\");",
+  "timestamp" : 1763750676807,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "navigation",
+  "url" : "https://loadtest-v2.cryoportal.com/session"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "email",
+    "name" : "email",
+    "parsedValue" : "xcsdfsdf",
+    "primary_name" : "email",
+    "value" : "xcsdfsdf"
+  },
+  "parsedValue" : "xcsdfsdf",
+  "raw_gherkin" : "I enter \"xcsdfsdf\" into the \"email\"",
+  "raw_selenium" : "driver.findElement(By.name(\"email\")).sendKeys(\"xcsdfsdf\");",
+  "selector" : "textbox",
+  "timestamp" : 1763750678048,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "change",
+  "value" : "xcsdfsdf"
+}, {
+  "action" : "click",
+  "options" : {
+    "id" : "password",
+    "name" : "password",
+    "primary_name" : "password"
+  },
+  "raw_gherkin" : "I click on the \"password\"",
+  "raw_selenium" : "driver.findElement(By.name(\"password\")).click();",
+  "selector" : "textbox",
+  "timestamp" : 1763750678138,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "click"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "password",
+    "name" : "password",
+    "parsedValue" : "sdfgsfdgdfg",
+    "primary_name" : "password",
+    "value" : "sdfgsfdgdfg"
+  },
+  "parsedValue" : "sdfgsfdgdfg",
+  "raw_gherkin" : "I enter \"sdfgsfdgdfg\" into the \"password\"",
+  "raw_selenium" : "driver.findElement(By.name(\"password\")).sendKeys(\"sdfgsfdgdfg\");",
+  "selector" : "textbox",
+  "timestamp" : 1763750683702,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "change",
+  "value" : "sdfgsfdgdfg"
+}, {
+  "action" : "click",
+  "options" : {
+    "name" : "commit",
+    "primary_name" : "commit"
+  },
+  "raw_gherkin" : "I click on the \"commit\"",
+  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
+  "selector" : "submit",
+  "timestamp" : 1763750683826,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "name" : "commit",
+    "primary_name" : "commit"
+  },
+  "raw_gherkin" : "I click on the \"commit\"",
+  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
+  "selector" : "submit",
+  "timestamp" : 1763750688507,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "click"
+} ]

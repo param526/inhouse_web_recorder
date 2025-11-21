@@ -1,0 +1,108 @@
+[ {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Sign In\";",
+  "timestamp" : 1763733067599,
+  "title" : "Sign In",
+  "type" : "navigation",
+  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DfSVEz1m86J1xnNTS6l0eWZEQYGDgP8rpXDwDNLaRMdXpMC0Ixrw%2BvOu3ZWkhyMbDGv7L0bOu5KHsOJh5q%2FeK%2Fbr96mZYCE224Wafcu0307bXIllnsSc3J8bX82e608QjAMnnX7B3dwfNrDPUKlsG4tmqod4F0RcAORLUAmTqC0n9dXWHVw%2FLB2AXjvo4M5IH0GGZiQqN6uiqN%2B2JtaGaICO8SV9FdeQUgg6vVLIwhDyCuyXQhcT5vw6%2FVr1oYSWIyfE%2FkQ2Z1OJqQVzLurHTJnxLrrHASmyP9ZDWdSuY97cN9IC%2FNTVUlb6ndDMfAsCwcXa0FSp0Tgslq%2B7FJ8kmDol8a3%2FKMbaNX5LxSZG08IJ2u5IcZZA9VXKWt3OKKSKW1DdOjyrLdmkvZsHqDmHTDGw460iPiGjwZHUht9BYGpqHX4aBhjiKbSECJ68TMg3XhT5329ydWSQkvVh9awdXem%2BuzTx3b3WzYUGbBKp4aaRvLn3TksAgTIh3Dth%2FcGpoOmdGL42hU36njbqDoQnKdsUGC4%2BGSmzOt9uM0mhEb183UDA2W5C%2BxrSpyVpVeFoUFawI%2FSb2G4y87SdcQAS3JmHww8c3gxm29n2qyctim1Y90IenBDlCd4BbVK69u7M7%2BVryXakNX9tz%2BOCrnG5Nqb8MQxKuQWeBPl7Lqqq0vG2wQiCoUwmWYj2biEFVwCbkHlxJXoLAtR8Q%2FgiQxM3zHeLkB5kYvRNx2muEwZQyHXmURdJxI8u4sxYciIPfEg5N%2F1URpGj%2F7lbdt4XKVnkVdNTaACmkjfoR3BnY4xTFTBwZfyHOwltjVC2TZhI%2BrbI%2BzF8pfVh%2FYHUQMouQHehheUC4g9p23QqsGb%2F%2FuUey8U%2FCuS4%2F8xN%2F%2BZ5%2FTw2DxTVmHzWkpwjEno8RBQQf6bPSawklq0fEVDUFiwk3ERNVb%2BxD0KzpURtxeDMEO4d2YkEH0jEOUKb3P7oNdAFgWLk0mcnRpaBb0oj99CcZV3clihjlqPMiVl0l104g5BJK1eTO2bJPo0VhlFnedusB%2FLfLPk8oUonlOFZ8vlHsq14fhjh%2FV7erE0rVJOzADQslc0%2Bo5rbw2qTLe79IRfrqbwznekdAhgkbKIgOJlw8rq7azTrsxckibzm7r5u2M6NEyDVwvPBKhTCSxs0HjQCOAO0SRl9F8ZLKwTTlIgwnVKDb5DXW18VvfUqjjR%2BtnH4hv4rli9dOinNG9VZk7%2FGKyrmvV8mBvxTJNSur8P3XBr9ot%2BwTL6gQjVhSIcpgp0eWJp%2BIaIc%2FZbtGlbIzZzw%2Fpcyy1iAiNmNZjC5LQLfYpA71CydPmi45o05guDjkQVoQIOjoFAeLRj%2FSxvNEF%2BZuv65FvJFyBFO4hmGHfbZm0MROjxdQPczP%2FqZl9PXs4a7ZmB3WcDnX2WALCY6JCKWfDGPB40%2B6Oc8iUxreZimK6Us5hShaq61i8mzqm2GLqE%2FqXJHJHLf4iuROJuNqJ7eRLasmmNQ0BlW%2B6gyA8fVGXU1YzPjQuBo%2FMUENIrgXu6jRR8Fj%2F87M71Aghmb9BK1VwbVSyrgRDXbgMLhSx%2BRoL91ISlkf5M6tUPQfuILo1QReRnw4LElSioUgU%2B%2BlYWLrP7V61wFLmH%2BH2TrIzt6INVr6iTbQkNjGLTxkVFIL1uUvpE%2BAcj2ZA9bbPC1mHHWLqvwOXQ%3D%3D%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3D22cefd62872fa79b26ffec96512eab9ca7cee8b6&ECID-Context=1.006H1gQw51H4ykM6yNedMG004WT_0004c8%3BkXjE"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"\";",
+  "timestamp" : 1763733092145,
+  "title" : "",
+  "type" : "navigation",
+  "url" : "https://idcs-9efadc0de91342138a85bc6418b7e0d4.identity.oraclecloud.com/ui/v1/signin"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "idcs-signin-basic-signin-form-username",
+    "name" : "idcs-signin-basic-signin-form-username"
+  },
+  "parsedValue" : "Fatech.user",
+  "raw_gherkin" : "the user enters \"Fatech.user\" into the \"idcs-signin-basic-signin-form-username\";",
+  "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-username\")).sendKeys(\"Fatech.user\");",
+  "selector" : "textbox",
+  "timestamp" : 1763733101672,
+  "title" : "Cloud Sign In",
+  "type" : "change",
+  "value" : "Fatech.user"
+}, {
+  "action" : "click",
+  "options" : {
+    "id" : "idcs-signin-basic-signin-form-password|input",
+    "name" : "idcs-signin-basic-signin-form-password|input"
+  },
+  "raw_gherkin" : "the user clicks the \"idcs-signin-basic-signin-form-password|input\";",
+  "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-password|input\")).click();",
+  "selector" : "textbox",
+  "timestamp" : 1763733105730,
+  "title" : "Cloud Sign In",
+  "type" : "click"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "idcs-signin-basic-signin-form-password|input",
+    "name" : "idcs-signin-basic-signin-form-password|input"
+  },
+  "parsedValue" : "Intercol@2022b",
+  "raw_gherkin" : "the user enters \"Intercol@2022b\" into the \"idcs-signin-basic-signin-form-password|input\";",
+  "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-password|input\")).sendKeys(\"Intercol@2022b\");",
+  "selector" : "textbox",
+  "timestamp" : 1763733107056,
+  "title" : "Cloud Sign In",
+  "type" : "change",
+  "value" : "Intercol@2022b"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Sign In",
+    "id" : "ui-id-4",
+    "name" : "Sign In"
+  },
+  "raw_gherkin" : "the user clicks the \"Sign In\";",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//span[normalize-space(.)='Sign In']\")).click();",
+  "selector" : "span",
+  "timestamp" : 1763733107151,
+  "title" : "Cloud Sign In",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Welcome\";",
+  "timestamp" : 1763733114179,
+  "title" : "Welcome",
+  "type" : "navigation",
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/AtkHomePageWelcome?_adf.ctrl-state=o382ukpcx_1&_adf.no-new-window-redirect=true&_afrLoop=26475061259255339&_afrWindowMode=2&_afrWindowId=null&_afrFS=16&_afrMT=screen&_afrMFW=1280&_afrMFH=533&_afrMFDW=1280&_afrMFDH=720&_afrMFC=8&_afrMFCI=0&_afrMFM=0&_afrMFR=144&_afrMFG=0&_afrMFS=0&_afrMFO=0"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Oracle Fusion Cloud Applications\";",
+  "timestamp" : 1763733124822,
+  "title" : "Oracle Fusion Cloud Applications",
+  "type" : "navigation",
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome?_adf.ctrl-state=o382ukpcx_5&fnd=%3B%3B%3B%3Bfalse%3B256%3B%3B%3B&_afrLoop=26475070026338062"
+}, {
+  "action" : "click",
+  "options" : {
+    "id" : "pt1:_UIScmil2u",
+    "name" : "pt1:_UIScmil2u"
+  },
+  "raw_gherkin" : "the user clicks the \"pt1:_UIScmil2u\";",
+  "raw_selenium" : "driver.findElement(By.id(\"pt1:_UIScmil2u\")).click();",
+  "selector" : "img",
+  "timestamp" : 1763733135805,
+  "title" : "Oracle Fusion Cloud Applications",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Single Sign-Off consent\";",
+  "timestamp" : 1763733144660,
+  "title" : "Single Sign-Off consent",
+  "type" : "navigation",
+  "url" : "https://eits-test.login.em2.oraclecloud.com/fusion_apps/pages/logoutConsent.jsp?logout_done_url=https%3A%2F%2Feits-test.fa.em2.oraclecloud.com%3A443%2FfscmUI%2FadfAuthentication%3F_adf.authenticate%3Dtrue&logoutId=AA9265EFB6E1AE0C4D47E93F9251AEB02E332C6130D0042152A55A4B6E8D8807"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "the user is on the page with title \"Sign In\";",
+  "timestamp" : 1763733150197,
+  "title" : "Sign In",
+  "type" : "navigation",
+  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DLrtVOllBvp29qN4vCgpgghmtSATpphSEIoXdOSMQvsXN26uaWItMcDvM6rSwXAOxO2QfXDxVLVw%2Bb5k%2FEw3nVBq7jDY303maWBRfZiJ0zbmVr1Fp6k2BUDsMmshyyoov8u1ZVmKTVFrv4kTdTZLc6L9oFNPjaWL99xNmHiRbG1r2cjaQI93fQnRLRgfHJIkqAM7PdEusaPJBb3kSoBjxm32KV1K6nWJdKXpy4QC3VJPOGq3I7uAuYnOjoUeNraI6znL%2BjCO8Zxq%2FAWa6Ookdm1F701N%2BsdRX%2FGwWXG%2FaXB4ugFxGBH7mq69Yp6F4S3uxKRBqplFJDznYEC2lCwRVc0fAgrM2sqnWHoEvMamaZ4KIzM2TcZaMs%2F4P6nH%2FoGfPydOPe3Hn%2FhjNe1ZlQ%2FLBgg0H%2Ff64Vc2PaiU73ggdZNuIZbx8B0zip8bhhJdn1NKD%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3D1621abca79e4baccaff2e6227a85769117f8c5a7&ECID-Context=1.006H1gW4XRq4ykM6yNedMG004WT_0004cp%3BkXjE"
+} ]
