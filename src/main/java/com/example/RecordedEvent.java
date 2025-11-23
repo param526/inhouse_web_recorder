@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class RecordedEvent {
     private String raw_gherkin;
     private String action; // New field to read the action type
+    long timestamp = 0;
 
     // Getters and Setters for raw_gherkin
     public String getRaw_gherkin() { return raw_gherkin; }
@@ -14,4 +15,8 @@ public class RecordedEvent {
     // Getter and Setter for action
     public String getAction() { return action; }
     public void setAction(String action) { this.action = action; }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
 }

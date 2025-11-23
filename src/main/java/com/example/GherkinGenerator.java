@@ -2,10 +2,12 @@ package com.example;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class GherkinGenerator {
@@ -14,98 +16,117 @@ public class GherkinGenerator {
 
     public static void generateFeatureFile(String featureName, String scenarioName) {
 
-        // 1. Define the output file path based on the feature name
-        // The file name should be based on the Feature name for consistency
         String outputFileName = featureName.replaceAll("\\s+", "_") + ".feature";
         String outputFilePath = "D:\\url-opener-selenium\\src\\main\\resources\\features\\" + outputFileName;
 
         File featureFile = new File(outputFilePath);
         File jsonFile = new File(INPUT_JSON_PATH);
 
-        // Determine if the file already exists to decide whether to write the Feature header.
         boolean fileExistsAndHasContent = featureFile.exists() && featureFile.length() > 0;
 
         ObjectMapper mapper = new ObjectMapper();
 
-        try (
-                // KEY CHANGE: Set 'true' in FileOutputStream for APPEND mode.
-                OutputStreamWriter writer = new OutputStreamWriter(
-                        new FileOutputStream(featureFile, true), "UTF-8"
-                )
-        ) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(
+                new FileOutputStream(featureFile, true), StandardCharsets.UTF_8)) {
 
-            // 1. Read the JSON array into a List of RecordedEvent POJOs
+            // 1. Read JSON → List<RecordedEvent>
             CollectionType listType = mapper.getTypeFactory()
                     .constructCollectionType(List.class, RecordedEvent.class);
             List<RecordedEvent> events = mapper.readValue(jsonFile, listType);
 
-            // 2. CONDITIONAL FEATURE HEADER
+            // NOTE: We assume the JSON array is already in chronological order.
+            // No sorting by timestamp to avoid getTimestamp() issues.
+
+            // 2. Conditional Feature header
             if (!fileExistsAndHasContent) {
-                // If the file is new or empty, write the Feature header first.
                 writer.write("Feature: " + featureName + "\n\n");
             } else {
-                // If content already exists, add a newline separator before the next scenario.
                 writer.write("\n");
             }
 
-            // 3. Write the Scenario header
+            // 3. Scenario header
             writer.write("Scenario: " + scenarioName + "\n");
-            String previousKeyword = "";
+
+            boolean firstNavigationSeen = false;
+            String previousActionType = null;  // For When/And logic
 
             for (int i = 0; i < events.size(); i++) {
                 RecordedEvent event = events.get(i);
+
                 String rawGherkin = event.getRaw_gherkin();
+                if (rawGherkin == null || rawGherkin.isEmpty()) {
+                    continue;
+                }
 
-                if (rawGherkin == null || rawGherkin.isEmpty()) continue;
+                String actionType = event.getAction(); // "navigate", "sendKeys", "click", etc.
+                if (actionType == null) {
+                    actionType = "other";
+                }
 
-                String currentKeyword;
-                String actionType = event.getAction();
+                String keyword;
+                String stepText = rawGherkin;
 
-                // --- Keyword Determination (Same as before) ---
-                switch (actionType) {
+                boolean isNavigation = "navigate".equalsIgnoreCase(actionType);
+                boolean isSendKeys = "sendKeys".equalsIgnoreCase(actionType);
 
-                    case "navigate":
-                        currentKeyword = "Given ";
-                        break;
+                // ========== Navigation handling ==========
+                if (isNavigation) {
 
-                    case "sendKeys":
-                    case "click":
-                        if (i == events.size() - 1) {
-                            currentKeyword = "Then ";
-                        } else if (i == 0 && !"navigate".equals(events.get(0).getAction())) {
-                            currentKeyword = "Given ";
+                    // First navigation → Given I visit "" page
+                    if (!firstNavigationSeen) {
+                        keyword = "Given";
+
+                        // Replace leading 'I navigate to' with 'I visit'
+                        if (rawGherkin.startsWith("I navigate to")) {
+                            stepText = rawGherkin.replaceFirst("I navigate to", "I visit");
                         } else {
-                            currentKeyword = "When ";
+                            // Fallback if pattern changes
+                            stepText = rawGherkin;
                         }
-                        break;
 
-                    default:
-                        currentKeyword = (i == 0) ? "Given " : "When ";
+                        firstNavigationSeen = true;
+
+                    } else {
+                        // Subsequent navigation → Then I am on "" page
+                        keyword = "Then";
+
+                        if (rawGherkin.startsWith("I navigate to")) {
+                            stepText = rawGherkin.replaceFirst("I navigate to", "I am on");
+                        } else {
+                            stepText = rawGherkin;
+                        }
+                    }
+
+                    writer.write(keyword + " " + stepText + "\n");
+                    previousActionType = actionType;
+                    continue;
                 }
-                // --- End Keyword Determination ---
 
+                // ========== Non-navigation handling (sendKeys, click, etc.) ==========
 
-                // NEW LOGIC: Substitute Keyword with "And"
-                String keywordToWrite;
+                // Base keyword is When
+                String baseKeyword = "When";
 
-                // Check if the current keyword matches the previous keyword (ignoring "Then")
-                // "Then" is rarely followed by "And", so we prioritize the distinction.
-                if (!currentKeyword.equals("Then ") && currentKeyword.equals(previousKeyword)) {
-                    keywordToWrite = "And ";
+                // Apply "And" logic:
+                // If previous event had the same action type → And
+                // Otherwise → When
+                if (previousActionType != null &&
+                        previousActionType.equalsIgnoreCase(actionType)) {
+                    keyword = "And";
                 } else {
-                    keywordToWrite = currentKeyword;
+                    keyword = baseKeyword;
                 }
 
-                // Write the step using the substituted keyword
-                writer.write(keywordToWrite + rawGherkin + "\n");
+                // For sendKeys: requirement said When for sendKeys, And for consecutive sendKeys.
+                // The above logic satisfies that, since sendKeys is identified by actionType.
 
-                // Update the previousKeyword for the next iteration
-                // We only track Given, When, or Then. We track the determined keyword, not "And".
-                previousKeyword = currentKeyword;
+                writer.write(keyword + " " + stepText + "\n");
+
+                // Track action type for next iteration
+                previousActionType = actionType;
             }
 
             writer.flush();
-
             System.out.println("🎉 Successfully appended new scenario to feature file: " + outputFilePath);
 
         } catch (IOException e) {
