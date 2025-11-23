@@ -14,6 +14,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Class" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -28,6 +29,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.UrlOpenerServer.executor": "Debug",
+    "DefaultHtmlFileTemplate": "HTML File",
     "Maven.url-opener-selenium [clean].executor": "Run",
     "Maven.url-opener-selenium [compile].executor": "Run",
     "Maven.url-opener-selenium [exec:java].executor": "Run",

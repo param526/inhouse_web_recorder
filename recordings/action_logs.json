@@ -2,7 +2,7 @@
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Cryoport - Cryoportal® 2\" page",
   "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/session\");",
-  "timestamp" : 1763915138372,
+  "timestamp" : 1763916233223,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "navigation",
   "url" : "https://loadtest-v2.cryoportal.com/session"
@@ -19,7 +19,7 @@
   "raw_gherkin" : "I enter \"cryoadmin@osidigital.com\" into the \"email\"",
   "raw_selenium" : "driver.findElement(By.name(\"email\")).sendKeys(\"cryoadmin@osidigital.com\");",
   "selector" : "textbox",
-  "timestamp" : 1763915153015,
+  "timestamp" : 1763916253974,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "change",
   "value" : "cryoadmin@osidigital.com"
@@ -36,7 +36,7 @@
   "raw_gherkin" : "I enter \"EnTropYoSi\" into the \"password\"",
   "raw_selenium" : "driver.findElement(By.name(\"password\")).sendKeys(\"EnTropYoSi\");",
   "selector" : "textbox",
-  "timestamp" : 1763915178997,
+  "timestamp" : 1763916265790,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "change",
   "value" : "EnTropYoSi"
@@ -50,7 +50,7 @@
   "raw_gherkin" : "I check the \"remember_me\" option",
   "raw_selenium" : "driver.findElement(By.name(\"remember_me\")).click();",
   "selector" : "checkbox",
-  "timestamp" : 1763915185424,
+  "timestamp" : 1763916269923,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "click"
 }, {
@@ -62,228 +62,35 @@
   "raw_gherkin" : "I click on the \"Sign in\" button",
   "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
   "selector" : "button",
-  "timestamp" : 1763915189372,
+  "timestamp" : 1763916272869,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "click"
 }, {
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
   "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/enroute\");",
-  "timestamp" : 1763915199679,
+  "timestamp" : 1763916286743,
   "title" : "Cryoport - Science, Logistics, Certainty",
   "type" : "navigation",
   "url" : "https://loadtest-v2.cryoportal.com/shipments/enroute"
 }, {
   "action" : "click",
   "options" : {
-    "element_text" : "New Order",
-    "primary_name" : "New Order"
+    "element_text" : "Sign Out",
+    "primary_name" : "Sign Out"
   },
-  "raw_gherkin" : "I click on the \"New Order\"",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//span[normalize-space(.)='New Order']\")).click();",
-  "selector" : "span",
-  "timestamp" : 1763915226653,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/new\");",
-  "timestamp" : 1763915226775,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/new"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "New Order",
-    "primary_name" : "New Order"
-  },
-  "raw_gherkin" : "I click on the \"New Order\"",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//span[normalize-space(.)='New Order']\")).click();",
-  "selector" : "span",
-  "timestamp" : 1763915226653,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/new\");",
-  "timestamp" : 1763915226775,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/new"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Adina Kern-Goldberger (ANDR153)",
-    "primary_name" : "Adina Kern-Goldberger (ANDR153)"
-  },
-  "raw_gherkin" : "I select the \"Adina Kern-Goldberger (ANDR153)\" option",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//li[normalize-space(.)='Adina Kern-Goldberger (ANDR153)']\")).click();",
-  "selector" : "option",
-  "timestamp" : 1763915236007,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "name" : "commit",
-    "primary_name" : "Save & Continue"
-  },
-  "raw_gherkin" : "I click on the \"Save & Continue\" button",
-  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
-  "selector" : "button",
-  "timestamp" : 1763915239394,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/410312/steps/route\");",
-  "timestamp" : 1763915244277,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/410312/steps/route"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER) Arsela Gishto (gishtoa@ccf.org)  26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157",
-    "primary_name" : "CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER) Arsela Gishto (gishtoa@ccf.org)  26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157"
-  },
-  "raw_gherkin" : "I select the \"CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER) Arsela Gishto (gishtoa@ccf.org)  26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157\" option",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//li[normalize-space(.)='CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157']\")).click();",
-  "selector" : "option",
-  "timestamp" : 1763915249264,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM)) Kristin Costine (kcostine@colocrm.com)  10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331",
-    "primary_name" : "FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM)) Kristin Costine (kcostine@colocrm.com)  10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331"
-  },
-  "raw_gherkin" : "I select the \"FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM)) Kristin Costine (kcostine@colocrm.com)  10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331\" option",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//li[normalize-space(.)='FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331']\")).click();",
-  "selector" : "option",
-  "timestamp" : 1763915257673,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "name" : "commit",
-    "primary_name" : "Save & Continue"
-  },
-  "raw_gherkin" : "I click on the \"Save & Continue\" button",
-  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
-  "selector" : "button",
-  "timestamp" : 1763915263448,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/410312/steps/shippers\");",
-  "timestamp" : 1763915268424,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/410312/steps/shippers"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "CXST1SPGP - EXPRESS STANDARD SHIPPER W/SP, GP",
-    "primary_name" : "CXST1SPGP - EXPRESS STANDARD SHIPPER W/SP, GP"
-  },
-  "raw_gherkin" : "I select the \"CXST1SPGP - EXPRESS STANDARD SHIPPER W/SP, GP\" option",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//li[normalize-space(.)='CXST1SPGP - EXPRESS STANDARD SHIPPER W/SP, GP']\")).click();",
-  "selector" : "option",
-  "timestamp" : 1763915273340,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Add Commodity",
-    "primary_name" : "Add Commodity"
-  },
-  "raw_gherkin" : "I click on the \"Add Commodity\" link",
-  "raw_selenium" : "driver.findElement(By.linkText(\"Add Commodity\")).click();",
+  "raw_gherkin" : "I click on the \"Sign Out\" link",
+  "raw_selenium" : "driver.findElement(By.linkText(\"Sign Out\")).click();",
   "selector" : "link",
-  "timestamp" : 1763915278948,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Human Embryo(s)",
-    "primary_name" : "Human Embryo(s)"
-  },
-  "raw_gherkin" : "I select the \"Human Embryo(s)\" option",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//li[normalize-space(.)='Human Embryo(s)']\")).click();",
-  "selector" : "option",
-  "timestamp" : 1763915283348,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "primary_name" : ""
-  },
-  "raw_gherkin" : "I interact with the unlabeled i element",
-  "raw_selenium" : "driver.findElement(By.cssSelector(\"i\")).click();",
-  "selector" : "i",
-  "timestamp" : 1763915286972,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "sendKeys",
-  "options" : {
-    "id" : "shippers_shippers_attributes_0_commodities_attributes_0_primary_container_type_description",
-    "name" : "shippers[shippers_attributes][0][commodities_attributes][0][primary_container_type_description]",
-    "parsedValue" : "sdfsdf",
-    "primary_name" : "shippers[shippers_attributes][0][commodities_attributes][0][primary_container_type_description]",
-    "value" : "sdfsdf"
-  },
-  "parsedValue" : "sdfsdf",
-  "raw_gherkin" : "I enter \"sdfsdf\" into the \"shippers[shippers_attributes][0][commodities_attributes][0][primary_container_type_description]\"",
-  "raw_selenium" : "driver.findElement(By.name(\"shippers[shippers_attributes][0][commodities_attributes][0][primary_container_type_description]\")).sendKeys(\"sdfsdf\");",
-  "selector" : "textbox",
-  "timestamp" : 1763915300585,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "change",
-  "value" : "sdfsdf"
-}, {
-  "action" : "click",
-  "options" : {
-    "id" : "shippers_shippers_attributes_0_commodities_attributes_0_leg_numbers_2",
-    "name" : "shippers[shippers_attributes][0][commodities_attributes][0][leg_numbers][]",
-    "primary_name" : "shippers[shippers_attributes][0][commodities_attributes][0][leg_numbers][]"
-  },
-  "raw_gherkin" : "I check the \"shippers[shippers_attributes][0][commodities_attributes][0][leg_numbers][]\" option",
-  "raw_selenium" : "driver.findElement(By.name(\"shippers[shippers_attributes][0][commodities_attributes][0][leg_numbers][]\")).click();",
-  "selector" : "checkbox",
-  "timestamp" : 1763915309346,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "name" : "commit",
-    "primary_name" : "Save & Continue"
-  },
-  "raw_gherkin" : "I click on the \"Save & Continue\" button",
-  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
-  "selector" : "button",
-  "timestamp" : 1763915313722,
+  "timestamp" : 1763916296005,
   "title" : "Cryoport - Science, Logistics, Certainty",
   "type" : "click"
 }, {
   "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/410312/steps/documentation\");",
-  "timestamp" : 1763915317764,
-  "title" : "Cryoport - Science, Logistics, Certainty",
+  "raw_gherkin" : "I navigate to \"Cryoport - Cryoportal® 2\" page",
+  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/session\");",
+  "timestamp" : 1763916298327,
+  "title" : "Cryoport - Cryoportal® 2",
   "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/410312/steps/documentation"
+  "url" : "https://loadtest-v2.cryoportal.com/session"
 } ]

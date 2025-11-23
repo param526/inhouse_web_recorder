@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selenium Recorder Control Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #2563eb;       /* Modern Blue */
+            --primary-hover: #1d4ed8;
+            --success: #10b981;       /* Emerald Green */
+            --success-hover: #059669;
+            --danger: #ef4444;        /* Red */
+            --danger-hover: #dc2626;
+            --bg-color: #f1f5f9;      /* Slate 100 */
+            --card-bg: #ffffff;
+            --text-main: #1e293b;     /* Slate 800 */
+            --text-sub: #64748b;      /* Slate 500 */
+            --border: #e2e8f0;
+            --radius: 12px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header --- */
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* --- Main Content --- */
+        .content {
+            padding: 30px;
+        }
+
+        /* --- Input Groups --- */
+        .section-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-sub);
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .input-group-row {
+            display: flex;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+
+        #url-input {
+            flex-grow: 1;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        #url-input:focus {
+            border-color: var(--primary);
+            z-index: 10;
+        }
+
+        #launch-btn {
+            padding: 0 24px;
+            background-color: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        #launch-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* --- Status Box --- */
+        .status-box {
+            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px; /* Reduced margin to sit closer to Stop button */
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-box.info { border-left: 4px solid var(--primary); }
+        .status-box.success { border-left: 4px solid var(--success); background-color: #ecfdf5; }
+        .status-box.error { border-left: 4px solid var(--danger); background-color: #fef2f2; }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .status-item:last-child { margin-bottom: 0; }
+
+        /* Glowing Pulse Animation for Active Status */
+        .status-active-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background-color: #dbeafe;
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            margin-right: 6px;
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        .code-snippet {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: block;
+            margin-top: 5px;
+            border-left: 3px solid var(--success);
+        }
+
+        /* --- Generator Card --- */
+        .card {
+            background-color: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* --- Buttons --- */
+        .btn-full {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+            margin-top: 15px;
+        }
+        .btn-success:hover { background-color: var(--success-hover); transform: translateY(-1px); }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover:not(:disabled) { background-color: var(--danger-hover); transform: translateY(-1px); }
+        .btn-danger:disabled { background-color: #cbd5e1; cursor: not-allowed; transform: none; }
+
+        /* --- Footer Status --- */
+        #generatorStatus {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 13px;
+            min-height: 20px;
+        }
+
+        .divider {
+            border: 0;
+            border-top: 1px solid var(--border);
+            margin: 30px 0;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Web Action Recorder</h1>
+        <p>Automated Test & Gherkin Generator</p>
+    </div>
+
+    <div class="content">
+
+        <span class="section-label">1. Start Session</span>
+        <form action="/open" method="post" class="input-group-row">
+            <input type="text" name="url" id="url-input" placeholder="https://example.com" required>
+            <button type="submit" id="launch-btn">
+                <span>Launch 🚀</span>
+            </button>
+        </form>
+
+        <span class="section-label">2. Live Monitor</span>
+        <div class="status-box info" id="status-message">
+            <div style="text-align: center; color: var(--text-sub);">
+                Waiting for browser session initialization...
+            </div>
+        </div>
+
+        <button id="saveQuitBtn" onclick="saveAndQuit()" class="btn-full btn-danger" disabled>
+            💾 Save Actions & Stop Recorder
+        </button>
+
+        <hr class="divider">
+
+        <span class="section-label">3. Export Configuration</span>
+        <div class="card" id="test-generator-card">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Gherkin Settings
+            </h3>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="featureInput">Feature Name</label>
+                    <input type="text" id="featureInput" class="form-control" placeholder="e.g., User Login">
+                </div>
+                <div class="form-group">
+                    <label for="scenarioInput">Scenario Name</label>
+                    <input type="text" id="scenarioInput" class="form-control" placeholder="e.g., Valid Credentials">
+                </div>
+            </div>
+
+            <button onclick="generateTest()" class="btn-full btn-success">
+                <span>Generate Feature File</span>
+            </button>
+            <p id="generatorStatus"></p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    /* --- JavaScript Logic (Preserved) --- */
+    const saveQuitBtn = document.getElementById('saveQuitBtn');
+    const statusBox = document.getElementById('status-message');
+    let statusInterval;
+
+    function updateStatus() {
+        fetch('/recorder-status')
+            .then(response => {
+                if (response.status === 400) {
+                    throw new Error("No active browser session detected.");
+                }
+                if (!response.ok) {
+                    throw new Error("HTTP Error: " + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const totalActions = data.count || 0;
+                const lastStepText = data.last_raw_gherkin || '';
+
+                // Determine badge style
+                const activeBadge = data.installed
+                    ? `<span class="status-active-badge"><div class="pulse-dot"></div> ACTIVE</span>`
+                    : `<span style="color:orange; font-weight:bold;">PENDING</span>`;
+
+                statusBox.className = 'status-box info';
+                // New UI Structure for the Status Box
+                statusBox.innerHTML = `
+                    <div class="status-item">
+                        <span>📡 Connection Status:</span>
+                        ${activeBadge}
+                    </div>
+                    <div class="status-item">
+                        <span>📊 Recorded Events:</span>
+                        <strong>${totalActions}</strong>
+                    </div>
+                    ${
+                        lastStepText
+                            ? `<div style="margin-top:12px;">
+                                 <span style="font-size:12px; font-weight:600; color:var(--text-sub);">LATEST ACTION:</span>
+                                 <div class="code-snippet">${lastStepText}</div>
+                               </div>`
+                            : `<div style="margin-top:10px; font-style:italic; font-size:13px; color:var(--text-sub);">Waiting for user interactions...</div>`
+                    }
+                `;
+
+                saveQuitBtn.disabled = false;
+                saveQuitBtn.innerHTML = '💾 Save All Actions & Quit Browser';
+            })
+            .catch(error => {
+                statusBox.className = 'status-box error';
+                statusBox.innerHTML = `
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <span style="font-size:20px;">🛑</span>
+                        <div>
+                            <strong>Session Inactive</strong><br>
+                            <span style="font-size:13px;">${error.message}</span>
+                        </div>
+                    </div>
+                `;
+                saveQuitBtn.disabled = true;
+                saveQuitBtn.innerText = 'Session Closed';
+            });
+    }
+
+    function saveAndQuit() {
+        if (saveQuitBtn.disabled) return;
+
+        saveQuitBtn.disabled = true;
+        saveQuitBtn.innerText = 'Saving actions...';
+
+        let savedFileLocation = "";
+
+        fetch('/save-recorded-actions')
+            .then(response => response.text())
+            .then(message => {
+                savedFileLocation = message;
+                statusBox.innerHTML = `<div style="text-align:center; color:var(--text-main);">💾 Saving data... Closing browser...</div>`;
+
+                return fetch('/quit');
+            })
+            .then(response => response.text())
+            .then(message => {
+                statusBox.className = 'status-box success';
+                statusBox.innerHTML = `
+                    <div style="text-align:center;">
+                        <h3 style="margin:0 0 10px; color:#166534;">✅ Recording Saved!</h3>
+                        <p style="font-size:13px; margin:0; color:#15803d;">File: <strong>${savedFileLocation}</strong></p>
+                    </div>
+                `;
+                saveQuitBtn.innerText = 'Session Closed';
+                clearInterval(statusInterval);
+            })
+            .catch(error => {
+                statusBox.className = 'status-box error';
+                statusBox.innerText = `🛑 Fatal Error during shutdown: ${error}`;
+                saveQuitBtn.innerText = 'Error';
+            });
+    }
+
+    window.onload = function() {
+        statusInterval = setInterval(updateStatus, 2000);
+        updateStatus();
+    };
+
+    function generateTest() {
+        const featureName = document.getElementById('featureInput').value;
+        const scenarioName = document.getElementById('scenarioInput').value;
+        const statusDiv = document.getElementById('generatorStatus');
+
+        const payload = JSON.stringify({
+            feature: featureName,
+            scenario: scenarioName
+        });
+
+        if (!scenarioName) {
+            statusDiv.textContent = "Please enter a Scenario Name.";
+            statusDiv.style.color = 'var(--danger)';
+            return;
+        }
+
+        statusDiv.textContent = "Generating...";
+        statusDiv.style.color = 'var(--primary)';
+
+        fetch('http://localhost:4567/generate-test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain',
+            },
+            body: payload
+        })
+        .then(response => response.json())
+        .then(data => {
+            statusDiv.textContent = data.message;
+            statusDiv.style.color = data.status === "Success" ? 'var(--success)' : 'var(--danger)';
+        })
+        .catch(error => {
+            statusDiv.textContent = "Error communicating with Java server.";
+            statusDiv.style.color = 'var(--danger)';
+            console.error('Fetch error:', error);
+        });
+    }
+</script>
+
+</body>
+</html>
