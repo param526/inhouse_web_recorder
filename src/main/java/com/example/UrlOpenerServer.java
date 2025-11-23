@@ -271,7 +271,7 @@ public class UrlOpenerServer {
         driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
 
         driver.get(url);
-        Thread.sleep(1500);
+        Thread.sleep(3000);
 
         currentDriver = driver;
 
