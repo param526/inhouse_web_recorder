@@ -1,5 +1,8 @@
 (function () {
     const STORAGE_KEY = '__recordedEvents';
+    // 🔥 Debounce config for text input recording
+    const TEXT_CHANGE_DEBOUNCE_MS = 1500; // 1.5 sec idle time before recording
+    const pendingTextChangeTimers = {};   // key -> { timeoutId, rec }
 
     // ---- Load existing events from localStorage (if any) ----
     try {
@@ -168,10 +171,66 @@
         return { type: 'By.cssSelector', value: tag };
     }
 
+    // --- Special handling for Select2 / dropdown options ---
+    document.addEventListener('mouseup', function (e) {
+        try {
+            // Only care about actual Select2 option elements
+            var optionEl = e.target.closest && e.target.closest('.select2-results__option');
+            if (!optionEl) return; // Not a Select2 option → ignore
+
+            var rec = {};
+            rec.timestamp = Date.now();
+            rec.type = 'click';              // treat as click in our model
+            rec.title = document.title;
+
+            // Get only the text of the option, not the whole list
+            var elementText = optionEl.textContent ? optionEl.textContent.trim() : '';
+            var accName = ''; // not really needed for Select2 options
+
+            // Use your existing locator helper (it will build an XPath with the option text)
+            var locator = generateSeleniumLocator(optionEl, accName);
+            var locatorValue = locator.value.replace(/\"/g, '\\\"');
+
+            rec.selector = 'option';
+
+            var gherkinName = elementText;
+            rec.options = {};
+            if (elementText.length > 0) {
+                rec.options.element_text = elementText;
+                rec.options.primary_name = elementText;
+            }
+
+            rec.action = 'click';
+            rec.raw_gherkin = 'I select the "' + gherkinName + '" option';
+            rec.raw_selenium =
+                'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).click();';
+
+            persistEvent(rec);
+        } catch (err) {
+            console && console.log && console.log('[recorder] select2 option mouseup handler error', err);
+        }
+    }, true);
+
+
+
     // ---- Main event recorder for click & change ----
     function recordEvent(e) {
         try {
+
+        if (!e) return;
+
+        // 🔇 Ignore script-generated CHANGE events (auto-fill, .trigger('change'), etc.)
+        // but DO NOT block clicks here (we want Select2 option clicks).
+        if (e.type === 'change' && e.isTrusted === false) {
+            return;
+        }
+
             var t = e.target;
+
+             // If there's no usable target, bail out
+                    if (!t || t.nodeType !== 1) { // 1 = ELEMENT_NODE
+                        return;
+                    }
             var rec = {};
             rec.timestamp = Date.now();
             rec.type = e.type;
@@ -239,8 +298,22 @@
 
             switch (e.type) {
                 case 'click': {
+
+                    if (role === 'textbox') {
+                                return;
+                            }
+
                     rec.action = 'click';
                     rec.raw_selenium = 'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).click();';
+
+                    if (t.type === 'checkbox' || role === 'checkbox') {
+                            if (t.checked) {
+                                rec.raw_gherkin = 'I check the "' + gherkinName + '" option';
+                            } else {
+                                rec.raw_gherkin = 'I uncheck the "' + gherkinName + '" option';
+                            }
+                            break;
+                        }
 
                     // SPECIAL CASE: dropdown/select-style option
                     const isSelectDropdown =
@@ -264,23 +337,54 @@
                 }
 
                 case 'change': {
-                    var value = t.value !== undefined
-                        ? t.value
-                        : (t.type === 'checkbox' || t.type === 'radio'
-                            ? (t.checked ? 'checked' : 'unchecked')
-                            : null);
+                    // 🔒 Avoid duplicate events for checkbox / radio
+                        if (t.type === 'checkbox' || t.type === 'radio') {
+                            // We already record the click; ignore the change for these controls.
+                            return;
+                        }
 
-                    rec.action = 'sendKeys';
-                    rec.parsedValue = value;
-                    rec.value = value;
-                    rec.raw_selenium = 'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).sendKeys(\"' + value + '\");';
-                    rec.raw_gherkin = 'I enter "' + value + '" into the "' + gherkinName + '"';
+                        var value = t.value !== undefined
+                            ? t.value
+                            : null;
 
-                    rec.options.value = value;
-                    rec.options.parsedValue = value;
-                    break;
+                        rec.action = 'sendKeys';
+                        rec.parsedValue = value;
+                        rec.value = value;
+
+                        rec.raw_selenium =
+                            'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).sendKeys(\"' + value + '\");';
+
+                        rec.raw_gherkin = 'I enter "' + value + '" into the "' + gherkinName + '"';
+
+                        rec.options.value = value;
+                        rec.options.parsedValue = value;
+
+                    // 🔄 NEW: debounce for textboxes so we don't record partial values
+                    if (role === 'textbox') {
+                        // Identify this field (prefer id, then name, then locator)
+                        const fieldKey =
+                            (t.id && ('id:' + t.id)) ||
+                            (t.name && ('name:' + t.name)) ||
+                            ('loc:' + locator.value);
+
+                        // Clear any pending timer for this field
+                        const existing = pendingTextChangeTimers[fieldKey];
+                        if (existing && existing.timeoutId) {
+                            clearTimeout(existing.timeoutId);
+                        }
+
+                        // Schedule a new timer; only the last value gets recorded
+                        const timeoutId = setTimeout(function () {
+                            persistEvent(rec);
+                            delete pendingTextChangeTimers[fieldKey];
+                        }, TEXT_CHANGE_DEBOUNCE_MS);
+
+                        pendingTextChangeTimers[fieldKey] = { timeoutId, rec };
+                    } else {
+                        // Non-textbox (e.g. selects) → record immediately
+                        persistEvent(rec);
+                   }
                 }
-
                 default:
                     return;
             }
