@@ -49,7 +49,7 @@ public class RawSeleniumReplayer {
 
         WebDriver driver = new ChromeDriver(options);
         driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
-        Thread.sleep(3000);
+        Thread.sleep(10000);
 
         try {
             for (RecordedEvent ev : events) {
