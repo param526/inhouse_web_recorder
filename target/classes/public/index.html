@@ -164,37 +164,37 @@
                style="margin-top: 15px; font-weight: bold; min-height: 1.2em; text-align: center; color: #333;"></p>
         </div>
 
-<!--        <div id="single-step-execution-card"-->
-<!--             style="max-width: 400px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif; background-color: #f9f9f9;">-->
-<!--            <h3 style="margin-bottom: 10px;">Debug: Execute Single Step</h3>-->
-<!--            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">-->
-<!--                Enter a complete Gherkin step (e.g., `the user clicks the "Sign In"`) to re-run it immediately.-->
-<!--            </p>-->
+        <!--        <div id="single-step-execution-card"-->
+        <!--             style="max-width: 400px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif; background-color: #f9f9f9;">-->
+        <!--            <h3 style="margin-bottom: 10px;">Debug: Execute Single Step</h3>-->
+        <!--            <p style="color: #666; font-size: 0.9em; margin-bottom: 15px;">-->
+        <!--                Enter a complete Gherkin step (e.g., `the user clicks the "Sign In"`) to re-run it immediately.-->
+        <!--            </p>-->
 
-<!--            <div class="input-group" style="margin-bottom: 25px;">-->
-<!--                <label for="stepToRunInput" style="font-weight: bold; display: block; margin-bottom: 5px;">Gherkin-->
-<!--                    Step:</label>-->
-<!--                <input-->
-<!--                        type="text"-->
-<!--                        id="stepToRunInput"-->
-<!--                        placeholder="the user clicks the 'Sign In' button"-->
-<!--                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em;"-->
-<!--                        required-->
-<!--                >-->
-<!--            </div>-->
+        <!--            <div class="input-group" style="margin-bottom: 25px;">-->
+        <!--                <label for="stepToRunInput" style="font-weight: bold; display: block; margin-bottom: 5px;">Gherkin-->
+        <!--                    Step:</label>-->
+        <!--                <input-->
+        <!--                        type="text"-->
+        <!--                        id="stepToRunInput"-->
+        <!--                        placeholder="the user clicks the 'Sign In' button"-->
+        <!--                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em;"-->
+        <!--                        required-->
+        <!--                >-->
+        <!--            </div>-->
 
-<!--            <button-->
-<!--                    onclick="executeStep()"-->
-<!--                    style="width: 100%; padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; transition: background-color 0.3s;"-->
-<!--                    onmouseover="this.style.backgroundColor='#c82333'"-->
-<!--                    onmouseout="this.style.backgroundColor='#dc3545'"-->
-<!--            >-->
-<!--                ▶️ Execute Step Now-->
-<!--            </button>-->
+        <!--            <button-->
+        <!--                    onclick="executeStep()"-->
+        <!--                    style="width: 100%; padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; transition: background-color 0.3s;"-->
+        <!--                    onmouseover="this.style.backgroundColor='#c82333'"-->
+        <!--                    onmouseout="this.style.backgroundColor='#dc3545'"-->
+        <!--            >-->
+        <!--                ▶️ Execute Step Now-->
+        <!--            </button>-->
 
-<!--            <p id="executionStatus"-->
-<!--               style="margin-top: 15px; font-weight: bold; min-height: 1.2em; text-align: center; color: #333;"></p>-->
-<!--        </div>-->
+        <!--            <p id="executionStatus"-->
+        <!--               style="margin-top: 15px; font-weight: bold; min-height: 1.2em; text-align: center; color: #333;"></p>-->
+        <!--        </div>-->
     </div>
 </div>
 
@@ -217,15 +217,26 @@
                 return response.json();
             })
             .then(data => {
-                const totalActions = data.count || 0;
-                statusBox.className = 'status-box info';
-                statusBox.innerHTML = `
-                    <p>✅ Recorder Status: <strong>${data.installed ? 'ACTIVE' : 'INJECTION PENDING/FAILED'}</strong></p>
-                    <p>📊 Total Recorded Actions: <strong>${totalActions}</strong> events</p>
-                `;
-                saveQuitBtn.disabled = false;
-                saveQuitBtn.innerText = '💾 Save All Actions & Quit Browser';
-            })
+          const totalActions = data.count || 0;
+
+    // 🔍 Last recorded step text
+    const lastStepText = data.last_raw_gherkin || '';
+
+    statusBox.className = 'status-box info';
+    statusBox.innerHTML = `
+        <p>✅ Recorder Status: <strong>${data.installed ? 'ACTIVE' : 'INJECTION PENDING/FAILED'}</strong></p>
+        <p>📊 Total Recorded Actions: <strong>${totalActions}</strong> events</p>
+        ${
+            lastStepText
+                ? `<p>📝 Last Step: <code>${lastStepText}</code></p>`
+                : `<p>📝 Last Step: <em>No events recorded yet.</em></p>`
+        }
+    `;
+
+    saveQuitBtn.disabled = false;
+    saveQuitBtn.innerText = '💾 Save All Actions & Quit Browser';
+})
+
             .catch(error => {
                 statusBox.className = 'status-box error';
                 statusBox.innerHTML = `<p>🛑 Session Status: <strong>${error.message}</strong></p><p>Launch a URL to begin recording.</p>`;

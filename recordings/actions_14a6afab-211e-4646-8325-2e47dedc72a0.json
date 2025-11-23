@@ -1,8 +1,0 @@
-[ {
-  "action" : "navigate",
-  "raw_gherkin" : "the user is on the page with title \"\";",
-  "timestamp" : 1763728425988,
-  "title" : "",
-  "type" : "navigation",
-  "url" : "https://idcs-9efadc0de91342138a85bc6418b7e0d4.identity.oraclecloud.com/ui/v1/signin"
-} ]

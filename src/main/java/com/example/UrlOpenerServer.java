@@ -120,20 +120,70 @@ public class UrlOpenerServer {
             }
             try {
                 JavascriptExecutor js = (JavascriptExecutor) currentDriver;
+
                 Object installed = js.executeScript("return !!window.__recordingInstalled;");
-                // Get current page count to display the total
-                int currentCount = ((List<?>) js.executeScript("return (window.__recordedEvents || [])")).size();
+
+                Object eventsObj = js.executeScript("return (window.__recordedEvents || []);");
+                int currentCount = 0;
+                String lastRawFromBrowser = null;
+
+                if (eventsObj instanceof java.util.List<?>) {
+                    java.util.List<?> browserEvents = (java.util.List<?>) eventsObj;
+                    currentCount = browserEvents.size();
+
+                    if (!browserEvents.isEmpty()) {
+                        Object lastEvent = browserEvents.get(browserEvents.size() - 1);
+                        if (lastEvent instanceof java.util.Map<?, ?>) {
+                            Object rg = ((java.util.Map<?, ?>) lastEvent).get("raw_gherkin");
+                            if (rg != null) {
+                                lastRawFromBrowser = rg.toString();
+                            }
+                        }
+                    }
+                }
+
                 int totalCount = ALL_RECORDED_ACTIONS.size() + currentCount;
 
-                String json = MAPPER.writeValueAsString(new Status(installed, totalCount));
+                // ✅ SAFE last_raw_gherkin extraction
+                String lastRawOverall = lastRawFromBrowser;
+
+                if (lastRawOverall == null && !ALL_RECORDED_ACTIONS.isEmpty()) {
+                    Object lastStored = ALL_RECORDED_ACTIONS.get(ALL_RECORDED_ACTIONS.size() - 1);
+
+                    if (lastStored instanceof com.example.RecordedEvent) {
+                        com.example.RecordedEvent ev = (com.example.RecordedEvent) lastStored;
+                        if (ev.getRaw_gherkin() != null) {
+                            lastRawOverall = ev.getRaw_gherkin();
+                        }
+                    } else if (lastStored instanceof java.util.Map<?, ?>) {
+                        java.util.Map<?, ?> m = (java.util.Map<?, ?>) lastStored;
+                        Object rg = m.get("raw_gherkin");
+                        if (rg != null) {
+                            lastRawOverall = rg.toString();
+                        }
+                    } else if (lastStored instanceof String) {
+                        lastRawOverall = (String) lastStored;
+                    }
+                }
+
+                RecorderServer.Status status = new RecorderServer.Status(
+                        (installed instanceof Boolean) && (Boolean) installed,
+                        totalCount,
+                        lastRawOverall
+                );
+
+                String json = MAPPER.writeValueAsString(status);
                 res.type("application/json");
                 return json;
+
             } catch (Exception e) {
                 e.printStackTrace();
                 res.status(500);
                 return "Error checking recorder status: " + e.getMessage();
             }
         });
+
+
 
         // Read recorded actions (in-memory) - Reads from persistent list
         get("/recorded-actions", (req, res) -> {
@@ -184,15 +234,29 @@ public class UrlOpenerServer {
     }
 
     // DTO for /recorder-status
-    public static class Status {
-        public Object installed;
-        public Object count;
-
-        public Status(Object installed, Object count) {
-            this.installed = installed;
-            this.count = count;
-        }
-    }
+//    public class Status {
+//        private boolean installed;
+//        private int count;
+//        private String last_raw_gherkin;  // NEW FIELD
+//
+//        public Status(boolean installed, int count, String lastRawGherkin) {
+//            this.installed = installed;
+//            this.count = count;
+//            this.last_raw_gherkin = lastRawGherkin;
+//        }
+//
+//        public boolean isInstalled() {
+//            return installed;
+//        }
+//
+//        public int getCount() {
+//            return count;
+//        }
+//
+//        public String getLast_raw_gherkin() {
+//            return last_raw_gherkin;
+//        }
+//    }
 
     private static String html(String msg, boolean error) {
         String color = error ? "red" : "green";
