@@ -2,7 +2,7 @@
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Cryoport - Cryoportal® 2\" page",
   "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/session\");",
-  "timestamp" : 1763916233223,
+  "timestamp" : 1763931017340,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "navigation",
   "url" : "https://loadtest-v2.cryoportal.com/session"
@@ -19,10 +19,23 @@
   "raw_gherkin" : "I enter \"cryoadmin@osidigital.com\" into the \"email\"",
   "raw_selenium" : "driver.findElement(By.name(\"email\")).sendKeys(\"cryoadmin@osidigital.com\");",
   "selector" : "textbox",
-  "timestamp" : 1763916253974,
+  "timestamp" : 1763931022696,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "change",
   "value" : "cryoadmin@osidigital.com"
+}, {
+  "action" : "click",
+  "options" : {
+    "id" : "remember_me",
+    "name" : "remember_me",
+    "primary_name" : "remember_me"
+  },
+  "raw_gherkin" : "I check the \"remember_me\" option",
+  "raw_selenium" : "driver.findElement(By.name(\"remember_me\")).click();",
+  "selector" : "checkbox",
+  "timestamp" : 1763931029235,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "click"
 }, {
   "action" : "sendKeys",
   "options" : {
@@ -36,61 +49,28 @@
   "raw_gherkin" : "I enter \"EnTropYoSi\" into the \"password\"",
   "raw_selenium" : "driver.findElement(By.name(\"password\")).sendKeys(\"EnTropYoSi\");",
   "selector" : "textbox",
-  "timestamp" : 1763916265790,
+  "timestamp" : 1763931029133,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "change",
   "value" : "EnTropYoSi"
 }, {
   "action" : "click",
   "options" : {
-    "id" : "remember_me",
-    "name" : "remember_me",
-    "primary_name" : "remember_me"
-  },
-  "raw_gherkin" : "I check the \"remember_me\" option",
-  "raw_selenium" : "driver.findElement(By.name(\"remember_me\")).click();",
-  "selector" : "checkbox",
-  "timestamp" : 1763916269923,
-  "title" : "Cryoport - Cryoportal® 2",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
     "name" : "commit",
-    "primary_name" : "Sign in"
+    "primary_name" : "commit"
   },
-  "raw_gherkin" : "I click on the \"Sign in\" button",
+  "raw_gherkin" : "I click on the \"commit\" button",
   "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
   "selector" : "button",
-  "timestamp" : 1763916272869,
+  "timestamp" : 1763931035272,
   "title" : "Cryoport - Cryoportal® 2",
   "type" : "click"
 }, {
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
   "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/enroute\");",
-  "timestamp" : 1763916286743,
+  "timestamp" : 1763931047233,
   "title" : "Cryoport - Science, Logistics, Certainty",
   "type" : "navigation",
   "url" : "https://loadtest-v2.cryoportal.com/shipments/enroute"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Sign Out",
-    "primary_name" : "Sign Out"
-  },
-  "raw_gherkin" : "I click on the \"Sign Out\" link",
-  "raw_selenium" : "driver.findElement(By.linkText(\"Sign Out\")).click();",
-  "selector" : "link",
-  "timestamp" : 1763916296005,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Cryoportal® 2\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/session\");",
-  "timestamp" : 1763916298327,
-  "title" : "Cryoport - Cryoportal® 2",
-  "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/session"
 } ]

@@ -2,6 +2,8 @@ package com.example;
 
 import static spark.Spark.*;
 
+import spark.Spark;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.JavascriptExecutor;
@@ -10,11 +12,13 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.WebDriverException;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 
+import com.example.RawSeleniumReplayer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.file.Files;
@@ -184,7 +188,6 @@ public class UrlOpenerServer {
         });
 
 
-
         // Read recorded actions (in-memory) - Reads from persistent list
         get("/recorded-actions", (req, res) -> {
             try {
@@ -228,35 +231,49 @@ public class UrlOpenerServer {
             }
         });
 
+        post("/replay", (req, res) -> {
+            System.out.println("Received /replay request");
+
+            try {
+                String workingDir = System.getProperty("user.dir");
+                System.out.println("Working directory: " + workingDir);
+
+                // ✅ Correct relative path based on what you told me:
+                // D:/url-opener-selenium/recordings/action_logs.log
+                String jsonPath = workingDir
+                        + File.separator + "recordings"
+                        + File.separator + "action_logs.json";
+
+                File jsonFile = new File(jsonPath);
+                System.out.println("Replay JSON path: " + jsonFile.getAbsolutePath());
+
+                if (!jsonFile.exists()) {
+                    String msg = "JSON file not found at: " + jsonFile.getAbsolutePath();
+                    System.err.println(msg);
+                    res.status(500);
+                    res.type("text/plain");
+                    return msg;
+                }
+
+                // Extension .log is OK as long as contents are JSON
+                RawSeleniumReplayer.replayFromJson(jsonFile.getAbsolutePath());
+
+                res.status(200);
+                res.type("text/plain");
+                return "Replay completed successfully.";
+            } catch (Exception e) {
+                e.printStackTrace();
+                res.status(500);
+                res.type("text/plain");
+                return "Replay failed: " + e.toString();
+            }
+        });
+
+
         System.out.println("Selenium URL Launcher + Recorder running on http://localhost:4567");
 
 //        RecorderServer.startServer();
     }
-
-    // DTO for /recorder-status
-//    public class Status {
-//        private boolean installed;
-//        private int count;
-//        private String last_raw_gherkin;  // NEW FIELD
-//
-//        public Status(boolean installed, int count, String lastRawGherkin) {
-//            this.installed = installed;
-//            this.count = count;
-//            this.last_raw_gherkin = lastRawGherkin;
-//        }
-//
-//        public boolean isInstalled() {
-//            return installed;
-//        }
-//
-//        public int getCount() {
-//            return count;
-//        }
-//
-//        public String getLast_raw_gherkin() {
-//            return last_raw_gherkin;
-//        }
-//    }
 
     private static String html(String msg, boolean error) {
         String color = error ? "red" : "green";

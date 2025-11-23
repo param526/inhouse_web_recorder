@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Selenium Recorder Control Panel</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <style>
         :root {
-            --bg: #0b1220;
-            --card-bg: #0f172a;
-            --card-soft: #111827;
+            --bg: #020617;
+            --bg-alt: #020617;
+            --card: #020617;
+            --card-elevated: #020617;
+            --border-subtle: #1f2937;
             --accent: #2563eb;
             --accent-soft: #1d4ed8;
             --accent-green: #22c55e;
             --accent-red: #ef4444;
-            --border-subtle: #1f2937;
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
-            --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.75);
-            --radius-lg: 14px;
+            --radius-lg: 16px;
             --radius-md: 10px;
+            --shadow-soft: 0 20px 50px rgba(15, 23, 42, 0.85);
             --transition-fast: 0.18s ease-out;
         }
 
@@ -26,11 +28,16 @@
         }
 
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: radial-gradient(circle at top left, #1f2937 0, #020617 45%, #000 100%);
             margin: 0;
-            padding: 24px;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             color: var(--text-main);
+            background:
+                radial-gradient(circle at 0% -20%, rgba(59, 130, 246, 0.45), transparent 60%),
+                radial-gradient(circle at 100% -10%, rgba(236, 72, 153, 0.35), transparent 55%),
+                radial-gradient(circle at 50% 110%, rgba(34, 197, 94, 0.35), transparent 60%),
+                #020617;
+            padding: 24px;
         }
 
         .app-shell {
@@ -48,23 +55,41 @@
 
         .app-title-block h1 {
             margin: 0;
-            font-size: 1.8rem;
+            font-size: 1.9rem;
             letter-spacing: 0.03em;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .app-title-block h1 span.icon {
+        .logo-orb {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background:
+                conic-gradient(from 210deg,
+                #38bdf8,
+                #6366f1,
+                #ec4899,
+                #22c55e,
+                #38bdf8);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
+            box-shadow:
+                0 0 0 2px rgba(15, 23, 42, 0.9),
+                0 12px 30px rgba(15, 23, 42, 0.9);
+        }
+
+        .logo-orb-inner {
+            width: 26px;
+            height: 26px;
             border-radius: 999px;
-            background: radial-gradient(circle at 30% 0, #38bdf8 0, #1d4ed8 45%, #020617 100%);
-            box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.7);
-            font-size: 18px;
+            background: radial-gradient(circle at 30% 0, #e5e7eb, #020617);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
         }
 
         .app-title-block p {
@@ -74,19 +99,21 @@
         }
 
         .badge {
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
             font-size: 0.75rem;
-            border: 1px solid rgba(148, 163, 184, 0.35);
             color: var(--text-muted);
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
         }
 
-        .badge span.dot {
-            width: 7px;
-            height: 7px;
+        .badge-dot {
+            width: 8px;
+            height: 8px;
             border-radius: 999px;
             background: #22c55e;
             box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
@@ -94,32 +121,33 @@
 
         .shell-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
             gap: 20px;
         }
 
-        /* Shared card styles */
+        /* Card styling */
         .card {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            padding: 22px 20px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border-subtle);
             position: relative;
+            background: radial-gradient(circle at top left, rgba(15,23,42,0.4), transparent 60%),
+                        rgba(15,23,42,0.9);
+            border-radius: var(--radius-lg);
+            padding: 20px 20px 18px;
+            border: 1px solid rgba(31, 41, 55, 0.9);
+            box-shadow: var(--shadow-soft);
             overflow: hidden;
         }
 
         .card::before {
             content: "";
             position: absolute;
-            inset: 0;
-            border-radius: inherit;
+            inset: -40%;
             background:
-                radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 60%),
-                radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.08), transparent 55%);
-            opacity: 0.75;
-            pointer-events: none;
+                radial-gradient(circle at 0% 0%, rgba(59,130,246,0.2), transparent 55%),
+                radial-gradient(circle at 100% 0%, rgba(244,63,94,0.18), transparent 55%),
+                radial-gradient(circle at 50% 130%, rgba(34,197,94,0.3), transparent 60%);
             mix-blend-mode: soft-light;
+            opacity: 0.9;
+            pointer-events: none;
         }
 
         .card > * {
@@ -129,23 +157,38 @@
 
         .card-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-bottom: 18px;
-            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .card-title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
 
         .card-title {
             font-size: 1rem;
             font-weight: 600;
-            letter-spacing: 0.04em;
             text-transform: uppercase;
-            color: #e5e7eb;
+            letter-spacing: 0.09em;
         }
 
         .card-subtitle {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
+        }
+
+        .tag-pill {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            border-radius: 999px;
+            padding: 3px 9px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            color: #e5e7eb;
+            background: rgba(15, 23, 42, 0.7);
         }
 
         /* URL launcher */
@@ -160,11 +203,15 @@
             padding: 11px 12px;
             border-radius: var(--radius-md);
             border: 1px solid #374151;
-            background: #020617;
+            background: rgba(15,23,42, 0.9);
             color: var(--text-main);
             font-size: 0.92rem;
             outline: none;
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+            transition:
+                border-color var(--transition-fast),
+                box-shadow var(--transition-fast),
+                background var(--transition-fast),
+                transform var(--transition-fast);
         }
 
         #url-input::placeholder {
@@ -173,8 +220,8 @@
 
         #url-input:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.6);
-            background: #020617;
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7);
+            transform: translateY(-0.5px);
         }
 
         #launch-btn {
@@ -184,13 +231,13 @@
             border: none;
             background: linear-gradient(to right, var(--accent), var(--accent-soft));
             color: white;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.45);
+            box-shadow: 0 14px 32px rgba(37, 99, 235, 0.6);
             transform-origin: center;
             transition:
                 background var(--transition-fast),
@@ -198,73 +245,100 @@
                 box-shadow var(--transition-fast);
         }
 
-        #launch-btn span {
+        #launch-btn span.icon {
             font-size: 1.05rem;
         }
 
         #launch-btn:hover {
             background: linear-gradient(to right, #1d4ed8, #1e3a8a);
             transform: translateY(-1px);
-            box-shadow: 0 18px 40px rgba(37, 99, 235, 0.6);
+            box-shadow: 0 20px 50px rgba(37, 99, 235, 0.75);
         }
 
         #launch-btn:active {
             transform: translateY(0);
-            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.9);
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.95);
         }
 
-        /* Status */
+        /* Status + stats */
+        .status-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
+            gap: 10px;
+            margin-top: 6px;
+            margin-bottom: 8px;
+        }
+
         .status-box {
-            margin-top: 10px;
-            padding: 14px 14px 12px;
+            padding: 12px 12px 10px;
             border-radius: var(--radius-md);
             font-size: 0.86rem;
-            line-height: 1.55;
+            line-height: 1.6;
             border: 1px solid transparent;
+            background: rgba(15,23,42, 0.85);
         }
 
         .status-box p {
-            margin: 4px 0;
+            margin: 3px 0;
         }
 
         .status-label {
             font-weight: 600;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-size: 0.72rem;
-            opacity: 0.9;
+            font-size: 0.7rem;
+            opacity: 0.85;
+            margin-bottom: 4px;
         }
 
         .status-box.info {
-            background: rgba(37, 99, 235, 0.08);
-            border-color: rgba(59, 130, 246, 0.6);
-            color: #bfdbfe;
+            border-color: rgba(59, 130, 246, 0.7);
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
         }
 
         .status-box.success {
-            background: rgba(16, 185, 129, 0.08);
-            border-color: rgba(52, 211, 153, 0.6);
-            color: #bbf7d0;
+            border-color: rgba(22, 163, 74, 0.9);
+            box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4);
         }
 
         .status-box.error {
-            background: rgba(220, 38, 38, 0.08);
-            border-color: rgba(248, 113, 113, 0.8);
-            color: #fecaca;
+            border-color: rgba(248, 113, 113, 0.9);
+            box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.35);
+        }
+
+        .stat-chip {
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 999px;
+            padding: 6px 9px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+        }
+
+        .stat-chip span.label {
+            color: var(--text-muted);
+        }
+
+        .stat-chip span.value {
+            font-weight: 600;
+            color: #e5e7eb;
         }
 
         code {
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.95);
             padding: 3px 6px;
             border-radius: 4px;
             font-size: 0.8rem;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
 
-        /* Buttons */
+        /* Save & Quit button */
         #saveQuitBtn {
             width: 100%;
-            margin-top: 12px;
+            margin-top: 10px;
             padding: 11px 16px;
             border-radius: var(--radius-md);
             border: 1px solid rgba(127, 29, 29, 0.9);
@@ -277,7 +351,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 12px 35px rgba(127, 29, 29, 0.75);
+            box-shadow: 0 14px 35px rgba(127, 29, 29, 0.9);
             transition:
                 opacity var(--transition-fast),
                 transform var(--transition-fast),
@@ -287,54 +361,54 @@
 
         #saveQuitBtn:hover:not(:disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 18px 45px rgba(127, 29, 29, 0.95);
+            box-shadow: 0 20px 50px rgba(127, 29, 29, 1);
             background: linear-gradient(to right, #991b1b, #7f1d1d);
         }
 
         #saveQuitBtn:disabled {
-            opacity: 0.6;
+            opacity: 0.55;
             cursor: not-allowed;
             box-shadow: none;
         }
 
-        /* Test generator card */
+        /* Generator */
         #test-generator-card {
-            margin-top: 18px;
-            padding: 16px 14px 14px;
+            margin-top: 16px;
+            padding: 14px 14px 12px;
             border-radius: var(--radius-md);
-            background: var(--card-soft);
-            border: 1px solid rgba(31, 41, 55, 0.9);
+            background: radial-gradient(circle at top left, rgba(37,99,235,0.12), transparent 55%),
+                        rgba(15,23,42, 0.96);
+            border: 1px solid rgba(55, 65, 81, 0.9);
         }
 
         #test-generator-card h3 {
-            margin: 0 0 3px;
-            font-size: 0.98rem;
-            letter-spacing: 0.06em;
+            margin: 0 0 4px;
+            font-size: 0.96rem;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
         }
 
         #test-generator-card p.description {
-            margin: 0 0 14px;
-            font-size: 0.83rem;
+            margin: 0 0 12px;
+            font-size: 0.82rem;
             color: var(--text-muted);
         }
 
         .field-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .field-label {
+            display: block;
             font-size: 0.8rem;
             font-weight: 600;
-            margin-bottom: 4px;
-            display: block;
-            color: #e5e7eb;
+            margin-bottom: 3px;
         }
 
         .field-hint {
             font-size: 0.75rem;
             color: #6b7280;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
 
         .field-input {
@@ -342,16 +416,20 @@
             padding: 9px 10px;
             border-radius: 7px;
             border: 1px solid #374151;
-            background: #020617;
+            background: rgba(15,23,42, 0.95);
             color: var(--text-main);
             font-size: 0.9rem;
             outline: none;
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+            transition:
+                border-color var(--transition-fast),
+                box-shadow var(--transition-fast),
+                transform var(--transition-fast);
         }
 
         .field-input:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7);
+            transform: translateY(-0.5px);
         }
 
         .btn-green {
@@ -361,14 +439,14 @@
             border: none;
             background: linear-gradient(to right, #16a34a, #22c55e);
             color: white;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            box-shadow: 0 12px 30px rgba(22, 163, 74, 0.65);
+            box-shadow: 0 14px 35px rgba(22, 163, 74, 0.9);
             transition:
                 background var(--transition-fast),
                 transform var(--transition-fast),
@@ -378,7 +456,7 @@
         .btn-green:hover {
             background: linear-gradient(to right, #15803d, #16a34a);
             transform: translateY(-1px);
-            box-shadow: 0 18px 45px rgba(22, 163, 74, 0.95);
+            box-shadow: 0 22px 55px rgba(22, 163, 74, 1);
         }
 
         #generatorStatus {
@@ -389,17 +467,37 @@
             text-align: center;
         }
 
-        /* Secondary (right) column card for future extensions if needed */
+        /* Side card */
         .side-card {
-            background: var(--card-bg);
+            position: relative;
+            background: radial-gradient(circle at top right, rgba(59,130,246,0.22), transparent 55%),
+                        rgba(15,23,42, 0.96);
             border-radius: var(--radius-lg);
-            padding: 18px 16px;
+            padding: 18px 18px 16px;
+            border: 1px solid rgba(31, 41, 55, 0.9);
             box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+        }
+
+        .side-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .side-card::before {
+            content: "";
+            position: absolute;
+            inset: -40%;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(37,99,235,0.25), transparent 60%),
+                radial-gradient(circle at 110% 0%, rgba(249,115,22,0.22), transparent 60%);
+            opacity: 0.8;
+            mix-blend-mode: soft-light;
+            pointer-events: none;
         }
 
         .side-card h2 {
-            margin: 0 0 10px;
+            margin: 0 0 6px;
             font-size: 1rem;
         }
 
@@ -417,7 +515,23 @@
         }
 
         .mini-list li {
-            margin-bottom: 4px;
+            margin-bottom: 5px;
+        }
+
+        .pill-tip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .pill-tip span.icon {
+            font-size: 0.85rem;
         }
 
         @media (max-width: 900px) {
@@ -439,7 +553,90 @@
             .card {
                 padding: 18px 16px;
             }
+
+            .side-card {
+                padding: 16px 14px;
+            }
         }
+
+        .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.replay-status-text {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    min-height: 1.2em; /* keeps layout stable even when empty */
+}
+
+.replay-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid #1d4ed8;
+    background: linear-gradient(to right, #1d4ed8, #3b82f6);
+    color: #eff6ff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 14px 35px rgba(37, 99, 235, 0.65);
+    transition:
+        opacity var(--transition-fast),
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        background var(--transition-fast);
+}
+
+.replay-btn .replay-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.replay-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 50px rgba(37, 99, 235, 0.85);
+    background: linear-gradient(to right, #1e40af, #2563eb);
+}
+
+.replay-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+}
+
+.replay-btn:focus-visible {
+    outline: 2px solid #bfdbfe;
+    outline-offset: 2px;
+}
+
+/* Disabled / loading state */
+.replay-btn:disabled,
+.replay-btn.is-loading {
+    opacity: 0.65;
+    cursor: default;
+    box-shadow: none;
+}
+
+/* Optional tiny spinner when loading */
+.replay-btn.is-loading .replay-icon {
+    animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
     </style>
 </head>
 <body>
@@ -448,51 +645,81 @@
     <header class="app-header">
         <div class="app-title-block">
             <h1>
-                <span class="icon">⏺</span>
+                <span class="logo-orb">
+                    <span class="logo-orb-inner">⏺</span>
+                </span>
                 Selenium Web Action Recorder
             </h1>
-            <p>Launch a browser, record interactions, and turn them into Gherkin feature files.</p>
+            <p>Launch a browser session, record user actions, and generate Gherkin feature files in one place.</p>
         </div>
         <div class="badge">
-            <span class="dot"></span>
+            <span class="badge-dot"></span>
             Live Recorder Panel
         </div>
     </header>
 
     <div class="shell-grid">
-        <!-- Left: Main recorder + generator -->
+        <!-- Main control card -->
         <div class="card">
             <div class="card-header">
-                <div>
+                <div class="card-title-block">
                     <div class="card-title">Browser Session</div>
-                    <div class="card-subtitle">Start recording by launching a URL</div>
+                    <div class="card-subtitle">Start recording by launching a URL under test.</div>
                 </div>
+                <span class="tag-pill">Selenium · Cucumber</span>
             </div>
 
-            <form action="/open" method="post" class="url-form">
-                <input type="text" name="url" id="url-input"
-                       placeholder="Enter URL (e.g., https://example.com)"
-                       required>
+            <form class="url-form" onsubmit="launchBrowser(event)">
+                <input
+                        type="text"
+                        name="url"
+                        id="url-input"
+                        placeholder="Enter URL (e.g., https://example.com)"
+                        required
+                >
                 <button type="submit" id="launch-btn">
-                    <span>🚀</span>
+                    <span class="icon">🚀</span>
                     <span>Launch</span>
                 </button>
             </form>
 
             <div id="control-panel">
-                <div class="status-box info" id="status-message">
-                    <div class="status-label">Recorder Status</div>
-                    <p>Waiting for browser session...</p>
+                <div class="status-row">
+                    <div id="status-message" class="status-box info">
+                        <div class="status-label">Recorder Status</div>
+                        <p>Waiting for browser session...</p>
+                    </div>
+
+                    <div class="status-box" style="border:1px solid rgba(55,65,81,0.9);">
+                        <div class="status-label">Quick Stats</div>
+                        <div class="stat-chip">
+                            <span class="label">Events:</span>
+                            <span class="value" id="stat-events">0</span>
+                        </div>
+                        <div class="stat-chip">
+                            <span class="label">Script:</span>
+                            <span class="value" id="stat-script">Unknown</span>
+                        </div>
+                    </div>
                 </div>
 
                 <button id="saveQuitBtn" onclick="saveAndQuit()" disabled>
                     💾 Save All Actions & Quit Browser
                 </button>
 
+                <button id="replayBtn" type="button" class="replay-btn">
+                    <span class="replay-icon">⏯</span>
+                    <span class="replay-label">Replay Recorded Script</span>
+                </button>
+
+                <p id="replayStatus" class="replay-status-text"></p>
+
+
                 <div id="test-generator-card">
                     <h3>Generate Gherkin Feature</h3>
                     <p class="description">
-                        Once actions are recorded and saved, generate a Cucumber feature file from them.
+                        After saving the recorded actions, generate a Cucumber <code>.feature</code> with your own
+                        Feature and Scenario names.
                     </p>
 
                     <div class="field-group">
@@ -519,7 +746,7 @@
                         >
                     </div>
 
-                    <button class="btn-green" onclick="generateTest()">
+                    <button type="button" class="btn-green" onclick="generateTest()">
                         💾 Generate Gherkin Feature
                     </button>
 
@@ -528,25 +755,29 @@
             </div>
         </div>
 
-        <!-- Right: Info / helper panel -->
+        <!-- Guide / help card -->
         <aside class="side-card">
             <h2>How this panel works</h2>
             <p>
-                Use this control panel to coordinate between your browser, the Java backend, and the recorder script.
+                This panel orchestrates your Selenium session, the recorder script running in the browser, and the Java
+                backend that generates Gherkin features.
             </p>
             <ul class="mini-list">
-                <li><strong>Launch Browser:</strong> Opens a new Selenium-driven browser session for the URL.</li>
-                <li><strong>Recorder Status:</strong> Shows whether the recorder script is active and how many events
-                    have been captured.
+                <li><strong>Launch Browser:</strong> Opens a Selenium-driven browser instance at the URL you provide.
                 </li>
-                <li><strong>Save & Quit:</strong> Persists all recorded actions to JSON and closes the browser.</li>
-                <li><strong>Generate Gherkin:</strong> Sends feature & scenario names to the Java app to generate a
-                    <code>.feature</code> file.
+                <li><strong>Recorder Script:</strong> Injected into the page, it records navigations, clicks and input
+                    changes.
+                </li>
+                <li><strong>Save & Quit:</strong> Persists all recorded actions into a JSON file and shuts down the
+                    browser.
+                </li>
+                <li><strong>Generate Gherkin:</strong> Sends your Feature & Scenario names to the Java app, which turns
+                    the recorded actions into a <code>.feature</code> file.
                 </li>
             </ul>
-            <p style="margin-top: 10px;">
-                Tip: Keep this panel open on one side of the screen and your app under test on the other for a smoother
-                workflow.
+            <p class="pill-tip">
+                <span class="icon">💡</span>
+                Keep this panel on one side and your AUT on the other for a smooth record → generate → run loop.
             </p>
         </aside>
     </div>
@@ -555,7 +786,42 @@
 <script>
     const saveQuitBtn = document.getElementById('saveQuitBtn');
     const statusBox = document.getElementById('status-message');
+    const statEvents = document.getElementById('stat-events');
+    const statScript = document.getElementById('stat-script');
+    const replayStatus = document.getElementById('replayStatus');
+    const replayBtn = document.getElementById('replayBtn');
     let statusInterval;
+
+    function launchBrowser(event) {
+        event.preventDefault();
+        const urlInput = document.getElementById('url-input');
+        const url = urlInput.value.trim();
+        if (!url) return;
+
+        // UI reset when starting a new browser session
+        statusBox.className = 'status-box info';
+        statusBox.innerHTML = `
+            <div class="status-label">Recorder Status</div>
+            <p>Connecting to browser session...</p>
+        `;
+        statEvents.textContent = '0';
+        statScript.textContent = 'Not Detected';
+        saveQuitBtn.disabled = true;
+        saveQuitBtn.textContent = 'Waiting for session...';
+
+        const params = new URLSearchParams();
+        params.append('url', url);
+
+        fetch('/open', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: params.toString()
+        }).catch(err => {
+            console.error('Error launching browser:', err);
+        });
+    }
 
     function updateStatus() {
         fetch('/recorder-status')
@@ -576,7 +842,6 @@
                 statusBox.innerHTML = `
                     <div class="status-label">Recorder Status</div>
                     <p>✅ Status: <strong>${data.installed ? 'ACTIVE' : 'INJECTION PENDING/FAILED'}</strong></p>
-                    <p>📊 Total Recorded Actions: <strong>${totalActions}</strong></p>
                     ${
                         lastStepText
                             ? `<p>📝 Last Step: <code>${lastStepText}</code></p>`
@@ -584,8 +849,11 @@
                     }
                 `;
 
+                statEvents.textContent = totalActions;
+                statScript.textContent = data.installed ? 'Injected' : 'Not Detected';
+
                 saveQuitBtn.disabled = false;
-                saveQuitBtn.innerText = '💾 Save All Actions & Quit Browser';
+                saveQuitBtn.textContent = '💾 Save All Actions & Quit Browser';
             })
             .catch(error => {
                 statusBox.className = 'status-box error';
@@ -594,8 +862,11 @@
                     <p>🛑 ${error.message}</p>
                     <p>Launch a URL above to begin recording.</p>
                 `;
+                statEvents.textContent = '0';
+                statScript.textContent = 'Not Detected';
+
                 saveQuitBtn.disabled = true;
-                saveQuitBtn.innerText = 'Session Closed.';
+                saveQuitBtn.textContent = 'Session Closed.';
             });
     }
 
@@ -603,7 +874,7 @@
         if (saveQuitBtn.disabled) return;
 
         saveQuitBtn.disabled = true;
-        saveQuitBtn.innerText = 'Saving actions...';
+        saveQuitBtn.textContent = 'Saving actions...';
         statusBox.className = 'status-box info';
         statusBox.innerHTML = `
             <div class="status-label">Recorder Status</div>
@@ -630,8 +901,7 @@
                     <p>✅ Browser closed successfully.</p>
                     <p>📁 Actions saved to:<br><strong>${savedFileLocation}</strong></p>
                 `;
-                saveQuitBtn.innerText = 'Session Closed.';
-                clearInterval(statusInterval);
+                saveQuitBtn.textContent = 'Session Closed.';
             })
             .catch(error => {
                 statusBox.className = 'status-box error';
@@ -640,14 +910,74 @@
                     <p>🛑 Fatal error during shutdown:</p>
                     <p><code>${error}</code></p>
                 `;
-                saveQuitBtn.innerText = 'Error (Check Server Log)';
+                saveQuitBtn.textContent = 'Error (Check Server Log)';
             });
     }
 
-    window.onload = function () {
-        statusInterval = setInterval(updateStatus, 2000);
-        updateStatus();
-    };
+    // 🔥 Replay recorded script using /replay endpoint
+    // 🔥 Replay recorded script using /replay endpoint
+replayBtn.addEventListener("click", async () => {
+    replayBtn.disabled = true;
+    replayBtn.classList.add('is-loading');
+
+    // Small inline status below the button
+    if (replayStatus) {
+        replayStatus.textContent = "Replaying recorded script...";
+        replayStatus.style.color = "#eab308"; // amber/yellow
+    }
+
+    // Also show in the main status card
+    statusBox.className = 'status-box info';
+    statusBox.innerHTML = `
+        <div class="status-label">Script Replay</div>
+        <p>⏳ Replaying recorded script...</p>
+    `;
+
+    try {
+        const resp = await fetch('/replay', { method: 'POST' });
+        const text = await resp.text();
+
+        if (resp.ok) {
+            statusBox.className = 'status-box success';
+            statusBox.innerHTML = `
+                <div class="status-label">Script Replay</div>
+                <p>✅ ${text}</p>
+            `;
+
+            if (replayStatus) {
+                replayStatus.textContent = "Replay completed successfully.";
+                replayStatus.style.color = "#22c55e"; // green
+            }
+        } else {
+            statusBox.className = 'status-box error';
+            statusBox.innerHTML = `
+                <div class="status-label">Script Replay</div>
+                <p>🛑 Replay Failed:</p>
+                <p><code>${text}</code></p>
+            `;
+
+            if (replayStatus) {
+                replayStatus.textContent = "Replay failed. See details above.";
+                replayStatus.style.color = "#f97316"; // orange
+            }
+        }
+    } catch (err) {
+        statusBox.className = 'status-box error';
+        statusBox.innerHTML = `
+            <div class="status-label">Script Replay</div>
+            <p>🛑 Replay failed:</p>
+            <p><code>${err.message}</code></p>
+        `;
+
+        if (replayStatus) {
+            replayStatus.textContent = "Replay failed due to an error.";
+            replayStatus.style.color = "#ef4444"; // red
+        }
+    } finally {
+        replayBtn.disabled = false;
+        replayBtn.classList.remove('is-loading');
+    }
+});
 
     function generateTest() {
         const featureName = document.getElementById('featureInput').value.trim();
@@ -677,21 +1007,36 @@
         fetch('http://localhost:4567/generate-test', {
             method: 'POST',
             headers: {
-                'Content-Type': 'text/plain', // keep as text/plain to match your existing Java endpoint
+                'Content-Type': 'text/plain',
             },
             body: payload
         })
-            .then(response => response.json())
-            .then(data => {
-                statusDiv.textContent = data.message || 'Done.';
-                statusDiv.style.color = data.status === "Success" ? '#22c55e' : '#f97316';
-            })
-            .catch(error => {
-                statusDiv.textContent = "Error communicating with Java server.";
-                statusDiv.style.color = '#ef4444';
-                console.error('Fetch error:', error);
-            });
+        .then(response => response.json())
+        .then(data => {
+            statusDiv.textContent = data.message || 'Done.';
+            statusDiv.style.color = data.status === "Success" ? '#22c55e' : '#f97316';
+        })
+        .catch(error => {
+            statusDiv.textContent = "Error communicating with Java server.";
+            statusDiv.style.color = '#ef4444';
+            console.error('Fetch error:', error);
+        });
     }
+
+    window.onload = function() {
+        // hook up polling
+        statusInterval = setInterval(updateStatus, 500);
+        updateStatus();
+
+        // hook up events if not wired inline in HTML
+        const urlForm = document.getElementById('url-form');
+        if (urlForm) {
+            urlForm.addEventListener('submit', launchBrowser);
+        }
+        if (saveQuitBtn) {
+            saveQuitBtn.addEventListener('click', saveAndQuit);
+        }
+    };
 </script>
 
 </body>

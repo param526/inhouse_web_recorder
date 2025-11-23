@@ -4,9 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RecordedEvent {
-    private String raw_gherkin;
-    private String action; // New field to read the action type
-    long timestamp = 0;
+    public String action;
+    public String type;
+    public String title;
+    public String url;
+    public String raw_gherkin;
+    public String raw_selenium;
+    public long timestamp;
 
     // Getters and Setters for raw_gherkin
     public String getRaw_gherkin() { return raw_gherkin; }

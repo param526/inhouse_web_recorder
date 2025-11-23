@@ -1,8 +1,12 @@
 (function () {
     const STORAGE_KEY = '__recordedEvents';
     // 🔥 Debounce config for text input recording
-    const TEXT_CHANGE_DEBOUNCE_MS = 1500; // 1.5 sec idle time before recording
+    const TEXT_CHANGE_DEBOUNCE_MS = 700; // 1.5 sec idle time before recording
     const pendingTextChangeTimers = {};   // key -> { timeoutId, rec }
+
+    let lsDirty = false;
+    let lsFlushTimer = null;
+    const LS_FLUSH_INTERVAL_MS = 1000;
 
     // ---- Load existing events from localStorage (if any) ----
     try {
@@ -26,24 +30,43 @@
     window.__currentUrl = window.location.href;
     console.log('[recorder] Installed on', window.location.href);
 
+    function scheduleLocalStorageFlush() {
+        if (lsFlushTimer !== null) return; // already scheduled
+
+        lsFlushTimer = setTimeout(function() {
+            lsFlushTimer = null;
+            if (!lsDirty) return;
+
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents || []));
+            } catch (e) {
+                console.log('[recorder] Failed to write to localStorage', e);
+            }
+            lsDirty = false;
+        }, LS_FLUSH_INTERVAL_MS);
+    }
+
     // ---- Central place to store and persist each event ----
     function persistEvent(rec) {
         (window.__recordedEvents || (window.__recordedEvents = [])).push(rec);
 
-        // Mirror to localStorage so events survive hard navigations (same origin)
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents));
-        } catch (e) {
-            console.log('[recorder] Failed to write to localStorage', e);
-        }
+        // mark as dirty & schedule a flush
+        lsDirty = true;
+        scheduleLocalStorageFlush();
 
-        console.log('[recorder] Event stored:', rec.type, rec.action, rec.raw_gherkin);
+        // optional: comment this out if you want max speed
+        // console.log('[recorder] Event stored:', rec.type, rec.action, rec.raw_gherkin);
     }
 
     // ---- Navigation logging ----
     function logNavigation(url) {
         if (!window.__recordedEvents) {
             window.__recordedEvents = [];
+        }
+
+        // 🔹 Global nav state (count) – initialize once
+        if (!window.__recorderNavState) {
+            window.__recorderNavState = { navCount: 0 };
         }
 
         if (!url || typeof url !== 'string' || url.length === 0) {
@@ -62,7 +85,25 @@
                 ? document.title.trim()
                 : '';
 
-        const stepText = `I navigate to "${pageTitle}" page`;
+        // If title is empty, fall back to URL as the "page" label
+        let pageName = pageTitle || url;
+        pageName = pageName.trim().replace(/\"/g, '\\"');
+
+        const isFirstNav = window.__recorderNavState.navCount === 0;
+        window.__recorderNavState.navCount += 1;
+
+        let stepText;
+        let rawSelenium;
+
+        if (isFirstNav) {
+            // ✅ First navigation
+            stepText = `I navigate to "${pageName}" page`;
+            rawSelenium = 'driver.get(\"' + escapedUrl + '\");';
+        } else {
+            // ✅ Subsequent navigations
+            stepText = `I am on "${pageName}" page`;
+            rawSelenium = ''; // no driver.get for later navigations
+        }
 
         const rec = {
             timestamp: Date.now(),
@@ -71,7 +112,7 @@
             url: url,
             title: pageTitle,
             raw_gherkin: stepText,
-            raw_selenium: 'driver.get(\"' + escapedUrl + '\");'
+            raw_selenium: rawSelenium
         };
 
         persistEvent(rec);
@@ -117,15 +158,73 @@
 
     // ---- Helpers for click/change recording ----
 
+    // ⭐ UPDATED: now walks ancestors, reads title/aria-label/SVG <title> etc.
     function getAccessibleName(t) {
-        var label = t.getAttribute('aria-label') || t.placeholder;
-        if (label) return label.trim();
-        var id = t.id;
-        if (id) {
-            var element = document.querySelector('label[for="' + id + '\"]');
-            if (element) return (element.innerText || element.textContent).trim();
+        if (!t) return '';
+
+        var original = t;
+
+        // 1️⃣ Walk up ancestors and look for aria-label / title / img alt
+        var el = t;
+        while (el) {
+            if (el.getAttribute) {
+                var aria = el.getAttribute('aria-label');
+                if (aria && aria.trim().length > 0) {
+                    return aria.trim();
+                }
+
+                var titleAttr = el.getAttribute('title');
+                if (titleAttr && titleAttr.trim().length > 0) {
+                    return titleAttr.trim();
+                }
+
+                if (el.tagName && el.tagName.toLowerCase() === 'img') {
+                    var alt = el.getAttribute('alt');
+                    if (alt && alt.trim().length > 0) {
+                        return alt.trim();
+                    }
+                }
+            }
+            el = el.parentElement;
         }
-        if (t.name) return t.name.trim();
+
+        // 2️⃣ <label for="id"> for the original element
+        var id = original.id;
+        if (id) {
+            var labelEl = document.querySelector('label[for="' + id + '"]');
+            if (labelEl) {
+                return (labelEl.innerText || labelEl.textContent || '').trim();
+            }
+        }
+
+        // 3️⃣ name attribute on the original element
+        if (original.name) {
+            return original.name.trim();
+        }
+
+        // 4️⃣ SVG <title> via nearest <svg> ancestor
+        try {
+            var svg = original.closest && original.closest('svg');
+            if (svg) {
+                var svgTitleEl = svg.querySelector('title');
+                if (svgTitleEl && svgTitleEl.textContent && svgTitleEl.textContent.trim().length > 0) {
+                    return svgTitleEl.textContent.trim();
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // 5️⃣ Last resort: any visible text on the element or its ancestors
+        el = original;
+        while (el) {
+            var txt = (el.innerText || el.textContent || '').trim();
+            if (txt.length > 0) {
+                return txt;
+            }
+            el = el.parentElement;
+        }
+
         return '';
     }
 
@@ -211,26 +310,65 @@
         }
     }, true);
 
+    document.addEventListener('click', function (event) {
+        let t = event.target;
 
+        // If click lands on a text node, go to its parent element
+        if (t && t.nodeType === 3) {
+            t = t.parentNode;
+        }
+
+        // 🔧 NEW: normalize to *clickable ancestor* if possible
+        if (t && t.closest) {
+            const clickable = t.closest('button, a, [role="button"], [onclick]');
+            if (clickable) {
+                t = clickable;
+            }
+        }
+
+        const tag  = (t.tagName || '').toLowerCase();
+        const role = (t.getAttribute && t.getAttribute('role')) || '';
+
+        // 🔍 Optional debug for this SSO case
+        // console.log('REC DEBUG CLICK:', { tag, role, id: t.id, cls: t.className });
+
+        // ... from here down, use THIS `t`, `tag`, `role` ...
+        // e.g. resolve locator based on `t`
+        // const locator = resolveLocator(t);
+        // const gherkinName = buildGherkinName(t, locator);
+
+        switch (event.type) {
+            // ⬇ your case 'click' goes here
+        }
+    });
 
     // ---- Main event recorder for click & change ----
     function recordEvent(e) {
         try {
+            if (!e) return;
 
-        if (!e) return;
-
-        // 🔇 Ignore script-generated CHANGE events (auto-fill, .trigger('change'), etc.)
-        // but DO NOT block clicks here (we want Select2 option clicks).
-        if (e.type === 'change' && e.isTrusted === false) {
-            return;
-        }
+            // 🔇 Ignore script-generated CHANGE events (auto-fill, .trigger('change'), etc.)
+            // but DO NOT block clicks here (we want Select2 option clicks).
+            if (e.type === 'change' && e.isTrusted === false) {
+                return;
+            }
 
             var t = e.target;
 
-             // If there's no usable target, bail out
-                    if (!t || t.nodeType !== 1) { // 1 = ELEMENT_NODE
-                        return;
-                    }
+            // If there's no usable target, bail out
+            if (!t || t.nodeType !== 1) { // 1 = ELEMENT_NODE
+                return;
+            }
+
+            // ⭐ NEW: For click events, promote inner SVG/ICON clicks
+            //         to the closest clickable ancestor (button/link/etc.)
+            if (e.type === 'click' && t.closest) {
+                var clickableAncestor = t.closest('button, a, [role="button"], [role="link"], [onclick]');
+                if (clickableAncestor) {
+                    t = clickableAncestor;
+                }
+            }
+
             var rec = {};
             rec.timestamp = Date.now();
             rec.type = e.type;
@@ -241,7 +379,6 @@
 
             // Role detection
             var role = t.getAttribute('role');
-
             const tag = t.tagName.toLowerCase();
 
             if (!role) {
@@ -277,16 +414,22 @@
             rec.selector = role;
 
             // Gherkin naming priority
+            // ✅ Gherkin naming priority (prefer label/aria-label over technical name)
             var gherkinName = '';
             if (elementText.length > 0) {
+                // Visible text on the element (e.g. button text, link text)
                 gherkinName = elementText;
+            } else if (accName && accName.length > 0) {
+                // Accessible name: aria-label, <label for>, title, SVG <title>, etc.
+                gherkinName = accName;      // 👈 e.g. "Registry ID"
             } else if (t.value && t.type === 'submit') {
-                gherkinName = t.value; // e.g. Sign in
+                // Submit button text
+                gherkinName = t.value;      // e.g. "Sign in"
             } else if (t.name && t.name.length > 0) {
+                // Technical name only if we have nothing better
                 gherkinName = t.name;
-            } else if (accName.length > 0) {
-                gherkinName = accName;
             } else if (t.id && t.id.length > 0) {
+                gherkinName = t.id;
                 gherkinName = t.id;
             }
 
@@ -297,67 +440,75 @@
             rec.options.primary_name = gherkinName;
 
             switch (e.type) {
-                case 'click': {
+               case 'click': {
 
-                    if (role === 'textbox') {
-                                return;
-                            }
+                   // 🔧 Only skip true textboxes, not buttons/links mis-labeled as textbox
+                   if (role === 'textbox' && tag !== 'button' && tag !== 'a') {
+                       return;
+                   }
 
-                    rec.action = 'click';
-                    rec.raw_selenium = 'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).click();';
+                   rec.action = 'click';
+                   rec.raw_selenium =
+                       'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
 
-                    if (t.type === 'checkbox' || role === 'checkbox') {
-                            if (t.checked) {
-                                rec.raw_gherkin = 'I check the "' + gherkinName + '" option';
-                            } else {
-                                rec.raw_gherkin = 'I uncheck the "' + gherkinName + '" option';
-                            }
-                            break;
-                        }
+                   // ✅ Checkbox handling
+                   if (t.type === 'checkbox' || role === 'checkbox') {
+                       if (t.checked) {
+                           rec.raw_gherkin = 'I check the "' + gherkinName + '" option';
+                       } else {
+                           rec.raw_gherkin = 'I uncheck the "' + gherkinName + '" option';
+                       }
+                       break;
+                   }
 
-                    // SPECIAL CASE: dropdown/select-style option
-                    const isSelectDropdown =
-                        tag === 'select' ||                                     // native <select>
-                        (t.closest && t.closest('.select2')) ||                 // Select2
-                        t.classList.contains('select2') ||
-                        /select|dropdown/i.test(locatorValue) ||
-                        t.getAttribute('role') === 'option' ||
-                        t.getAttribute('aria-selected') !== null;
+                   // ✅ Dropdown / select-like widgets
+                   const isSelectDropdown =
+                       tag === 'select' ||                                     // native <select>
+                       (t.closest && t.closest('.select2')) ||                 // Select2 wrapper
+                       t.classList.contains('select2') ||
+                       /select|dropdown/i.test(locatorValue) ||
+                       t.getAttribute('role') === 'option' ||
+                       t.getAttribute('aria-selected') !== null;
 
-                    if (isSelectDropdown) {
-                        rec.raw_gherkin = 'I select the "' + gherkinName + '" option';
-                    } else if (role === 'link') {
-                        rec.raw_gherkin = 'I click on the "' + gherkinName + '" link';
-                    } else if (t.type === 'submit' || role === 'button') {
-                        rec.raw_gherkin = 'I click on the "' + gherkinName + '" button';
-                    } else {
-                        rec.raw_gherkin = 'I click on the "' + gherkinName + '"';
-                    }
-                    break;
-                }
+                   if (isSelectDropdown) {
+                       rec.raw_gherkin = 'I select the "' + gherkinName + '" option';
+
+                   } else if (role === 'link' || tag === 'a') {
+                       // Links
+                       rec.raw_gherkin = 'I click on the "' + gherkinName + '" link';
+
+                   } else if (t.type === 'submit' || t.type === 'button' || role === 'button') {
+                       // 🔧 Explicitly handle <button type="button"> (your SSO button)
+                       rec.raw_gherkin = 'I click on the "' + gherkinName + '" button';
+
+                   } else {
+                       // Generic click fallback
+                       rec.raw_gherkin = 'I click on the "' + gherkinName + '"';
+                   }
+
+                   break;
+               }
 
                 case 'change': {
                     // 🔒 Avoid duplicate events for checkbox / radio
-                        if (t.type === 'checkbox' || t.type === 'radio') {
-                            // We already record the click; ignore the change for these controls.
-                            return;
-                        }
+                    if (t.type === 'checkbox' || t.type === 'radio') {
+                        // We already record the click; ignore the change for these controls.
+                        return;
+                    }
 
-                        var value = t.value !== undefined
-                            ? t.value
-                            : null;
+                    var value = t.value !== undefined ? t.value : null;
 
-                        rec.action = 'sendKeys';
-                        rec.parsedValue = value;
-                        rec.value = value;
+                    rec.action = 'sendKeys';
+                    rec.parsedValue = value;
+                    rec.value = value;
 
-                        rec.raw_selenium =
-                            'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).sendKeys(\"' + value + '\");';
+                    rec.raw_selenium =
+                        'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).sendKeys(\"' + value + '\");';
 
-                        rec.raw_gherkin = 'I enter "' + value + '" into the "' + gherkinName + '"';
+                    rec.raw_gherkin = 'I enter "' + value + '" into the "' + gherkinName + '"';
 
-                        rec.options.value = value;
-                        rec.options.parsedValue = value;
+                    rec.options.value = value;
+                    rec.options.parsedValue = value;
 
                     // 🔄 NEW: debounce for textboxes so we don't record partial values
                     if (role === 'textbox') {
@@ -383,7 +534,7 @@
                     } else {
                         // Non-textbox (e.g. selects) → record immediately
                         persistEvent(rec);
-                   }
+                    }
                 }
                 default:
                     return;
@@ -400,7 +551,7 @@
     }
 
     ['click', 'change'].forEach(function (type) {
-        document.addEventListener(type, recordEvent, true);
+        window.addEventListener(type, recordEvent, true);
     });
 
     // ❌ No submit recording – we only care about click
