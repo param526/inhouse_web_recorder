@@ -11,6 +11,8 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 
 
 import java.io.File;
@@ -21,6 +23,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -49,11 +52,14 @@ public class RawSeleniumReplayer {
     private static class StepResult {
         int index;
         String rawScript;
-        String rawGherkin;   // NEW – Gherkin text
+        String rawGherkin;
         boolean success;
         long durationMs;
         String errorMessage;
         String stackTrace;
+
+        // NEW – relative filename for screenshot (e.g. "step_001.png")
+        String screenshotFileName;
     }
 
     // ========== PUBLIC ENTRYPOINTS ==========
@@ -85,6 +91,13 @@ public class RawSeleniumReplayer {
         List<StepResult> results = new ArrayList<>();
         boolean allPassed = false;
         WebDriver driver = null;
+
+        // NEW – screenshots directory based on reportPath
+        File reportFile = new File(reportPath);
+        File screenshotsDir = new File(reportFile.getParentFile(), "screenshots");
+        if (!screenshotsDir.exists()) {
+            screenshotsDir.mkdirs();
+        }
 
         try {
             // 1) Read events from JSON
@@ -138,6 +151,10 @@ public class RawSeleniumReplayer {
                     e.printStackTrace();
                 } finally {
                     step.durationMs = System.currentTimeMillis() - start;
+                    // NEW – capture screenshot for this step (nav or action)
+                    if (driver != null) {
+                        step.screenshotFileName = captureScreenshot(driver, screenshotsDir, step.index);
+                    }
                     results.add(step);
                 }
 
@@ -324,6 +341,28 @@ public class RawSeleniumReplayer {
                 .until(d -> ((JavascriptExecutor) d)
                         .executeScript("return document.readyState")
                         .equals("complete"));
+    }
+
+    /**
+     * Captures a screenshot and saves it into screenshotsDir as
+     * e.g. "step_001.png". Returns that file name, or null on failure.
+     */
+    private static String captureScreenshot(WebDriver driver,
+                                            File screenshotsDir,
+                                            int stepIndex) {
+        if (!(driver instanceof TakesScreenshot)) {
+            return null;
+        }
+        try {
+            File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            String fileName = String.format("step_%03d.png", stepIndex);
+            File dest = new File(screenshotsDir, fileName);
+            java.nio.file.Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return fileName;
+        } catch (Exception e) {
+            System.err.println("Failed to capture screenshot for step " + stepIndex + ": " + e.getMessage());
+            return null;
+        }
     }
 
 
@@ -584,6 +623,7 @@ public class RawSeleniumReplayer {
             out.println("              <th style=\"width: 80px;\">Duration</th>");
             out.println("              <th>Raw Selenium</th>");
             out.println("              <th>Raw Gherkin</th>");
+            out.println("              <th style=\"width: 160px;\">Screenshot</th>");
             out.println("              <th style=\"width: 200px;\">Error Message</th>");
             out.println("              <th style=\"width: 260px;\">Stack Trace</th>");
             out.println("            </tr>");
@@ -610,6 +650,20 @@ public class RawSeleniumReplayer {
                 out.println("              <td class=\"mono\">");
                 if (r.rawGherkin != null && !r.rawGherkin.isEmpty()) {
                     out.println("                <pre>" + escapeHtml(r.rawGherkin) + "</pre>");
+                } else {
+                    out.println("                <span class=\"small\">—</span>");
+                }
+                out.println("              </td>");
+                out.println("              <td>");
+                if (r.screenshotFileName != null && !r.screenshotFileName.isEmpty()) {
+                    String imgSrc = "/screenshots/" + r.screenshotFileName;
+                    out.println("                <a href=\"" + imgSrc + "\" target=\"_blank\" " +
+                            "style=\"text-decoration:none; color:inherit;\">");
+                    out.println("                  <img src=\"" + imgSrc + "\" " +
+                            "style=\"max-width: 150px; border-radius: 8px; " +
+                            "border: 1px solid #1f2937; display:block;\">");
+                    out.println("                  <span class=\"small\">Open full-size</span>");
+                    out.println("                </a>");
                 } else {
                     out.println("                <span class=\"small\">—</span>");
                 }

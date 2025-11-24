@@ -304,6 +304,34 @@ public class UrlOpenerServer {
             return Files.readString(reportPath, StandardCharsets.UTF_8);
         });
 
+        get("/screenshots/:fileName", (req, res) -> {
+            String fileName = req.params(":fileName");
+
+            String workingDir = System.getProperty("user.dir");
+            Path imgPath = Path.of(
+                    workingDir,
+                    "replay-recordings",
+                    "screenshots",
+                    fileName
+            );
+
+            if (!Files.exists(imgPath)) {
+                res.status(404);
+                res.type("text/plain");
+                return "Screenshot not found: " + fileName;
+            }
+
+            // Basic content type – if you only save PNGs, this is fine
+            res.status(200);
+            res.type("image/png");
+
+            // Stream bytes
+            byte[] bytes = Files.readAllBytes(imgPath);
+            res.raw().getOutputStream().write(bytes);
+            res.raw().getOutputStream().flush();
+            return res.raw();
+        });
+
 
         System.out.println("Selenium URL Launcher + Recorder running on http://localhost:4567");
 
