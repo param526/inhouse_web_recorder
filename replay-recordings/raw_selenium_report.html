@@ -196,16 +196,16 @@
     <div class="header">
       <div class="header-main">
         <div class="header-title">Raw Selenium Replay Report</div>
-        <div class="header-sub">Generated at 2025-11-24 21:36:41 Â· 18 steps Â· Total duration 36019 ms</div>
+        <div class="header-sub">Generated at 2025-11-24 22:52:40 Â· 20 steps Â· Total duration 62701 ms</div>
       </div>
-      <div class="status-pill pass">        <span class="status-dot"></span>
-        <span>ALL STEPS PASSED</span>
+      <div class="status-pill fail">        <span class="status-dot"></span>
+        <span>FAILURES DETECTED</span>
       </div>
     </div>
     <div class="summary-grid">
       <div class="summary-card">
         <div class="summary-label">Total Steps</div>
-        <div class="summary-value">18</div>
+        <div class="summary-value">20</div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Passed</div>
@@ -213,15 +213,15 @@
       </div>
       <div class="summary-card">
         <div class="summary-label">Failed</div>
-        <div class="summary-value" style="color: var(--fail);">0</div>
+        <div class="summary-value" style="color: var(--fail);">1</div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Skipped</div>
-        <div class="summary-value" style="color: #ca8a04;">0</div>
+        <div class="summary-value" style="color: #ca8a04;">1</div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Pass Rate</div>
-        <div class="summary-value">100.0%</div>
+        <div class="summary-value">90.0%</div>
         <div class="summary-sub">JSON: D:\url-opener-selenium\recordings\action_logs.json</div>
       </div>
     </div>
@@ -246,7 +246,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>2813 ms</td>
+              <td>2583 ms</td>
               <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/session");</pre></td>
               <td class="mono">
                 <pre>I navigate to "Cryoport - Cryoportal® 2" page</pre>
@@ -269,7 +269,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>258 ms</td>
+              <td>189 ms</td>
               <td class="mono"><pre>driver.findElement(By.name("email")).sendKeys("cryoadmin@osidigital.com");</pre></td>
               <td class="mono">
                 <pre>I enter "cryoadmin@osidigital.com" into the "email"</pre>
@@ -292,7 +292,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>144 ms</td>
+              <td>118 ms</td>
               <td class="mono"><pre>driver.findElement(By.name("password")).sendKeys("EnTropYoSi");</pre></td>
               <td class="mono">
                 <pre>I enter "EnTropYoSi" into the "password"</pre>
@@ -315,7 +315,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>188 ms</td>
+              <td>221 ms</td>
               <td class="mono"><pre>driver.findElement(By.name("remember_me")).click();</pre></td>
               <td class="mono">
                 <pre>I check the "remember_me" option</pre>
@@ -338,7 +338,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>12813 ms</td>
+              <td>17593 ms</td>
               <td class="mono"><pre>driver.findElement(By.name("commit")).click();</pre></td>
               <td class="mono">
                 <pre>I click on the "commit" button</pre>
@@ -361,7 +361,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>6194 ms</td>
+              <td>2804 ms</td>
               <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/shipments/enroute");</pre></td>
               <td class="mono">
                 <pre>I navigate to "Cryoport - Science, Logistics, Certainty" page</pre>
@@ -384,10 +384,10 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>209 ms</td>
+              <td>212 ms</td>
               <td class="mono"><pre>driver.findElement(By.cssSelector("a.sidenav_hamburger-icon")).click();</pre></td>
               <td class="mono">
-                <pre>I click on the "Sidenav hamburger icon" button</pre>
+                <pre>I click on the "Sidenav hamburger icon" link</pre>
               </td>
               <td>
                 <a href="/screenshots/step_007.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -407,7 +407,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>146 ms</td>
+              <td>161 ms</td>
               <td class="mono"><pre>driver.findElement(By.linkText("New Order")).click();</pre></td>
               <td class="mono">
                 <pre>I click on the "New Order" link</pre>
@@ -430,7 +430,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>759 ms</td>
+              <td>177 ms</td>
               <td class="mono"><pre>driver.findElement(By.cssSelector(".select2-selection[aria-labelledby='select2-shipment_wizard_client_id-container']")).click();</pre></td>
               <td class="mono">
                 <pre>I open the "Select a client..." dropdown</pre>
@@ -453,7 +453,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>111 ms</td>
+              <td>181 ms</td>
               <td class="mono"><pre>driver.findElement(By.xpath("//li[contains(@class,'select2-results__option') and normalize-space()='Adina Kern-Goldberger (ANDR153)']")).click();</pre></td>
               <td class="mono">
                 <pre>I select "Adina Kern-Goldberger (ANDR153)" from the dropdown</pre>
@@ -476,7 +476,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>4567 ms</td>
+              <td>2616 ms</td>
               <td class="mono"><pre>driver.findElement(By.name("commit")).click();</pre></td>
               <td class="mono">
                 <pre>I click on the "commit" button</pre>
@@ -499,8 +499,8 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>1284 ms</td>
-              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/shipments/wizard/410358/steps/route");</pre></td>
+              <td>846 ms</td>
+              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/shipments/wizard/410365/steps/route");</pre></td>
               <td class="mono">
                 <pre>I navigate to "Cryoport - Science, Logistics, Certainty" page</pre>
               </td>
@@ -522,7 +522,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>169 ms</td>
+              <td>188 ms</td>
               <td class="mono"><pre>driver.findElement(By.cssSelector(".select2-selection[aria-labelledby='select2-route_site_1_attributes_site_template_id-container']")).click();</pre></td>
               <td class="mono">
                 <pre>I open the "None" dropdown</pre>
@@ -545,7 +545,7 @@
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>208 ms</td>
+              <td>183 ms</td>
               <td class="mono"><pre>driver.findElement(By.xpath("//li[contains(@class,'select2-results__option') and normalize-space()='CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)
 Arsela Gishto (gishtoa@ccf.org)
 26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157']")).click();</pre></td>
@@ -572,7 +572,7 @@ Arsela Gishto (gishtoa@ccf.org)
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>140 ms</td>
+              <td>153 ms</td>
               <td class="mono"><pre>driver.findElement(By.cssSelector(".select2-selection[aria-labelledby='select2-route_site_2_attributes_site_template_id-container']")).click();</pre></td>
               <td class="mono">
                 <pre>I open the "None" dropdown</pre>
@@ -595,7 +595,7 @@ Arsela Gishto (gishtoa@ccf.org)
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>130 ms</td>
+              <td>140 ms</td>
               <td class="mono"><pre>driver.findElement(By.xpath("//li[contains(@class,'select2-results__option') and normalize-space()='FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))
 Kristin Costine (kcostine@colocrm.com)
 10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331']")).click();</pre></td>
@@ -622,7 +622,7 @@ Kristin Costine (kcostine@colocrm.com)
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>4391 ms</td>
+              <td>2458 ms</td>
               <td class="mono"><pre>driver.findElement(By.name("commit")).click();</pre></td>
               <td class="mono">
                 <pre>I click on the "commit" button</pre>
@@ -645,8 +645,8 @@ Kristin Costine (kcostine@colocrm.com)
               <td>
                 <span class="status-chip pass">PASS</span>
               </td>
-              <td>1495 ms</td>
-              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/shipments/wizard/410358/steps/shippers");</pre></td>
+              <td>1444 ms</td>
+              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/shipments/wizard/410365/steps/shippers");</pre></td>
               <td class="mono">
                 <pre>I navigate to "Cryoport - Science, Logistics, Certainty" page</pre>
               </td>
@@ -658,6 +658,78 @@ Kristin Costine (kcostine@colocrm.com)
               </td>
               <td>
                 <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>19</td>
+              <td>
+                <span class="status-chip fail">FAIL</span>
+              </td>
+              <td>30434 ms</td>
+              <td class="mono"><pre>driver.findElement(By.linkText("Sign Out")).click();</pre></td>
+              <td class="mono">
+                <pre>I click on the "Sign Out" link</pre>
+              </td>
+              <td>
+                <a href="/screenshots/step_019.png" target="_blank" style="text-decoration:none; color:inherit;">
+                  <img src="/screenshots/step_019.png" style="max-width: 150px; border-radius: 8px; border: 1px solid #1f2937; display:block;">
+                  <span class="small">Open full-size</span>
+                </a>
+              </td>
+              <td>
+                <div class="mono"><pre>Timed out waiting for element: By.linkText: Sign Out | Raw: driver.findElement(By.linkText("Sign Out")).click();</pre></div>
+              </td>
+              <td>
+                <span class="stack-toggle" data-target="stack-19">View stack trace</span>
+                <div id="stack-19" class="stack-content"><pre>java.lang.RuntimeException: Timed out waiting for element: By.linkText: Sign Out | Raw: driver.findElement(By.linkText("Sign Out")).click();
+    at com.example.RawSeleniumReplayer.executeElement(RawSeleniumReplayer.java:314)
+    at com.example.RawSeleniumReplayer.replayFromJson(RawSeleniumReplayer.java:143)
+    at com.example.RawSeleniumReplayer.replayFromJson(RawSeleniumReplayer.java:74)
+    at com.example.UrlOpenerServer.lambda$main$7(UrlOpenerServer.java:265)
+    at spark.RouteImpl$1.handle(RouteImpl.java:72)
+    at spark.http.matching.Routes.execute(Routes.java:61)
+    at spark.http.matching.MatcherFilter.doFilter(MatcherFilter.java:134)
+    at spark.embeddedserver.jetty.JettyHandler.doHandle(JettyHandler.java:50)
+    at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:1598)
+    at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)
+    at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)
+    at org.eclipse.jetty.server.Server.handle(Server.java:516)
+    at org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)
+    at org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)
+    at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)
+    at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)
+    at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)
+    at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)
+    at org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)
+    at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)
+    at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)
+    at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)
+    at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)
+    at org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)
+    at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)
+    at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)
+    at java.base/java.lang.Thread.run(Thread.java:842)
+</pre></div>
+              </td>
+            </tr>
+            <tr>
+              <td>20</td>
+              <td>
+                <span class="status-chip skipped">SKIPPED</span>
+              </td>
+              <td>0 ms</td>
+              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/session");</pre></td>
+              <td class="mono">
+                <pre>I navigate to "Cryoport - Cryoportal® 2" page</pre>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <div class="mono"><pre>Step not executed due to previous failure at step 19</pre></div>
               </td>
               <td>
                 <span class="small">â€”</span>

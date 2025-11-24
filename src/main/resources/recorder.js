@@ -142,6 +142,16 @@
         }, 100);
     });
 
+    window.addEventListener('beforeunload', function () {
+        try {
+            if (window.__recordedEvents) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents));
+            }
+        } catch (e) {
+            console.log('[recorder] beforeunload flush failed', e);
+        }
+    });
+
     // --- Dedicated handler for Select2 / dropdown options --
 
     (function (history) {
@@ -229,46 +239,52 @@
     }
 
     function generateSeleniumLocator(t, accName) {
-        var id = t.id;
-        var name = t.name;
-        var tag = t.tagName.toLowerCase();
+        if (!t) {
+            return { type: 'By.cssSelector', value: '*' };
+        }
 
-        var elementText = t.innerText ? t.innerText.trim() : (t.textContent ? t.textContent.trim() : '');
-        var normalizedText = elementText.replace(/'/g, "\\'");
-        var normalizedAccName = accName.replace(/'/g, "\\'");
+        var id   = t.id || '';
+        var name = t.name || '';
+        var tag  = (t.tagName || '').toLowerCase();
 
-        // Special case: links → By.linkText when we have text
+        var elementText       = (t.innerText || t.textContent || '').trim();
+        var normalizedText    = elementText.replace(/'/g, "\\'");
+        var normalizedAccName = (accName || '').replace(/'/g, "\\'");
+
+        // 🔹 Special case: links → By.linkText when we have text
         if (tag === 'a' && elementText.length > 0) {
             return { type: 'By.linkText', value: elementText };
         }
 
-        // PRIORITY 1: Element Text (XPath by Text) for non-input/textarea
+        // 🔹 PRIORITY 1: Element Text (XPath by Text) for non-input/textarea
         if (elementText.length > 0 && tag !== 'input' && tag !== 'textarea') {
             var xpath = "//" + tag + "[normalize-space(.)='" + normalizedText + "']";
             return { type: 'By.xpath', value: xpath };
         }
 
-        // PRIORITY 2: By Name
+        // 🔹 PRIORITY 2: By Name
         if (name && name.length > 0) {
             return { type: 'By.name', value: name };
         }
 
-        // PRIORITY 3: By ID
+        // 🔹 PRIORITY 3: By ID
         if (id && id.length > 0) {
             return { type: 'By.id', value: id };
         }
 
-        // PRIORITY 4: Accessible name–based XPath
-        if (accName.length > 0) {
-            var xpath2 = "//label[normalize-space(.)='" + normalizedAccName + "']/following-sibling::" + tag +
+        // 🔹 PRIORITY 4: Accessible name–based XPath
+        if (normalizedAccName.length > 0) {
+            var xpath2 =
+                "//label[normalize-space(.)='" + normalizedAccName + "']/following-sibling::" + tag +
                 " | //" + tag + "[@aria-label='" + normalizedAccName + "']" +
                 " | //" + tag + "[@placeholder='" + normalizedAccName + "']";
             return { type: 'By.xpath', value: xpath2 };
         }
 
-        // Final Fallback: tag selector
-        return { type: 'By.cssSelector', value: tag };
+        // 🔹 Final Fallback: tag selector
+        return { type: 'By.cssSelector', value: tag || '*' };
     }
+
 
     // --- Dedicated handler for dropdown options (Select2 & friends) ---
     function handleDropdownOptionEvent(e) {
@@ -345,10 +361,10 @@
         try {
             if (!e) return;
 
-            // 🔇 Ignore script-generated CHANGE events (auto-fill, .trigger('change'), etc.)
-            if (e.type === 'change' && e.isTrusted === false) {
-                return;
-            }
+            // 🔇 Ignore script-generated events (we only want real user actions)
+                    if (!e.isTrusted) {
+                        return;
+                    }
 
             var t = e.target;
 
@@ -357,13 +373,24 @@
                 return;
             }
 
-            // ⭐ For click events, promote inner icon/text clicks to clickable ancestor
+            // ⭐ For click events, normalize to the *real* clickable element.
+            // This makes mega-menu tiles like "New Order" work even if the click
+            // lands on the <li> background, icon <i>, or nested <span>.
             if (e.type === 'click' && t.closest) {
-                var clickableAncestor = t.closest('button, a, [role="button"], [role="link"], [onclick]');
-                if (clickableAncestor) {
-                    t = clickableAncestor;
+                // 1️⃣ Prefer an ancestor that is inherently clickable
+                let clickable = t.closest('a[href], button, [role="button"], [role="link"], [onclick]');
+
+                // 2️⃣ If the event target is a container (LI/DIV), look *inside* it
+                //    for the first inner link/button widget (mega-menu tiles, cards, etc.).
+                if (!clickable && (t.tagName === 'LI' || t.tagName === 'DIV') && t.querySelector) {
+                    clickable = t.querySelector('a[href], button, [role="button"], [role="link"]');
+                }
+
+                if (clickable) {
+                    t = clickable;
                 }
             }
+
 
             var rec = {};
             rec.timestamp = Date.now();
@@ -435,7 +462,7 @@
                 // ================= CLICK HANDLING =================
                 case 'click': {
                     // Normalize basics
-                    const tag = (t.tagName || '').toLowerCase();
+                    const tagName = (t.tagName || '').toLowerCase();
                     const roleAttr = (t.getAttribute && t.getAttribute('role')) || '';
                     const roleLower = roleAttr.toLowerCase();
                     const classList = Array.from(t.classList || []);
@@ -473,10 +500,10 @@
 
                     // Consider only *real* textboxes as ignorable
                     const isRealTextbox =
-                        (tag === 'input' && [
+                        (tagName === 'input' && [
                             'text', 'search', 'email', 'password', 'tel', 'number', 'url'
                         ].includes(t.type)) ||
-                        tag === 'textarea' ||
+                        tagName === 'textarea' ||
                         t.isContentEditable === true;
 
                     // 🔧 Skip real text inputs, but NOT fake dropdown "textbox" spans
@@ -486,30 +513,25 @@
 
                     // 🔎 Ignore big container DIV clicks (layout, info panels)
                     const textForHeuristic = elementText || '';
-
                     const looksLikeContainerDiv =
-                        tag === 'div' &&
+                        tagName === 'div' &&
                         !isDropdownOption &&
                         !insideDropdown &&
                         !t.hasAttribute('onclick') &&
                         !t.getAttribute('role') &&
-                        !t.isContentEditable &&
-                        !classList.includes('input-group-addon') &&
-                        !classList.includes('select2-selection') &&
-                        !classList.includes('oj-select-choice') &&
-                        !classList.includes('oj-combobox-choice');
+                        !t.isContentEditable;
 
                     if (looksLikeContainerDiv) {
                         const hasNewlines = textForHeuristic.indexOf('\n') !== -1;
                         const isVeryLong  = textForHeuristic.length > 80;
-
                         if (isVeryLong && hasNewlines) {
-                            return;   // ✅ treat as non-interactive layout click
+                            // ✅ treat as non-interactive layout click
+                            return;
                         }
                     }
 
-                    // ----- Determine if this click is on something we care about -----
-                    const isNativeSelect = tag === 'select';
+                    // ----- Determine whether this element is "actionable" -----
+                    const isNativeSelect = tagName === 'select';
                     const looksLikeDropdownName =
                         /select|dropdown/i.test(locatorValue || '');
 
@@ -528,38 +550,37 @@
                         roleLower === 'button';
 
                     const isLinkLike =
-                        roleLower === 'link' || tag === 'a';
+                        roleLower === 'link' || tagName === 'a';
 
                     const hasOnclick =
                         !!t.getAttribute('onclick') || typeof t.onclick === 'function';
 
-                    // ✅ Stimulus controllers and similar: data-action="click->..."
+                    // Stimulus / data-action click handlers
                     const hasDataActionClick =
                         !!(t.closest && t.closest('[data-action*="click->"]'));
 
-                    const isDropdownOrOption = isDropdownActivator || isDropdownOption;
-
                     const isActionable =
-                        isDropdownOrOption ||
+                        isDropdownActivator ||
+                        isDropdownOption ||
                         isCheckboxLike ||
                         isButtonLike ||
                         isLinkLike ||
                         hasOnclick ||
                         hasDataActionClick;
 
-                    // Ignore generic layout / header / wrapper clicks (like plain <div>)
+                    // ❌ Ignore generic non-actionable layout clicks
                     if (!isActionable) {
                         return;
                     }
 
                     rec.action = 'click';
 
-                    // ========= SPECIAL CASE: icon-only <a> like hamburger menu =========
+                    // ========= SPECIAL CASE: icon-only <a> like menu icons =========
                     const textContent = (t.textContent || '').trim();
                     const mainClass =
                         classList.find(c => !c.startsWith('-')) || classList[0] || null;
 
-                    if (tag === 'a' && !textContent && mainClass) {
+                    if (tagName === 'a' && !textContent && mainClass) {
                         const css = 'a.' + mainClass.split(/\s+/).join('.');
 
                         rec.raw_selenium =
@@ -571,18 +592,18 @@
                             .trim()
                             .replace(/^./, c => c.toUpperCase());
 
-                        rec.raw_gherkin = 'I click on the "' + niceName + '" button';
+                        rec.raw_gherkin = 'I click on the "' + niceName + '" link';
                         rec.options.primary_name = niceName;
                         break;
                     }
 
-                    // ---------- 1) OPTION CLICK (generic for many dropdowns) ----------
+                    // ---------- 1) OPTION CLICK (Select2 / dropdowns) ----------
                     if (isDropdownOption) {
                         const opt = optionEl;
                         const rawOptionText = (opt.innerText || opt.textContent || '').trim();
                         if (!rawOptionText) return;
 
-                        // Use only the first line as the key
+                        // Use only the first line as the key (some options have multi-line details)
                         const firstLine = rawOptionText.split(/\r?\n/)[0].trim();
                         const escapedFirstLine = firstLine.replace(/'/g, "\\'");
 
@@ -628,7 +649,6 @@
                         rec.raw_gherkin = 'I open the "' + dropdownLabel + '" dropdown';
 
                         if (insideDropdown && dropdownContainer) {
-                            // 🔧 Always click a stable element for THIS dropdown instance
                             const selectionEl =
                                 dropdownContainer.querySelector('.select2-selection') ||
                                 dropdownContainer.querySelector('.oj-select-choice') ||
@@ -663,7 +683,7 @@
                                     const allSelections = Array.from(
                                         document.querySelectorAll('.select2-container .select2-selection')
                                     );
-                                    const idx = allSelections.indexOf(selectionEl); // 0-based
+                                    const idx = allSelections.indexOf(selectionEl);
                                     if (idx >= 0) {
                                         const nth = idx + 1;
                                         byExpr =
@@ -682,7 +702,6 @@
                         } else if (isNativeSelect) {
                             rec.raw_selenium =
                                 'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
-
                         } else {
                             rec.raw_selenium =
                                 'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
@@ -703,22 +722,27 @@
                     }
 
                     // ---------- 4) LINKS ----------
-                    if (roleLower === 'link' || tag === 'a') {
-                        rec.raw_gherkin = 'I click on the "' + gherkinName + '" link';
+                    if (isLinkLike) {
+                        const linkText = (t.innerText || t.textContent || '').trim();
+                        const escaped = linkText.replace(/\"/g, '\\\"');
+
+                        rec.raw_gherkin = 'I click on the "' + linkText + '" link';
                         rec.raw_selenium =
-                            'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
+                            'driver.findElement(By.linkText(\"' + escaped + '\")).click();';
+
+                        rec.options.primary_name = linkText;
                         break;
                     }
 
                     // ---------- 5) BUTTONS ----------
-                    if (t.type === 'submit' || t.type === 'button' || roleLower === 'button') {
+                    if (isButtonLike) {
                         rec.raw_gherkin = 'I click on the "' + gherkinName + '" button';
                         rec.raw_selenium =
                             'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
                         break;
                     }
 
-                    // ---------- 6) GENERIC CLICK (still actionable, e.g. custom widget with onclick) ----------
+                    // ---------- 6) GENERIC CLICK (custom widgets with onclick / data-action) ----------
                     rec.raw_gherkin = 'I click on the "' + gherkinName + '"';
                     rec.raw_selenium =
                         'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
