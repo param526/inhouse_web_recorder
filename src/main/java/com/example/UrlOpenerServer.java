@@ -253,8 +253,8 @@ public class UrlOpenerServer {
                     return msg;
                 }
 
-                // reports/raw_selenium_report.html
-                String reportDirPath = workingDir + File.separator + "reports";
+                // replay-recordings/raw_selenium_report.html
+                String reportDirPath = workingDir + File.separator + "replay-recordings";
                 File reportDir = new File(reportDirPath);
                 if (!reportDir.exists()) {
                     reportDir.mkdirs();
@@ -267,11 +267,15 @@ public class UrlOpenerServer {
                         reportPath
                 );
 
-                res.status(ok ? 200 : 500);
                 res.type("text/plain");
-                return ok
-                        ? "Replay completed successfully. Report: " + reportPath
-                        : "Replay had failures. See report: " + reportPath;
+                if (ok) {
+                    res.status(200);
+                    // UI knows the report is always at /view-replay-report
+                    return "OK";
+                } else {
+                    res.status(500);
+                    return "Replay had failures. Report is still available at /view-replay-report";
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -281,6 +285,24 @@ public class UrlOpenerServer {
             }
         });
 
+        get("/view-replay-report", (req, res) -> {
+            String workingDir = System.getProperty("user.dir");
+            Path reportPath = Path.of(
+                    workingDir,
+                    "replay-recordings",          // or "reports" if that's your folder
+                    "raw_selenium_report.html"
+            );
+
+            if (!Files.exists(reportPath)) {
+                res.status(404);
+                res.type("text/plain");
+                return "Replay report not found. Run /replay first.";
+            }
+
+            res.status(200);
+            res.type("text/html");
+            return Files.readString(reportPath, StandardCharsets.UTF_8);
+        });
 
 
         System.out.println("Selenium URL Launcher + Recorder running on http://localhost:4567");

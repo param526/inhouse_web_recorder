@@ -574,6 +574,51 @@
     min-height: 1.2em; /* keeps layout stable even when empty */
 }
 
+.report-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid #0f766e;
+    background: linear-gradient(to right, #0f766e, #14b8a6);
+    color: #ecfeff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 10px 26px rgba(15, 118, 110, 0.85);
+    transition:
+        opacity var(--transition-fast),
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        background var(--transition-fast);
+}
+
+.report-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 40px rgba(15, 118, 110, 0.95);
+    background: linear-gradient(to right, #115e59, #0f766e);
+}
+
+.report-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+}
+
+.report-btn:focus-visible {
+    outline: 2px solid #a5f3fc;
+    outline-offset: 2px;
+}
+
+.report-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+    box-shadow: none;
+}
+
 .replay-btn {
     width: 100%;
     margin-top: 10px;
@@ -713,6 +758,14 @@
                 </button>
 
                 <p id="replayStatus" class="replay-status-text"></p>
+
+                <button id="openReportBtn"
+                        type="button"
+                        class="report-btn"
+                        style="display: none;"
+                        onclick="window.open('/view-replay-report', '_blank')">
+                    <span>📄 Open Replay Report</span>
+                </button>
 
 
                 <div id="test-generator-card">
@@ -914,11 +967,18 @@
             });
     }
 
+    // Get the button once at top of script
+    const openReportBtn = document.getElementById("openReportBtn");
+
     // 🔥 Replay recorded script using /replay endpoint
-    // 🔥 Replay recorded script using /replay endpoint
-replayBtn.addEventListener("click", async () => {
+    replayBtn.addEventListener("click", async () => {
     replayBtn.disabled = true;
     replayBtn.classList.add('is-loading');
+
+    // Hide report button at the start of each replay (optional)
+    if (openReportBtn) {
+        openReportBtn.style.display = "none";
+    }
 
     // Small inline status below the button
     if (replayStatus) {
@@ -941,24 +1001,37 @@ replayBtn.addEventListener("click", async () => {
             statusBox.className = 'status-box success';
             statusBox.innerHTML = `
                 <div class="status-label">Script Replay</div>
-                <p>✅ ${text}</p>
+                <p>✅ Replay completed successfully.</p>
+                <p class="small">You can open the detailed HTML report using the button below.</p>
             `;
 
             if (replayStatus) {
                 replayStatus.textContent = "Replay completed successfully.";
                 replayStatus.style.color = "#22c55e"; // green
             }
+
+            // ✅ Show the "Open Replay Report" button
+            if (openReportBtn) {
+                openReportBtn.style.display = "inline-block";
+            }
+
         } else {
             statusBox.className = 'status-box error';
             statusBox.innerHTML = `
                 <div class="status-label">Script Replay</div>
                 <p>🛑 Replay Failed:</p>
                 <p><code>${text}</code></p>
+                <p class="small">The replay report (with failures) is still available.</p>
             `;
 
             if (replayStatus) {
                 replayStatus.textContent = "Replay failed. See details above.";
                 replayStatus.style.color = "#f97316"; // orange
+            }
+
+            // ❗ Even on failure, show the report button (report now always generated)
+            if (openReportBtn) {
+                openReportBtn.style.display = "inline-block";
             }
         }
     } catch (err) {
@@ -973,11 +1046,17 @@ replayBtn.addEventListener("click", async () => {
             replayStatus.textContent = "Replay failed due to an error.";
             replayStatus.style.color = "#ef4444"; // red
         }
+
+        // Optionally: still show button in case report got generated before error
+        if (openReportBtn) {
+            openReportBtn.style.display = "inline-block";
+        }
     } finally {
         replayBtn.disabled = false;
         replayBtn.classList.remove('is-loading');
     }
 });
+
 
     function generateTest() {
         const featureName = document.getElementById('featureInput').value.trim();

@@ -8,10 +8,13 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -43,12 +46,10 @@ public class RawSeleniumReplayer {
 
     // ========== INNER CLASS FOR RESULTS ==========
 
-    /**
-     * Simple holder for per-step result (internal only).
-     */
     private static class StepResult {
         int index;
         String rawScript;
+        String rawGherkin;   // NEW – Gherkin text
         boolean success;
         long durationMs;
         String errorMessage;
@@ -79,26 +80,30 @@ public class RawSeleniumReplayer {
                                          Scenario scenario) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
-        // Important: ignore extra fields like "options", "timestamp", etc.
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        List<RecordedEvent> events = mapper.readValue(
-                new File(jsonPath),
-                new TypeReference<List<RecordedEvent>>() {
-                }
-        );
-
-        WebDriverManager.chromedriver().setup();
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--start-maximized");
-
-        WebDriver driver = new ChromeDriver(options);
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
-        Thread.sleep(10000);
-
         List<StepResult> results = new ArrayList<>();
+        boolean allPassed = false;
+        WebDriver driver = null;
 
         try {
+            // 1) Read events from JSON
+            List<RecordedEvent> events = mapper.readValue(
+                    new File(jsonPath),
+                    new TypeReference<List<RecordedEvent>>() {
+                    }
+            );
+
+            // 2) Start WebDriver
+            WebDriverManager.chromedriver().setup();
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("--start-maximized");
+
+            driver = new ChromeDriver(options);
+            driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
+//            Thread.sleep(10000);
+
+            // 3) Replay all events, collecting StepResult for each
             int index = 1;
             for (RecordedEvent ev : events) {
                 if (ev == null || ev.raw_selenium == null || ev.raw_selenium.trim().isEmpty()) {
@@ -111,6 +116,8 @@ public class RawSeleniumReplayer {
                 StepResult step = new StepResult();
                 step.index = index++;
                 step.rawScript = script;
+                // assuming JSON field is "raw_gherkin" and RecordedEvent has matching field
+                step.rawGherkin = ev.raw_gherkin;
                 long start = System.currentTimeMillis();
 
                 try {
@@ -134,58 +141,86 @@ public class RawSeleniumReplayer {
                     results.add(step);
                 }
 
-                // small delay between steps
                 Thread.sleep(300);
             }
 
-            // Pause at the end to see the final state
             Thread.sleep(1200);
 
-        } finally {
-            driver.quit();
-        }
+            // 4) Compute overall result from collected steps
+            allPassed = results.stream().allMatch(r -> r.success);
+            System.out.println("Overall Result: " + (allPassed ? "PASS" : "FAIL"));
 
-        boolean allPassed = results.stream().allMatch(r -> r.success);
-        generateHtmlReport(results, jsonPath, reportPath, allPassed);
+            return allPassed;
 
-        // ========== CUCUMBER INTEGRATION ==========
+        } catch (Exception fatal) {
+            // Any unexpected fatal error before/around the loop
+            System.out.println("Fatal error during replay: " + fatal.getMessage());
+            fatal.printStackTrace();
 
-        if (scenario != null) {
-            scenario.log("RawSeleniumReplayer finished. Result: " +
-                    (allPassed ? "PASS" : "FAIL"));
-            scenario.log("JSON: " + jsonPath);
-            scenario.log("HTML report: " + reportPath);
-
-            // Attach HTML report to Cucumber
-            try {
-                byte[] bytes = Files.readAllBytes(Paths.get(reportPath));
-                scenario.attach(bytes, "text/html", "Raw Selenium Replay Report");
-            } catch (IOException e) {
-                scenario.log("Failed to attach HTML report: " + e.getMessage());
+            // If no steps were recorded at all, add a synthetic "framework error" step
+            if (results.isEmpty()) {
+                StepResult setupStep = new StepResult();
+                setupStep.index = 1;
+                setupStep.rawScript = "FRAMEWORK / SETUP ERROR";
+                setupStep.rawGherkin = "Framework error before executing steps";
+                setupStep.success = false;
+                setupStep.errorMessage = fatal.getMessage();
+                setupStep.stackTrace = getStackTraceAsString(fatal);
+                setupStep.durationMs = 0L;
+                results.add(setupStep);
             }
 
-            // Optional: log each step
-            for (StepResult r : results) {
-                scenario.log(
-                        String.format("Step %d: %s - %s (%d ms)",
-                                r.index,
-                                r.success ? "PASS" : "FAIL",
-                                r.rawScript,
-                                r.durationMs
-                        )
-                );
-                if (!r.success && r.errorMessage != null) {
-                    scenario.log("  Error: " + r.errorMessage);
+            // allPassed stays false
+            throw fatal; // still let caller know it failed (your /replay handler catches it)
+        } finally {
+            // 5) Always try to quit driver
+            if (driver != null) {
+                try {
+                    driver.quit();
+                } catch (Exception quitEx) {
+                    System.out.println("Warning: error quitting driver: " + quitEx.getMessage());
+                }
+            }
+
+            // 6) ALWAYS try to generate the HTML report, even if an exception occurred
+            try {
+                generateHtmlReport(results, jsonPath, reportPath, allPassed);
+                System.out.println("HTML report written to: " + reportPath);
+            } catch (IOException io) {
+                System.err.println("Failed to write replay HTML report: " + io.getMessage());
+            }
+
+            // 7) Cucumber integration – log + attach report (if Scenario is provided)
+            if (scenario != null) {
+                scenario.log("RawSeleniumReplayer finished. Result: " +
+                        (allPassed ? "PASS" : "FAIL"));
+                scenario.log("JSON: " + jsonPath);
+                scenario.log("HTML report: " + reportPath);
+
+                for (StepResult r : results) {
+                    scenario.log(
+                            String.format("Step %d: %s - %s (%d ms)",
+                                    r.index,
+                                    r.success ? "PASS" : "FAIL",
+                                    r.rawScript,
+                                    r.durationMs
+                            )
+                    );
+                    if (!r.success && r.errorMessage != null) {
+                        scenario.log("  Error: " + r.errorMessage);
+                    }
+                }
+
+                // Attach report after we've generated it
+                try {
+                    byte[] bytes = Files.readAllBytes(Paths.get(reportPath));
+                    scenario.attach(bytes, "text/html", "Raw Selenium Replay Report");
+                } catch (IOException e) {
+                    scenario.log("Failed to attach HTML report: " + e.getMessage());
                 }
             }
         }
-
-        System.out.println("Overall Result: " + (allPassed ? "PASS" : "FAIL"));
-        System.out.println("HTML report written to: " + reportPath);
-
-        return allPassed;
     }
-
     // ========== HELPERS ==========
 
     private static boolean isNavigation(String raw) {
@@ -200,7 +235,11 @@ public class RawSeleniumReplayer {
         String url = m.group(1);
         System.out.println("➡ Navigating to: " + url);
         driver.get(url);
+
+        // ✅ Wait until the page has fully loaded
+        waitForPageLoad(driver);
     }
+
 
     private static void executeElement(String raw, WebDriver driver) {
         Matcher m = ELEMENT_PATTERN.matcher(raw);
@@ -215,12 +254,16 @@ public class RawSeleniumReplayer {
         String arg = m.group(4);  // value for sendKeys (may be null)
 
         By by = toBy(locatorType, locatorValue);
-        WebElement element;
 
+        // ✅ Wait for element to be present (and optionally visible)
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        WebElement element;
         try {
-            element = driver.findElement(by);
-        } catch (NoSuchElementException e) {
-            throw new RuntimeException("Element not found for: " + raw + " | By: " + by, e);
+            // If you want just presence, use presenceOfElementLocated(by)
+            // If you want visible, use visibilityOfElementLocated(by)
+            element = wait.until(ExpectedConditions.presenceOfElementLocated(by));
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Timed out waiting for element: " + by + " | Raw: " + raw, e);
         }
 
         switch (method) {
@@ -276,6 +319,14 @@ public class RawSeleniumReplayer {
         return sb.toString();
     }
 
+    private static void waitForPageLoad(WebDriver driver) {
+        new org.openqa.selenium.support.ui.WebDriverWait(driver, Duration.ofSeconds(30))
+                .until(d -> ((JavascriptExecutor) d)
+                        .executeScript("return document.readyState")
+                        .equals("complete"));
+    }
+
+
     private static void generateHtmlReport(List<StepResult> results,
                                            String jsonPath,
                                            String reportPath,
@@ -285,7 +336,6 @@ public class RawSeleniumReplayer {
         int passed = (int) results.stream().filter(r -> r.success).count();
         int failed = total - passed;
         double passPercent = total == 0 ? 0.0 : (passed * 100.0 / total);
-
         long totalDuration = results.stream().mapToLong(r -> r.durationMs).sum();
 
         String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
@@ -533,6 +583,7 @@ public class RawSeleniumReplayer {
             out.println("              <th style=\"width: 90px;\">Status</th>");
             out.println("              <th style=\"width: 80px;\">Duration</th>");
             out.println("              <th>Raw Selenium</th>");
+            out.println("              <th>Raw Gherkin</th>");
             out.println("              <th style=\"width: 200px;\">Error Message</th>");
             out.println("              <th style=\"width: 260px;\">Stack Trace</th>");
             out.println("            </tr>");
@@ -555,6 +606,16 @@ public class RawSeleniumReplayer {
                 out.println("              <td>" + r.durationMs + " ms</td>");
                 out.println("              <td class=\"mono\"><pre>" + escapeHtml(r.rawScript) + "</pre></td>");
 
+                // Raw Gherkin column
+                out.println("              <td class=\"mono\">");
+                if (r.rawGherkin != null && !r.rawGherkin.isEmpty()) {
+                    out.println("                <pre>" + escapeHtml(r.rawGherkin) + "</pre>");
+                } else {
+                    out.println("                <span class=\"small\">—</span>");
+                }
+                out.println("              </td>");
+
+                // Error message
                 out.println("              <td>");
                 if (r.errorMessage != null && !r.errorMessage.isEmpty()) {
                     out.println("                <div class=\"mono\"><pre>" + escapeHtml(r.errorMessage) + "</pre></div>");
@@ -563,6 +624,7 @@ public class RawSeleniumReplayer {
                 }
                 out.println("              </td>");
 
+                // Stack trace
                 out.println("              <td>");
                 if (r.stackTrace != null && !r.stackTrace.isEmpty()) {
                     String stackId = "stack-" + idx;
@@ -582,7 +644,6 @@ public class RawSeleniumReplayer {
             out.println("      </div>");
             out.println("    </div>");
 
-            // Small footer
             out.println("    <p class=\"small\" style=\"margin-top: 12px;\">Generated by RawSeleniumReplayer.</p>");
 
             out.println("  </div>");
@@ -608,7 +669,6 @@ public class RawSeleniumReplayer {
             out.println("</html>");
         }
     }
-
 
     private static String escapeHtml(String s) {
         if (s == null) return "";

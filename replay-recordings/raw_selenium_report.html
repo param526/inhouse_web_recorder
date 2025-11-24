@@ -191,7 +191,7 @@
     <div class="header">
       <div class="header-main">
         <div class="header-title">Raw Selenium Replay Report</div>
-        <div class="header-sub">Generated at 2025-11-24 13:59:52 Â· 12 steps Â· Total duration 38537 ms</div>
+        <div class="header-sub">Generated at 2025-11-24 15:06:55 Â· 12 steps Â· Total duration 43733 ms</div>
       </div>
       <div class="status-pill pass">        <span class="status-dot"></span>
         <span>ALL STEPS PASSED</span>
@@ -225,6 +225,7 @@
               <th style="width: 90px;">Status</th>
               <th style="width: 80px;">Duration</th>
               <th>Raw Selenium</th>
+              <th>Raw Gherkin</th>
               <th style="width: 200px;">Error Message</th>
               <th style="width: 260px;">Stack Trace</th>
             </tr>
@@ -233,8 +234,11 @@
             <tr>
               <td>1</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>11694 ms</td>
+              <td>8393 ms</td>
               <td class="mono"><pre>driver.get("https://gap.com/");</pre></td>
+              <td class="mono">
+                <pre>I navigate to "Warning: Shopping" page</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -245,8 +249,11 @@
             <tr>
               <td>2</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>2179 ms</td>
+              <td>620 ms</td>
               <td class="mono"><pre>driver.get("https://www.gap.com/");</pre></td>
+              <td class="mono">
+                <pre>I navigate to "Shop Latest Offers + Gap Women’s, Men’s, Baby &amp; Kids Clothing" page</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -257,8 +264,11 @@
             <tr>
               <td>3</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>4135 ms</td>
+              <td>6390 ms</td>
               <td class="mono"><pre>driver.findElement(By.linkText("Men")).click();</pre></td>
+              <td class="mono">
+                <pre>I click on the "Men" link</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -269,8 +279,11 @@
             <tr>
               <td>4</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>2771 ms</td>
+              <td>3788 ms</td>
               <td class="mono"><pre>driver.get("https://www.gap.com/browse/men?cid=5063&amp;mlink=39813%2C30012485%2CMegnav_Men&amp;clink=30012485&amp;nav=meganav%3AMen%3A%3A");</pre></td>
+              <td class="mono">
+                <pre>I navigate to "Shop Men's Clothing | Gap" page</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -281,8 +294,11 @@
             <tr>
               <td>5</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>131 ms</td>
+              <td>402 ms</td>
               <td class="mono"><pre>driver.findElement(By.linkText("Gifts")).click();</pre></td>
+              <td class="mono">
+                <pre>I click on the "Gifts" link</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -293,8 +309,11 @@
             <tr>
               <td>6</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>86 ms</td>
+              <td>198 ms</td>
               <td class="mono"><pre>driver.findElement(By.linkText("Gifts")).click();</pre></td>
+              <td class="mono">
+                <pre>I click on the "Gifts" link</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -305,8 +324,11 @@
             <tr>
               <td>7</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>9050 ms</td>
+              <td>14885 ms</td>
               <td class="mono"><pre>driver.findElement(By.linkText("GapStudio")).click();</pre></td>
+              <td class="mono">
+                <pre>I click on the "GapStudio" link</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -317,8 +339,11 @@
             <tr>
               <td>8</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>1793 ms</td>
+              <td>2905 ms</td>
               <td class="mono"><pre>driver.get("https://www.gap.com/browse/info.do?cid=3045347&amp;nav=meganav%3AGapStudio%3A%3A");</pre></td>
+              <td class="mono">
+                <pre>I navigate to "https://www.gap.com/browse/info.do?cid=3045347&amp;nav=meganav%3AGapStudio%3A%3A" page</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -329,8 +354,11 @@
             <tr>
               <td>9</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>92 ms</td>
+              <td>401 ms</td>
               <td class="mono"><pre>driver.findElement(By.xpath("//label[normalize-space(.)='My account']/following-sibling::button | //button[@aria-label='My account'] | //button[@placeholder='My account']")).click();</pre></td>
+              <td class="mono">
+                <pre>I click on the "My account" button</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -341,8 +369,11 @@
             <tr>
               <td>10</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>5768 ms</td>
+              <td>4744 ms</td>
               <td class="mono"><pre>driver.get("https://secure-www.gap.com/my-account/sign-in?_gl=1*17zerfo*_gcl_au*MTA4MDQyNzI3MC4xNzYzOTcyNTQ3");</pre></td>
+              <td class="mono">
+                <pre>I navigate to "Sign in | Gap" page</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -353,8 +384,11 @@
             <tr>
               <td>11</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>150 ms</td>
+              <td>637 ms</td>
               <td class="mono"><pre>driver.findElement(By.name("email")).sendKeys("fdsfsfsdfs");</pre></td>
+              <td class="mono">
+                <pre>I enter "fdsfsfsdfs" into the "email"</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
@@ -365,8 +399,11 @@
             <tr>
               <td>12</td>
               <td><span class="status-chip pass">PASS</span></td>
-              <td>688 ms</td>
+              <td>370 ms</td>
               <td class="mono"><pre>driver.findElement(By.xpath("//button[normalize-space(.)='Continue']")).click();</pre></td>
+              <td class="mono">
+                <pre>I click on the "Continue" button</pre>
+              </td>
               <td>
                 <span class="small">â€”</span>
               </td>
