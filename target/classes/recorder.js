@@ -284,18 +284,24 @@
             return original.name.trim();
         }
 
-        // 4️⃣ SVG <title> via nearest <svg> ancestor
-        try {
-            var svg = original.closest && original.closest('svg');
-            if (svg) {
-                var svgTitleEl = svg.querySelector('title');
-                if (svgTitleEl && svgTitleEl.textContent && svgTitleEl.textContent.trim().length > 0) {
-                    return svgTitleEl.textContent.trim();
+                // 4️⃣.b Descendant <img> alt/title (icon-only buttons/links)
+                try {
+                    if (original.querySelector) {
+                        var imgDesc = original.querySelector('img[alt], img[title]');
+                        if (imgDesc) {
+                            var imgLabel =
+                                (imgDesc.getAttribute('alt') || imgDesc.getAttribute('title') || '').trim();
+                            if (imgLabel.length > 0) {
+                                return imgLabel;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // ignore
                 }
-            }
-        } catch (e) {
-            // ignore
-        }
+
+                // 5️⃣ Last resort: any visible text on the element or its ancestors
+
 
         // 5️⃣ Last resort: any visible text on the element or its ancestors
         el = original;
@@ -647,27 +653,77 @@
 
                     rec.action = 'click';
 
-                    // ========= SPECIAL CASE: icon-only <a> like menu icons =========
-                    const textContent = (t.textContent || '').trim();
-                    const mainClass =
-                        classList.find(c => !c.startsWith('-')) || classList[0] || null;
+                    // ========= SPECIAL CASE: icon-only <a> like menu icons / avatar icons =========
+                                        const textContent = (t.textContent || '').trim();
+                                        const mainClass =
+                                            classList.find(c => !c.startsWith('-')) || classList[0] || null;
 
-                    if (tagName === 'a' && !textContent && mainClass) {
-                        const css = 'a.' + mainClass.split(/\s+/).join('.');
+                                        if (tagName === 'a' && !textContent) {
+                                            // Prefer a stable, semantic label:
+                                            //  - accessible name (aria / title / label / child img alt/title)
+                                            //  - link's own title attribute
+                                            let iconLabel = accName;
+                                            const linkTitleAttr = (t.getAttribute('title') || '').trim();
 
-                        rec.raw_selenium =
-                            'driver.findElement(By.cssSelector("' + css + '")).click();';
+                                            // If getAccessibleName didn't pick it up, check child <img> directly
+                                            if ((!iconLabel || iconLabel.length === 0) && t.querySelector) {
+                                                const img = t.querySelector('img[alt], img[title]');
+                                                if (img) {
+                                                    iconLabel = (img.getAttribute('alt') || img.getAttribute('title') || '').trim();
+                                                }
+                                            }
 
-                        const niceName = mainClass
-                            .replace(/[-_]+/g, ' ')
-                            .replace(/\s+/g, ' ')
-                            .trim()
-                            .replace(/^./, c => c.toUpperCase());
+                                            if (!iconLabel && linkTitleAttr) {
+                                                iconLabel = linkTitleAttr;
+                                            }
 
-                        rec.raw_gherkin = 'I click on the "' + niceName + '" link';
-                        rec.options.primary_name = niceName;
-                        break;
-                    }
+                                            if (iconLabel && iconLabel.length > 0) {
+                                                const escapedLabel = iconLabel.replace(/\"/g, '\\\"');
+
+                                                // Build a stable locator:
+                                                //  1) If there's an <img>, click the <a> that contains that img with this alt/title
+                                                //  2) Otherwise, use a[title="..."]
+                                                let byExpr;
+                                                const img = t.querySelector && t.querySelector('img[alt], img[title]');
+                                                if (img) {
+                                                    byExpr =
+                                                        'By.xpath("//a[.//img[@title=\\"' + escapedLabel +
+                                                        '\\" or @alt=\\"' + escapedLabel + '\\"]]")';
+                                                } else {
+                                                    byExpr =
+                                                        'By.cssSelector("a[title=\\"' + escapedLabel + '\\"]")';
+                                                }
+
+                                                rec.raw_selenium =
+                                                    'driver.findElement(' + byExpr + ').click();';
+
+                                                rec.raw_gherkin =
+                                                    'I click on the "' + iconLabel + '" link';
+
+                                                rec.options.primary_name = iconLabel;
+
+                                                break;
+                                            }
+
+                                            // 🔁 Fallback: no stable label found → old class-based behavior
+                                            if (mainClass) {
+                                                const css = 'a.' + mainClass.split(/\s+/).join('.');
+
+                                                rec.raw_selenium =
+                                                    'driver.findElement(By.cssSelector("' + css + '")).click();';
+
+                                                const niceName = mainClass
+                                                    .replace(/[-_]+/g, ' ')
+                                                    .replace(/\s+/g, ' ')
+                                                    .trim()
+                                                    .replace(/^./, c => c.toUpperCase());
+
+                                                rec.raw_gherkin = 'I click on the "' + niceName + '" link';
+                                                rec.options.primary_name = niceName;
+                                                break;
+                                            }
+                                        }
+
 
                     // ---------- 1) OPTION CLICK (Select2 / dropdowns) ----------
                     if (isDropdownOption) {

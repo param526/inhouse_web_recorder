@@ -1,11 +1,11 @@
 [ {
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Sign In\" page",
-  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DeoiPzvWljtc5rF5jzf0tLCjSyX62R4X1HAoAQN9djHJh89tKFLxGE9ULyWWJ0h%2B2vFp87xmFAdkAbQckYSi2z%2FlVFVTSeQsdZ4QOA5F%2B4pv5RSEKQ20I2mM8TxLuQkSeicSlTK2mnn3SU2Bt5ZPLIjuVwHt7C58wYR0xmCVIjXTdBjYg8I%2BshvPJZYjP83ofLBeYVv1G1JLjWo6D%2BQnr6JUKcC6jhVCQP9lM1l9AoSMhv2iI2aI2RInzmaxufXbgFjCVWJKz7b6thLI595KbvUJyva8azZDTjE9zcb3gCq6RVCM1rEJGGWG3gots6rh6czVB5MqtPwa6FELdjpLm9DmmUpsUPunBSuQQnjEcb8sKHNmRvu%2Fg8svfDsHa8QYTJDpKINFZyDfgLtNdj2YEOg1KAcUs82hyNgae%2BYJ8ivuZzqfDHXP3ljIcb8keliouGHkAHHzdxNkzwcpKnkMBcvP3cfU9f5VR1k5oWizOf24cuTGshWnpLQFBSxNAgx48t66xL83lYqwK1tGYQv%2BTtNXFU6yKGB3oGkG5yD6%2FkGKL8GqJwdSNp9AA8O9gkvRdb8l0vWwzYZDDmj0LQvapo8RS2FUXYeOjldnsNoJWmDbtSfnZjRhmty1gikZTky9k2arN9gs7bSxoJZjZKgmmr7wczCLLY6uPDn3SNLVRRRPOFF07PbAGvTJrGnEAowOVY1gwWD%2Bviic6Li3tQOp6XzZh5Q7gzimRxZcb%2BjFc3sFhDks6hjPFa7YdOhWO8hKhN4Wol5jGDLWMFjTU4B73ZAGtHnvVQj81rmd4BO8xGyTDUmzYQhsRMP5e5XdScsNbvXTkgxrUQLbcGjrQ7s0q68EOGAftv4W1d8v2eGb0A45Z5JLQ1nSYe60CpT4FCxiJUY%2F%2FDq62Ew6Ia8%2FF8cZNNQh9IdVOLGHtfjlWATBe%2Bs%2BTefjG6IhXlCwK8CvHK6iTMPZz1iaBBoySRZWVW1tmCSJSSH50jgIgC5zDLg98xmnohvqPErLOp5J11pH0i1aujswMeP%2Fxnt7ma06glMgy1%2BurLcBU07rbmJ7goeTiJUxm%2BrzGrj8XEEfCtItUBohtqEhvLgFpXLS0u1BDcqkJYdNQ4kw%2BLszbay7Umrgs4ZHu73iWPDg8AReGeVLcl8BUwy2Pbh4cI0%2FxA5HvyYnYDbP91y%2BYPg6ZuWYolYlCpxt%2FBtP59sw%2FXGrh%2FAherLhYThAukKM8GwqTdZXnR3qpS97twSqzpu9mAO%2FykkZ9Vma7x1VcucS%2BqfYzxUIHPqvaotcXo%2B1hVgN9iseOj%2FB0DSvcwbQZOxlROTBM%2FjJA9xPqmeMFcwfok4kKwpIvr17EZ9vhIqYiXMPjG3yGoPtLgksFCNWu5HIxAfwInf1NWzHx3BiJkqWM3GJbVAJPcnK4%2FOYJD%2BXEtvLGHLJLCL0BkOJNl1yw%2B4w5B%2FOedY4mZpJlQUAAO3kiO4khCFOkY1hjemEfGIbF2Mur3FAQT5d0V2cFC9I%2BL9Gj13iLXCa3jI6KZTm7r9RXuw2uFGsWlTECWaCKHgMzvlm9maLzqT4HZffabtkzuxT%2FnP%2F5LSvXhFgzphL%2BIQRLNv6mhzn0A51nN%2FYxxHaj1y6vjzZaxpVLa%2F0xoX3XaC%2FCuK0x%2B2HUybqOWgvHapzb1LmGkdyTexm%2FK8P3AR2Ez7XC%2FtJ695CQfA%3D%3D%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3Dea6c93c8252412eb3643a57b5f2d10b897f02396&ECID-Context=1.006H5k9iTdh4ykM6yNedMG006cLb0004I6%3BkXjE\");",
-  "timestamp" : 1764011950500,
+  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DT%2F7sht4026eJ9LNJIwo%2BCoOO8O7yhmiFIhH1aeWtW%2ByVpzGwEKzbugZy29MkkyDQ%2FI7t888LJoyZgsYaqMIq97AYdhjMUApiyL%2ByX9OYSJVNCLRLm0QFS%2F%2Bmbq7mXd8drxcKkDfd9OxSxopJsj5J9F4iP9j1peqrGxHYWawZKjTsuOjWrFsXTPCdzpXAws8XdLdspb2rZ2HShIYxWWvLNq6Y90PhTzYDfSpNzkEsW9JE7Cx5FJjh9KsA47X2CoxmPMZV%2FsXjheuFgpKcsSLFhWr6FWEAG2zy3ogXJRAW9P%2BxG0UC1IIDHvoeZnfoJckGW3dDvniVTxoBDRjXOkyLA2N%2F2%2BnP30BwQLfdFRiwcC6mkqKfh02e%2BXkSYW2zB%2FWd4jLJNRUq5yXiybijgCb40AQH%2BTjR7pnIQgOiPlRLXwtBKHIKhisKjaXMIxhPJfsX%2BNZSAySZrMu5xL1RB%2FWpbUPmcNHfaQFp2NCg74jcDIKO9vQ3WCdMVFbxncz2lORQ%2BHuuE68ESjfFJ6Q7A8Kp3NRqCR%2FKN%2FAqvRISwmKeG9J7x9dW9JDe43GXKj9LBkjnhgsfXj8t%2FBOy3o9Gx1N%2B5btWze0UgeDE2cltSXEZqbKe0PT14iLdKsztp%2B%2FsDVfcz78la15xkN3I0thDajjGA%2BYjsck3MwwZBiR1MhxOT7nyZMPjKrMZoaLVzzsu8S9KEVXc2ccY%2FkrW%2Bj2BcIAT%2Bqr%2FEHz4e05ZqNE%2B2bNFRVYBjjzg5urSDzsFfRJA1aHsy4QZ6CzDSxbhQcor1jwmRVimwSitTEAi1RxGrCPS6VqtZGUJX3rDyH75H88X77DGQVvTiHgtgItwYwVpWZFgSlcL4FX5bpFZxlmrTkoK%2F7VhweoQYg9z5OwAp1pjCtiTGGpk6tBEADDaRgLcfInbwKJ%2FYvuhc%2BXWR67ZrnUMQ549SLTFofdvwYSGi%2BGVX%2BZ6NJJ4VeRnG7wDkibDrTkdG2EJE7UlUVdIMMswDxXL80KGdmmAlGvFAyFqQhWtSZzu8fDDTP8iNxGp0VPe2dxe5%2FFJYXNhC7sr0ic4JktS6AlRFNRC8bl5j2p86BVmA93ALCfl4Nm3Nk1wJYv0RAytl6lMxp2YC%2BM0xUrDXBtIGQiMXJo4TIjqKN%2Bo2yBhsyBOaGnF%2FK5fTucqHM9sUYXhqGdyEiOdm8p2abtwoF6DMTAdZWnD8LBI2fufi27SABGDKvv%2BBzGQTsF3n%2F26Sscx8G%2F7YTUetbBGLxbz%2Fj53KrhEfQ25mcpMAAwvXIsBBQ37ygw5SU6N6LiD6N0AOFKU91God40LKVXVUvIJ2L%2BGpVTy7C0qDsMynrKblmTcqkMOkG%2Bl6%2BNjpuaxGepQ56nAFez13kSiKPpvfmxTTSkdibr%2BfKiee%2BB2%2Fa5gJ%2FK%2F5GGSGxzhIhiyxZnq3c3s%2FbXqEScjaxV1gjDHgGXAqepvrv9OU%2FHw4n9%2BYh62rxxXbvIxMV3ac2yn0DfN8BVkEKjGmRaRXWRwq3y58ZAlP2Hj4K52R%2B%2BALkKlD4zqn3qE8uAIJfyeor4H1T%2Bx2Jpfwmsap9iuCSoHqLYiVsx1xNjRycmtpfTqy5OIEEkU59zicDjgTiVAcbuyMjuDjtSnvUfHFPFUR3pCQ231J880hrWgWgyQoUx71KFsOdJz3bz1PemNkzBZPKgEb%2FLXkvMhKCfLTA%3D%3D%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3D9bf86ffdbf537ab67d90f522bb1669c2fb6e05a0&ECID-Context=1.006H5l4oECu4ykM6yNedMG007E5o0000nN%3BkXjE\");",
+  "timestamp" : 1764012941902,
   "title" : "Sign In",
   "type" : "navigation",
-  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DeoiPzvWljtc5rF5jzf0tLCjSyX62R4X1HAoAQN9djHJh89tKFLxGE9ULyWWJ0h%2B2vFp87xmFAdkAbQckYSi2z%2FlVFVTSeQsdZ4QOA5F%2B4pv5RSEKQ20I2mM8TxLuQkSeicSlTK2mnn3SU2Bt5ZPLIjuVwHt7C58wYR0xmCVIjXTdBjYg8I%2BshvPJZYjP83ofLBeYVv1G1JLjWo6D%2BQnr6JUKcC6jhVCQP9lM1l9AoSMhv2iI2aI2RInzmaxufXbgFjCVWJKz7b6thLI595KbvUJyva8azZDTjE9zcb3gCq6RVCM1rEJGGWG3gots6rh6czVB5MqtPwa6FELdjpLm9DmmUpsUPunBSuQQnjEcb8sKHNmRvu%2Fg8svfDsHa8QYTJDpKINFZyDfgLtNdj2YEOg1KAcUs82hyNgae%2BYJ8ivuZzqfDHXP3ljIcb8keliouGHkAHHzdxNkzwcpKnkMBcvP3cfU9f5VR1k5oWizOf24cuTGshWnpLQFBSxNAgx48t66xL83lYqwK1tGYQv%2BTtNXFU6yKGB3oGkG5yD6%2FkGKL8GqJwdSNp9AA8O9gkvRdb8l0vWwzYZDDmj0LQvapo8RS2FUXYeOjldnsNoJWmDbtSfnZjRhmty1gikZTky9k2arN9gs7bSxoJZjZKgmmr7wczCLLY6uPDn3SNLVRRRPOFF07PbAGvTJrGnEAowOVY1gwWD%2Bviic6Li3tQOp6XzZh5Q7gzimRxZcb%2BjFc3sFhDks6hjPFa7YdOhWO8hKhN4Wol5jGDLWMFjTU4B73ZAGtHnvVQj81rmd4BO8xGyTDUmzYQhsRMP5e5XdScsNbvXTkgxrUQLbcGjrQ7s0q68EOGAftv4W1d8v2eGb0A45Z5JLQ1nSYe60CpT4FCxiJUY%2F%2FDq62Ew6Ia8%2FF8cZNNQh9IdVOLGHtfjlWATBe%2Bs%2BTefjG6IhXlCwK8CvHK6iTMPZz1iaBBoySRZWVW1tmCSJSSH50jgIgC5zDLg98xmnohvqPErLOp5J11pH0i1aujswMeP%2Fxnt7ma06glMgy1%2BurLcBU07rbmJ7goeTiJUxm%2BrzGrj8XEEfCtItUBohtqEhvLgFpXLS0u1BDcqkJYdNQ4kw%2BLszbay7Umrgs4ZHu73iWPDg8AReGeVLcl8BUwy2Pbh4cI0%2FxA5HvyYnYDbP91y%2BYPg6ZuWYolYlCpxt%2FBtP59sw%2FXGrh%2FAherLhYThAukKM8GwqTdZXnR3qpS97twSqzpu9mAO%2FykkZ9Vma7x1VcucS%2BqfYzxUIHPqvaotcXo%2B1hVgN9iseOj%2FB0DSvcwbQZOxlROTBM%2FjJA9xPqmeMFcwfok4kKwpIvr17EZ9vhIqYiXMPjG3yGoPtLgksFCNWu5HIxAfwInf1NWzHx3BiJkqWM3GJbVAJPcnK4%2FOYJD%2BXEtvLGHLJLCL0BkOJNl1yw%2B4w5B%2FOedY4mZpJlQUAAO3kiO4khCFOkY1hjemEfGIbF2Mur3FAQT5d0V2cFC9I%2BL9Gj13iLXCa3jI6KZTm7r9RXuw2uFGsWlTECWaCKHgMzvlm9maLzqT4HZffabtkzuxT%2FnP%2F5LSvXhFgzphL%2BIQRLNv6mhzn0A51nN%2FYxxHaj1y6vjzZaxpVLa%2F0xoX3XaC%2FCuK0x%2B2HUybqOWgvHapzb1LmGkdyTexm%2FK8P3AR2Ez7XC%2FtJ695CQfA%3D%3D%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3Dea6c93c8252412eb3643a57b5f2d10b897f02396&ECID-Context=1.006H5k9iTdh4ykM6yNedMG006cLb0004I6%3BkXjE"
+  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DT%2F7sht4026eJ9LNJIwo%2BCoOO8O7yhmiFIhH1aeWtW%2ByVpzGwEKzbugZy29MkkyDQ%2FI7t888LJoyZgsYaqMIq97AYdhjMUApiyL%2ByX9OYSJVNCLRLm0QFS%2F%2Bmbq7mXd8drxcKkDfd9OxSxopJsj5J9F4iP9j1peqrGxHYWawZKjTsuOjWrFsXTPCdzpXAws8XdLdspb2rZ2HShIYxWWvLNq6Y90PhTzYDfSpNzkEsW9JE7Cx5FJjh9KsA47X2CoxmPMZV%2FsXjheuFgpKcsSLFhWr6FWEAG2zy3ogXJRAW9P%2BxG0UC1IIDHvoeZnfoJckGW3dDvniVTxoBDRjXOkyLA2N%2F2%2BnP30BwQLfdFRiwcC6mkqKfh02e%2BXkSYW2zB%2FWd4jLJNRUq5yXiybijgCb40AQH%2BTjR7pnIQgOiPlRLXwtBKHIKhisKjaXMIxhPJfsX%2BNZSAySZrMu5xL1RB%2FWpbUPmcNHfaQFp2NCg74jcDIKO9vQ3WCdMVFbxncz2lORQ%2BHuuE68ESjfFJ6Q7A8Kp3NRqCR%2FKN%2FAqvRISwmKeG9J7x9dW9JDe43GXKj9LBkjnhgsfXj8t%2FBOy3o9Gx1N%2B5btWze0UgeDE2cltSXEZqbKe0PT14iLdKsztp%2B%2FsDVfcz78la15xkN3I0thDajjGA%2BYjsck3MwwZBiR1MhxOT7nyZMPjKrMZoaLVzzsu8S9KEVXc2ccY%2FkrW%2Bj2BcIAT%2Bqr%2FEHz4e05ZqNE%2B2bNFRVYBjjzg5urSDzsFfRJA1aHsy4QZ6CzDSxbhQcor1jwmRVimwSitTEAi1RxGrCPS6VqtZGUJX3rDyH75H88X77DGQVvTiHgtgItwYwVpWZFgSlcL4FX5bpFZxlmrTkoK%2F7VhweoQYg9z5OwAp1pjCtiTGGpk6tBEADDaRgLcfInbwKJ%2FYvuhc%2BXWR67ZrnUMQ549SLTFofdvwYSGi%2BGVX%2BZ6NJJ4VeRnG7wDkibDrTkdG2EJE7UlUVdIMMswDxXL80KGdmmAlGvFAyFqQhWtSZzu8fDDTP8iNxGp0VPe2dxe5%2FFJYXNhC7sr0ic4JktS6AlRFNRC8bl5j2p86BVmA93ALCfl4Nm3Nk1wJYv0RAytl6lMxp2YC%2BM0xUrDXBtIGQiMXJo4TIjqKN%2Bo2yBhsyBOaGnF%2FK5fTucqHM9sUYXhqGdyEiOdm8p2abtwoF6DMTAdZWnD8LBI2fufi27SABGDKvv%2BBzGQTsF3n%2F26Sscx8G%2F7YTUetbBGLxbz%2Fj53KrhEfQ25mcpMAAwvXIsBBQ37ygw5SU6N6LiD6N0AOFKU91God40LKVXVUvIJ2L%2BGpVTy7C0qDsMynrKblmTcqkMOkG%2Bl6%2BNjpuaxGepQ56nAFez13kSiKPpvfmxTTSkdibr%2BfKiee%2BB2%2Fa5gJ%2FK%2F5GGSGxzhIhiyxZnq3c3s%2FbXqEScjaxV1gjDHgGXAqepvrv9OU%2FHw4n9%2BYh62rxxXbvIxMV3ac2yn0DfN8BVkEKjGmRaRXWRwq3y58ZAlP2Hj4K52R%2B%2BALkKlD4zqn3qE8uAIJfyeor4H1T%2Bx2Jpfwmsap9iuCSoHqLYiVsx1xNjRycmtpfTqy5OIEEkU59zicDjgTiVAcbuyMjuDjtSnvUfHFPFUR3pCQ231J880hrWgWgyQoUx71KFsOdJz3bz1PemNkzBZPKgEb%2FLXkvMhKCfLTA%3D%3D%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3D9bf86ffdbf537ab67d90f522bb1669c2fb6e05a0&ECID-Context=1.006H5l4oECu4ykM6yNedMG007E5o0000nN%3BkXjE"
 }, {
   "action" : "click",
   "options" : {
@@ -17,14 +17,14 @@
   "raw_gherkin" : "I click on the \"Company Single Sign-On\" button",
   "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Company Single Sign-On']\")).click();",
   "selector" : "button",
-  "timestamp" : 1764011950500,
+  "timestamp" : 1764012941902,
   "title" : "Sign In",
   "type" : "click"
 }, {
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Cloud Sign In\" page",
   "raw_selenium" : "driver.get(\"https://idcs-9efadc0de91342138a85bc6418b7e0d4.identity.oraclecloud.com/ui/v1/signin\");",
-  "timestamp" : 1764011957926,
+  "timestamp" : 1764012949599,
   "title" : "Cloud Sign In",
   "type" : "navigation",
   "url" : "https://idcs-9efadc0de91342138a85bc6418b7e0d4.identity.oraclecloud.com/ui/v1/signin"
@@ -40,7 +40,7 @@
   "raw_gherkin" : "I enter \"Fatech.user\" into the \"User Name\"",
   "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-username\")).sendKeys(\"Fatech.user\");",
   "selector" : "textbox",
-  "timestamp" : 1764011965780,
+  "timestamp" : 1764012967234,
   "title" : "Cloud Sign In",
   "type" : "change",
   "value" : "Fatech.user"
@@ -56,7 +56,7 @@
   "raw_gherkin" : "I enter \"Intercol@2022b\" into the \"Password\"",
   "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-password|input\")).sendKeys(\"Intercol@2022b\");",
   "selector" : "textbox",
-  "timestamp" : 1764011974162,
+  "timestamp" : 1764012973821,
   "title" : "Cloud Sign In",
   "type" : "change",
   "value" : "Intercol@2022b"
@@ -69,28 +69,49 @@
   "raw_gherkin" : "I click on the \"Sign In\" button",
   "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Sign In']\")).click();",
   "selector" : "button",
-  "timestamp" : 1764011976302,
+  "timestamp" : 1764012975364,
   "title" : "Cloud Sign In",
   "type" : "click"
 }, {
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Welcome\" page",
   "raw_selenium" : "",
-  "timestamp" : 1764011981748,
+  "timestamp" : 1764012981343,
   "title" : "Welcome",
   "type" : "navigation",
-  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/AtkHomePageWelcome?_adf.ctrl-state=w1mw7vkx2_1&_adf.no-new-window-redirect=true&_afrLoop=55041323793615238&_afrWindowMode=2&_afrWindowId=null&_afrFS=16&_afrMT=screen&_afrMFW=1280&_afrMFH=533&_afrMFDW=1280&_afrMFDH=720&_afrMFC=8&_afrMFCI=0&_afrMFM=0&_afrMFR=144&_afrMFG=0&_afrMFS=0&_afrMFO=0"
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/AtkHomePageWelcome?_adf.ctrl-state=q1iia6czs_1&_adf.no-new-window-redirect=true&_afrLoop=26754929350643498&_afrWindowMode=2&_afrWindowId=null&_afrFS=16&_afrMT=screen&_afrMFW=1280&_afrMFH=533&_afrMFDW=1280&_afrMFDH=720&_afrMFC=8&_afrMFCI=0&_afrMFM=0&_afrMFR=144&_afrMFG=0&_afrMFS=0&_afrMFO=0"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Home",
+    "id" : "pt1:_UIShome",
+    "primary_name" : "Home"
+  },
+  "raw_gherkin" : "I click on the \"Home\" link",
+  "raw_selenium" : "driver.findElement(By.linkText(\"Home\")).click();",
+  "selector" : "link",
+  "timestamp" : 1764012995542,
+  "title" : "Welcome",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "I navigate to \"Oracle Fusion Cloud Applications\" page",
+  "raw_selenium" : "driver.get(\"https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome?_adf.ctrl-state=q1iia6czs_5&fnd=%3B%3B%3B%3Bfalse%3B256%3B%3B%3B&_afrLoop=26754947642677904\");",
+  "timestamp" : 1764013002986,
+  "title" : "Oracle Fusion Cloud Applications",
+  "type" : "navigation",
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/FuseWelcome?_adf.ctrl-state=q1iia6czs_5&fnd=%3B%3B%3B%3Bfalse%3B256%3B%3B%3B&_afrLoop=26754947642677904"
 }, {
   "action" : "click",
   "options" : {
     "id" : "pt1:_UIScmil3u",
-    "primary_name" : "Xmx"
+    "primary_name" : "Settings and Actions"
   },
-  "raw_gherkin" : "I click on the \"Xmx\" link",
-  "raw_selenium" : "driver.findElement(By.cssSelector(\"a.xmx\")).click();",
+  "raw_gherkin" : "I click on the \"Settings and Actions\" link",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//a[.//img[@title=\\\"Settings and Actions\\\" or @alt=\\\"Settings and Actions\\\"]]\")).click();",
   "selector" : "link",
-  "timestamp" : 1764012019185,
-  "title" : "Welcome",
+  "timestamp" : 1764013022787,
+  "title" : "Oracle Fusion Cloud Applications",
   "type" : "click"
 }, {
   "action" : "click",
@@ -102,7 +123,7 @@
   "raw_gherkin" : "I click on the \"Company Single Sign-On\" button",
   "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Company Single Sign-On']\")).click();",
   "selector" : "button",
-  "timestamp" : 1764011951658,
+  "timestamp" : 1764012942802,
   "title" : "Sign In",
   "type" : "click"
 }, {
@@ -116,17 +137,17 @@
   "raw_gherkin" : "I click on the \"Company Single Sign-On\" button",
   "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Company Single Sign-On']\")).click();",
   "selector" : "button",
-  "timestamp" : 1764011951659,
+  "timestamp" : 1764012942803,
   "title" : "Sign In",
   "type" : "click"
 }, {
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Single Sign-Off consent\" page",
-  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/fusion_apps/pages/logoutConsent.jsp?logout_done_url=https%3A%2F%2Feits-test.fa.em2.oraclecloud.com%3A443%2FfscmUI%2FadfAuthentication%3F_adf.authenticate%3Dtrue&logoutId=3C7BAC514BB5AA6FBD369AAD76556B47169AB66A9F3A221D660A17437C9115CE\");",
-  "timestamp" : 1764012105377,
+  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/fusion_apps/pages/logoutConsent.jsp?logout_done_url=https%3A%2F%2Feits-test.fa.em2.oraclecloud.com%3A443%2FfscmUI%2FadfAuthentication%3F_adf.authenticate%3Dtrue&logoutId=BF87A8746FC41F439842E48FBC1630B09D1D39A31BA1BD656F36271C5D901722\");",
+  "timestamp" : 1764013035811,
   "title" : "Single Sign-Off consent",
   "type" : "navigation",
-  "url" : "https://eits-test.login.em2.oraclecloud.com/fusion_apps/pages/logoutConsent.jsp?logout_done_url=https%3A%2F%2Feits-test.fa.em2.oraclecloud.com%3A443%2FfscmUI%2FadfAuthentication%3F_adf.authenticate%3Dtrue&logoutId=3C7BAC514BB5AA6FBD369AAD76556B47169AB66A9F3A221D660A17437C9115CE"
+  "url" : "https://eits-test.login.em2.oraclecloud.com/fusion_apps/pages/logoutConsent.jsp?logout_done_url=https%3A%2F%2Feits-test.fa.em2.oraclecloud.com%3A443%2FfscmUI%2FadfAuthentication%3F_adf.authenticate%3Dtrue&logoutId=BF87A8746FC41F439842E48FBC1630B09D1D39A31BA1BD656F36271C5D901722"
 }, {
   "action" : "click",
   "options" : {
@@ -138,17 +159,17 @@
   "raw_gherkin" : "I click on the \"Confirm\" button",
   "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Confirm']\")).click();",
   "selector" : "button",
-  "timestamp" : 1764012111205,
+  "timestamp" : 1764013053935,
   "title" : "Single Sign-Off consent",
   "type" : "click"
 }, {
   "action" : "navigate",
   "raw_gherkin" : "I navigate to \"Sign In\" page",
-  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DZyJUOJtzoV8LgdU%2BWZSMv1G3Xsi%2B4WrBUnjtvbfv8M%2FxKvN98NP%2Fi4lWTqmZqakOWcWYvbmhNLbPe08DJZdXBZzGJfqIXMluy3RVWJnMML04NA%2B7ZIRO9jGUTSbOa7RUuBgTyQqKNfimQl50%2BslRoU1Nek33%2FUGLreHpc5JqIAF0gGYquUPLXUDVNRnSb%2Fsri9mOqwRXDKDmUqYheAO8a1818zooy%2B5qHaxG%2BoHLA5YYpckFElj%2BmkNXrDxD5w9SE5bNuQXavtemfxWza0qqXB4wNIleHT2OYvpy59OO5UmNSS%2FHgWD0VXSRnWnb5YvRJI%2FHD1t%2Bk7VkRigcHKaXflrlefBQcdSyTPezt8aIONsdSgw95AQdKWRXHda9maVsg7wid%2F0%2Bnj4Gf2y7awl5Tk00ngQBfj7L6DB1ggU2pliSVVdZRLpUuIa2y%2FENrd97%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3De49b08fa512c8b7748fc0dcea661aefb3e1cc863&ECID-Context=1.006H5kJgB_X4ykM6yNedMG007E5o0000Hn%3BkXjE\");",
-  "timestamp" : 1764012114938,
+  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3D%2Bcy%2FqkD0WCsnVnNkkWCyfCgVluearxjiiWvRqcEsF8RovxESik1PrRZJym1WO%2FscCH374NVnr5DOrMDekw5vKpLjeDNeCskwdeCiz%2Bh4N6hg3w8%2FjH2Qof0yCbOTeS%2FB85LQC6l9srQz6hzCVYwZZ2AWeBij2vFnwcw%2BcvMtMxPbIoUI3WmWkbtblXB9kyTF5QHvtiZwqojVuwC57Gdc1XQQQs1EmgG77P5XdFkbM4wjK6MlC49bnvEd0BshUqxZs8SUQsCyMJkwVop%2BaRMYR1NhpADfuA2PpJUXrIc5vld9shVnEIuKMDrJKU5QC8fc1k9PZ65fhQSVUJvsVH4H2dIwbJPBWofss51vWdUeyhfRhW2ENbZMyh5U%2BiiHUGTcw8uRYrAfoHk6Uat%2BN0Y20jm41lHAHnVqQceiUp%2F2rxWvq4FPgpTgwHAzuaNHoknY%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3Dd7e85b5cb2609ef39adf2b5e04f86c6d05b27170&ECID-Context=1.006H5lBvwfY4ykM6yNedMG007E5o0000oU%3BkXjE\");",
+  "timestamp" : 1764013058701,
   "title" : "Sign In",
   "type" : "navigation",
-  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DZyJUOJtzoV8LgdU%2BWZSMv1G3Xsi%2B4WrBUnjtvbfv8M%2FxKvN98NP%2Fi4lWTqmZqakOWcWYvbmhNLbPe08DJZdXBZzGJfqIXMluy3RVWJnMML04NA%2B7ZIRO9jGUTSbOa7RUuBgTyQqKNfimQl50%2BslRoU1Nek33%2FUGLreHpc5JqIAF0gGYquUPLXUDVNRnSb%2Fsri9mOqwRXDKDmUqYheAO8a1818zooy%2B5qHaxG%2BoHLA5YYpckFElj%2BmkNXrDxD5w9SE5bNuQXavtemfxWza0qqXB4wNIleHT2OYvpy59OO5UmNSS%2FHgWD0VXSRnWnb5YvRJI%2FHD1t%2Bk7VkRigcHKaXflrlefBQcdSyTPezt8aIONsdSgw95AQdKWRXHda9maVsg7wid%2F0%2Bnj4Gf2y7awl5Tk00ngQBfj7L6DB1ggU2pliSVVdZRLpUuIa2y%2FENrd97%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3De49b08fa512c8b7748fc0dcea661aefb3e1cc863&ECID-Context=1.006H5kJgB_X4ykM6yNedMG007E5o0000Hn%3BkXjE"
+  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3D%2Bcy%2FqkD0WCsnVnNkkWCyfCgVluearxjiiWvRqcEsF8RovxESik1PrRZJym1WO%2FscCH374NVnr5DOrMDekw5vKpLjeDNeCskwdeCiz%2Bh4N6hg3w8%2FjH2Qof0yCbOTeS%2FB85LQC6l9srQz6hzCVYwZZ2AWeBij2vFnwcw%2BcvMtMxPbIoUI3WmWkbtblXB9kyTF5QHvtiZwqojVuwC57Gdc1XQQQs1EmgG77P5XdFkbM4wjK6MlC49bnvEd0BshUqxZs8SUQsCyMJkwVop%2BaRMYR1NhpADfuA2PpJUXrIc5vld9shVnEIuKMDrJKU5QC8fc1k9PZ65fhQSVUJvsVH4H2dIwbJPBWofss51vWdUeyhfRhW2ENbZMyh5U%2BiiHUGTcw8uRYrAfoHk6Uat%2BN0Y20jm41lHAHnVqQceiUp%2F2rxWvq4FPgpTgwHAzuaNHoknY%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3Dd7e85b5cb2609ef39adf2b5e04f86c6d05b27170&ECID-Context=1.006H5lBvwfY4ykM6yNedMG007E5o0000oU%3BkXjE"
 }, {
   "action" : "click",
   "options" : {
@@ -160,7 +181,7 @@
   "raw_gherkin" : "I click on the \"Company Single Sign-On\" button",
   "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Company Single Sign-On']\")).click();",
   "selector" : "button",
-  "timestamp" : 1764012114938,
+  "timestamp" : 1764013058701,
   "title" : "Sign In",
   "type" : "click"
 } ]
