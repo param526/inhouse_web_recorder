@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="66b0d625-eaf9-4b68-b406-25f81fbd43fb" name="Changes" comment="updated recorder.js" />
+    <list default="true" id="66b0d625-eaf9-4b68-b406-25f81fbd43fb" name="Changes" comment="updated recorder.js">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/ReplaySteps.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/recordings/action_logs.json" beforeDir="false" afterPath="$PROJECT_DIR$/recordings/action_logs.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/RawSeleniumReplayer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/RawSeleniumReplayer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/UrlOpenerServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/UrlOpenerServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/UrlOpenerServer.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/UrlOpenerServer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -17,6 +27,9 @@
         <option value="Class" />
       </list>
     </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
@@ -36,6 +49,8 @@
     "Maven.url-opener-selenium [org.codehaus.mojo:exec-maven-plugin:3.1.0:java].executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
     "last_opened_file_path": "D:/url-opener-selenium/src/main/resources/features",
     "settings.editor.selected.configurable": "preferences.pluginManager"
   }

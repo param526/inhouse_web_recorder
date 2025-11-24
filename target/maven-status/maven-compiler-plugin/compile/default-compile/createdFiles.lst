@@ -2,7 +2,9 @@ com\example\FeatureInfo.class
 com\example\RawSeleniumReplayer.class
 com\example\UrlOpenerServer.class
 com\example\RecordedEvent.class
+com\example\RawSeleniumReplayer$StepResult.class
 com\example\RecorderServer$Status.class
+com\example\ReplaySteps.class
 com\example\RawSeleniumReplayer$1.class
 com\example\RecorderServer.class
 com\example\GherkinGenerator.class

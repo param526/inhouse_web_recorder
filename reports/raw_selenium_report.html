@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Raw Selenium Replay Report</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #ffffff;
+      --border-subtle: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --pass: #16a34a;
+      --fail: #dc2626;
+      --chip-bg-pass: #dcfce7;
+      --chip-bg-fail: #fee2e2;
+      --chip-text-pass: #166534;
+      --chip-text-fail: #991b1b;
+      --row-hover: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: #f1f5f9;
+      color: var(--text-main);
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+    .header {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      border-radius: 16px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.35);
+      margin-bottom: 24px;
+    }
+    .header-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .header-sub {
+      font-size: 13px;
+      color: #cbd5f5;
+    }
+    .status-pill {
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: rgba(15,23,42,0.8);
+      border: 1px solid rgba(148,163,184,0.6);
+    }
+    .status-pill.pass { border-color: #22c55e; color: #bbf7d0; }
+    .status-pill.fail { border-color: #f97373; color: #fecaca; }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #22c55e;
+    }
+    .status-pill.fail .status-dot { background-color: #f97316; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .summary-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 4px 12px rgba(15,23,42,0.08);
+    }
+    .summary-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .summary-value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .summary-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      word-break: break-all;
+    }
+    .table-card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.1);
+      overflow: hidden;
+    }
+    .table-wrapper {
+      max-height: 640px;
+      overflow: auto;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 13px;
+    }
+    thead th {
+      position: sticky;
+      top: 0;
+      background-color: #f8fafc;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-muted);
+      z-index: 1;
+    }
+    tbody td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) { background-color: #f9fafb; }
+    tbody tr:hover { background-color: var(--row-hover); }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .status-chip.pass {
+      background-color: var(--chip-bg-pass);
+      color: var(--chip-text-pass);
+    }
+    .status-chip.fail {
+      background-color: var(--chip-bg-fail);
+      color: var(--chip-text-fail);
+    }
+    .mono {
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+    }
+    pre {
+      white-space: pre-wrap;
+      margin: 0;
+    }
+    .stack-toggle {
+      font-size: 11px;
+      color: #2563eb;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-bottom: 4px;
+      display: inline-block;
+    }
+    .stack-content {
+      display: none;
+      margin-top: 4px;
+      max-height: 220px;
+      overflow: auto;
+      background-color: #0b1120;
+      color: #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 10px;
+      border: 1px solid #1f2937;
+    }
+    .stack-content pre { font-size: 11px; }
+    .small { font-size: 11px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-main">
+        <div class="header-title">Raw Selenium Replay Report</div>
+        <div class="header-sub">Generated at 2025-11-24 13:59:52 Â· 12 steps Â· Total duration 38537 ms</div>
+      </div>
+      <div class="status-pill pass">        <span class="status-dot"></span>
+        <span>ALL STEPS PASSED</span>
+      </div>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Total Steps</div>
+        <div class="summary-value">12</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Passed</div>
+        <div class="summary-value" style="color: var(--pass);">12</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Failed</div>
+        <div class="summary-value" style="color: var(--fail);">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Pass Rate</div>
+        <div class="summary-value">100.0%</div>
+        <div class="summary-sub">JSON: D:\url-opener-selenium\recordings\action_logs.json</div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;">#</th>
+              <th style="width: 90px;">Status</th>
+              <th style="width: 80px;">Duration</th>
+              <th>Raw Selenium</th>
+              <th style="width: 200px;">Error Message</th>
+              <th style="width: 260px;">Stack Trace</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>11694 ms</td>
+              <td class="mono"><pre>driver.get("https://gap.com/");</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>2179 ms</td>
+              <td class="mono"><pre>driver.get("https://www.gap.com/");</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>4135 ms</td>
+              <td class="mono"><pre>driver.findElement(By.linkText("Men")).click();</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>2771 ms</td>
+              <td class="mono"><pre>driver.get("https://www.gap.com/browse/men?cid=5063&amp;mlink=39813%2C30012485%2CMegnav_Men&amp;clink=30012485&amp;nav=meganav%3AMen%3A%3A");</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>131 ms</td>
+              <td class="mono"><pre>driver.findElement(By.linkText("Gifts")).click();</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>86 ms</td>
+              <td class="mono"><pre>driver.findElement(By.linkText("Gifts")).click();</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>9050 ms</td>
+              <td class="mono"><pre>driver.findElement(By.linkText("GapStudio")).click();</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>1793 ms</td>
+              <td class="mono"><pre>driver.get("https://www.gap.com/browse/info.do?cid=3045347&amp;nav=meganav%3AGapStudio%3A%3A");</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>92 ms</td>
+              <td class="mono"><pre>driver.findElement(By.xpath("//label[normalize-space(.)='My account']/following-sibling::button | //button[@aria-label='My account'] | //button[@placeholder='My account']")).click();</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>5768 ms</td>
+              <td class="mono"><pre>driver.get("https://secure-www.gap.com/my-account/sign-in?_gl=1*17zerfo*_gcl_au*MTA4MDQyNzI3MC4xNzYzOTcyNTQ3");</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>150 ms</td>
+              <td class="mono"><pre>driver.findElement(By.name("email")).sendKeys("fdsfsfsdfs");</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td><span class="status-chip pass">PASS</span></td>
+              <td>688 ms</td>
+              <td class="mono"><pre>driver.findElement(By.xpath("//button[normalize-space(.)='Continue']")).click();</pre></td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="small" style="margin-top: 12px;">Generated by RawSeleniumReplayer.</p>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var toggles = document.querySelectorAll('.stack-toggle');
+      toggles.forEach(function (toggle) {
+        toggle.addEventListener('click', function () {
+          var targetId = this.getAttribute('data-target');
+          var el = document.getElementById(targetId);
+          if (!el) return;
+          var visible = el.style.display === 'block';
+          el.style.display = visible ? 'none' : 'block';
+          this.textContent = visible ? 'View stack trace' : 'Hide stack trace';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

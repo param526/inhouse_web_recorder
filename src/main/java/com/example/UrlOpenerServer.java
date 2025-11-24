@@ -187,7 +187,6 @@ public class UrlOpenerServer {
             }
         });
 
-
         // Read recorded actions (in-memory) - Reads from persistent list
         get("/recorded-actions", (req, res) -> {
             try {
@@ -238,8 +237,7 @@ public class UrlOpenerServer {
                 String workingDir = System.getProperty("user.dir");
                 System.out.println("Working directory: " + workingDir);
 
-                // ✅ Correct relative path based on what you told me:
-                // D:/url-opener-selenium/recordings/action_logs.log
+                // recordings/action_logs.json
                 String jsonPath = workingDir
                         + File.separator + "recordings"
                         + File.separator + "action_logs.json";
@@ -255,12 +253,26 @@ public class UrlOpenerServer {
                     return msg;
                 }
 
-                // Extension .log is OK as long as contents are JSON
-                RawSeleniumReplayer.replayFromJson(jsonFile.getAbsolutePath());
+                // reports/raw_selenium_report.html
+                String reportDirPath = workingDir + File.separator + "reports";
+                File reportDir = new File(reportDirPath);
+                if (!reportDir.exists()) {
+                    reportDir.mkdirs();
+                }
 
-                res.status(200);
+                String reportPath = reportDirPath + File.separator + "raw_selenium_report.html";
+
+                boolean ok = RawSeleniumReplayer.replayFromJson(
+                        jsonFile.getAbsolutePath(),
+                        reportPath
+                );
+
+                res.status(ok ? 200 : 500);
                 res.type("text/plain");
-                return "Replay completed successfully.";
+                return ok
+                        ? "Replay completed successfully. Report: " + reportPath
+                        : "Replay had failures. See report: " + reportPath;
+
             } catch (Exception e) {
                 e.printStackTrace();
                 res.status(500);
@@ -268,6 +280,7 @@ public class UrlOpenerServer {
                 return "Replay failed: " + e.toString();
             }
         });
+
 
 
         System.out.println("Selenium URL Launcher + Recorder running on http://localhost:4567");
