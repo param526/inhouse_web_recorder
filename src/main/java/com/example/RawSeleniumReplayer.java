@@ -58,7 +58,7 @@ public class RawSeleniumReplayer {
         String errorMessage;
         String stackTrace;
 
-        // NEW – relative filename for screenshot (e.g. "step_001.png")
+        // For screenshots
         String screenshotFileName;
     }
 
@@ -92,7 +92,7 @@ public class RawSeleniumReplayer {
         boolean allPassed = false;
         WebDriver driver = null;
 
-        // NEW – screenshots directory based on reportPath
+        // screenshots folder next to the report
         File reportFile = new File(reportPath);
         File screenshotsDir = new File(reportFile.getParentFile(), "screenshots");
         if (!screenshotsDir.exists()) {
@@ -103,8 +103,7 @@ public class RawSeleniumReplayer {
             // 1) Read events from JSON
             List<RecordedEvent> events = mapper.readValue(
                     new File(jsonPath),
-                    new TypeReference<List<RecordedEvent>>() {
-                    }
+                    new TypeReference<List<RecordedEvent>>() {}
             );
 
             // 2) Start WebDriver
@@ -114,10 +113,11 @@ public class RawSeleniumReplayer {
 
             driver = new ChromeDriver(options);
             driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
-//            Thread.sleep(10000);
 
-            // 3) Replay all events, collecting StepResult for each
             int index = 1;
+            boolean stopAfterFailure = false;
+
+            // 3) Replay all events
             for (RecordedEvent ev : events) {
                 if (ev == null || ev.raw_selenium == null || ev.raw_selenium.trim().isEmpty()) {
                     continue;
@@ -129,15 +129,14 @@ public class RawSeleniumReplayer {
                 StepResult step = new StepResult();
                 step.index = index++;
                 step.rawScript = script;
-                // assuming JSON field is "raw_gherkin" and RecordedEvent has matching field
-                step.rawGherkin = ev.raw_gherkin;
+                step.rawGherkin = ev.raw_gherkin;  // adjust if your field is named differently
                 long start = System.currentTimeMillis();
 
                 try {
                     if (isNavigation(script)) {
-                        executeNavigation(script, driver);
+                        executeNavigation(script, driver);     // you can have this wait for page load
                     } else {
-                        executeElement(script, driver);
+                        executeElement(script, driver);        // with explicit waits internally
                     }
 
                     step.success = true;
@@ -149,13 +148,24 @@ public class RawSeleniumReplayer {
                     step.stackTrace = getStackTraceAsString(e);
                     System.out.println("Error executing step: " + script);
                     e.printStackTrace();
+
+                    // stop replaying after first failure
+                    stopAfterFailure = true;
                 } finally {
                     step.durationMs = System.currentTimeMillis() - start;
-                    // NEW – capture screenshot for this step (nav or action)
+
+                    // 👇 capture screenshot for this step (whether PASS or FAIL)
                     if (driver != null) {
                         step.screenshotFileName = captureScreenshot(driver, screenshotsDir, step.index);
                     }
+
                     results.add(step);
+                }
+
+                if (stopAfterFailure) {
+                    System.out.println("⚠ Aborting replay after step " + step.index +
+                            " due to failure. Remaining steps will be skipped.");
+                    break;
                 }
 
                 Thread.sleep(300);
@@ -163,43 +173,20 @@ public class RawSeleniumReplayer {
 
             Thread.sleep(1200);
 
-            // 4) Compute overall result from collected steps
             allPassed = results.stream().allMatch(r -> r.success);
             System.out.println("Overall Result: " + (allPassed ? "PASS" : "FAIL"));
-
             return allPassed;
 
-        } catch (Exception fatal) {
-            // Any unexpected fatal error before/around the loop
-            System.out.println("Fatal error during replay: " + fatal.getMessage());
-            fatal.printStackTrace();
-
-            // If no steps were recorded at all, add a synthetic "framework error" step
-            if (results.isEmpty()) {
-                StepResult setupStep = new StepResult();
-                setupStep.index = 1;
-                setupStep.rawScript = "FRAMEWORK / SETUP ERROR";
-                setupStep.rawGherkin = "Framework error before executing steps";
-                setupStep.success = false;
-                setupStep.errorMessage = fatal.getMessage();
-                setupStep.stackTrace = getStackTraceAsString(fatal);
-                setupStep.durationMs = 0L;
-                results.add(setupStep);
-            }
-
-            // allPassed stays false
-            throw fatal; // still let caller know it failed (your /replay handler catches it)
         } finally {
-            // 5) Always try to quit driver
             if (driver != null) {
                 try {
                     driver.quit();
-                } catch (Exception quitEx) {
-                    System.out.println("Warning: error quitting driver: " + quitEx.getMessage());
+                } catch (Exception e) {
+                    System.out.println("Warning: error quitting driver: " + e.getMessage());
                 }
             }
 
-            // 6) ALWAYS try to generate the HTML report, even if an exception occurred
+            // Always generate report
             try {
                 generateHtmlReport(results, jsonPath, reportPath, allPassed);
                 System.out.println("HTML report written to: " + reportPath);
@@ -207,7 +194,7 @@ public class RawSeleniumReplayer {
                 System.err.println("Failed to write replay HTML report: " + io.getMessage());
             }
 
-            // 7) Cucumber integration – log + attach report (if Scenario is provided)
+            // Cucumber integration (after report generation)
             if (scenario != null) {
                 scenario.log("RawSeleniumReplayer finished. Result: " +
                         (allPassed ? "PASS" : "FAIL"));
@@ -228,7 +215,6 @@ public class RawSeleniumReplayer {
                     }
                 }
 
-                // Attach report after we've generated it
                 try {
                     byte[] bytes = Files.readAllBytes(Paths.get(reportPath));
                     scenario.attach(bytes, "text/html", "Raw Selenium Replay Report");
@@ -238,6 +224,7 @@ public class RawSeleniumReplayer {
             }
         }
     }
+
     // ========== HELPERS ==========
 
     private static boolean isNavigation(String raw) {
