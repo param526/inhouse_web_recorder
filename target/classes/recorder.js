@@ -1,7 +1,7 @@
 (function () {
     const STORAGE_KEY = '__recordedEvents';
     // 🔥 Debounce config for text input recording
-    const TEXT_CHANGE_DEBOUNCE_MS = 700; // 1.5 sec idle time before recording
+    const TEXT_CHANGE_DEBOUNCE_MS = 700;
     const pendingTextChangeTimers = {};   // key -> { timeoutId, rec }
 
     let lsDirty = false;
@@ -54,7 +54,6 @@
         lsDirty = true;
         scheduleLocalStorageFlush();
 
-        // optional: comment this out if you want max speed
         // console.log('[recorder] Event stored:', rec.type, rec.action, rec.raw_gherkin);
     }
 
@@ -143,6 +142,8 @@
         }, 100);
     });
 
+    // --- Dedicated handler for Select2 / dropdown options --
+
     (function (history) {
         const pushState = history.pushState;
         history.pushState = function () {
@@ -158,7 +159,6 @@
 
     // ---- Helpers for click/change recording ----
 
-    // ⭐ UPDATED: now walks ancestors, reads title/aria-label/SVG <title> etc.
     function getAccessibleName(t) {
         if (!t) return '';
 
@@ -270,77 +270,75 @@
         return { type: 'By.cssSelector', value: tag };
     }
 
-    // --- Special handling for Select2 / dropdown options ---
-    document.addEventListener('mouseup', function (e) {
+    // --- Dedicated handler for dropdown options (Select2 & friends) ---
+    function handleDropdownOptionEvent(e) {
         try {
-            // Only care about actual Select2 option elements
-            var optionEl = e.target.closest && e.target.closest('.select2-results__option');
-            if (!optionEl) return; // Not a Select2 option → ignore
+            if (!e || !e.target || !e.target.closest) return;
 
-            var rec = {};
+            // Cover Select2 + generic ARIA options
+            const optionEl = e.target.closest(
+                '.select2-results__option,' +
+                'li[role="option"],' +
+                '[role="option"],' +
+                'li[aria-selected]'
+            );
+
+            if (!optionEl) return;  // not a dropdown option → ignore
+
+            const optionText = (optionEl.innerText || optionEl.textContent || '').trim();
+            if (!optionText) return;
+
+            const rec = {};
             rec.timestamp = Date.now();
-            rec.type = 'click';              // treat as click in our model
+            rec.type = 'click';
             rec.title = document.title;
+            rec.action = 'click';
 
-            // Get only the text of the option, not the whole list
-            var elementText = optionEl.textContent ? optionEl.textContent.trim() : '';
-            var accName = ''; // not really needed for Select2 options
+            // 🔒 Build a stable locator for this option
+            const escapedText = optionText.replace(/'/g, "\\'");
 
-            // Use your existing locator helper (it will build an XPath with the option text)
-            var locator = generateSeleniumLocator(optionEl, accName);
-            var locatorValue = locator.value.replace(/\"/g, '\\\"');
+            let locatorExpr;
 
-            rec.selector = 'option';
-
-            var gherkinName = elementText;
-            rec.options = {};
-            if (elementText.length > 0) {
-                rec.options.element_text = elementText;
-                rec.options.primary_name = elementText;
+            // Select2-style option
+            if (optionEl.classList.contains('select2-results__option')) {
+                locatorExpr =
+                    'By.xpath("//li[contains(@class,\'select2-results__option\') and normalize-space()=\'' +
+                    escapedText + '\']")';
+            }
+            // Generic ARIA role="option"
+            else if (optionEl.getAttribute('role') === 'option' ||
+                     optionEl.getAttribute('aria-selected') != null) {
+                locatorExpr =
+                    'By.xpath("(//*[@role=\'option\' and normalize-space()=\'' +
+                    escapedText + '\'])[1]")';
+            }
+            // Fallback – any element with that text
+            else {
+                locatorExpr =
+                    'By.xpath("(//*[normalize-space()=\'' + escapedText + '\'])[1]")';
             }
 
-            rec.action = 'click';
-            rec.raw_gherkin = 'I select the "' + gherkinName + '" option';
             rec.raw_selenium =
-                'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).click();';
+                'driver.findElement(' + locatorExpr + ').click();';
+
+            rec.raw_gherkin = 'I select "' + optionText + '" from the dropdown';
+
+            rec.selector = 'option';
+            rec.options = {
+                element_text: optionText,
+                primary_name: optionText
+            };
 
             persistEvent(rec);
         } catch (err) {
-            console && console.log && console.log('[recorder] select2 option mouseup handler error', err);
+            console && console.log && console.log('[recorder] dropdown option handler error', err);
         }
-    }, true);
+    }
 
-    document.addEventListener('click', function (event) {
-        let t = event.target;
+    // Attach to BOTH mouseup + click so we catch whatever the widget uses
+    document.addEventListener('mouseup', handleDropdownOptionEvent, true);
+    document.addEventListener('click', handleDropdownOptionEvent, true);
 
-        // If click lands on a text node, go to its parent element
-        if (t && t.nodeType === 3) {
-            t = t.parentNode;
-        }
-
-        // 🔧 NEW: normalize to *clickable ancestor* if possible
-        if (t && t.closest) {
-            const clickable = t.closest('button, a, [role="button"], [onclick]');
-            if (clickable) {
-                t = clickable;
-            }
-        }
-
-        const tag  = (t.tagName || '').toLowerCase();
-        const role = (t.getAttribute && t.getAttribute('role')) || '';
-
-        // 🔍 Optional debug for this SSO case
-        // console.log('REC DEBUG CLICK:', { tag, role, id: t.id, cls: t.className });
-
-        // ... from here down, use THIS `t`, `tag`, `role` ...
-        // e.g. resolve locator based on `t`
-        // const locator = resolveLocator(t);
-        // const gherkinName = buildGherkinName(t, locator);
-
-        switch (event.type) {
-            // ⬇ your case 'click' goes here
-        }
-    });
 
     // ---- Main event recorder for click & change ----
     function recordEvent(e) {
@@ -348,7 +346,6 @@
             if (!e) return;
 
             // 🔇 Ignore script-generated CHANGE events (auto-fill, .trigger('change'), etc.)
-            // but DO NOT block clicks here (we want Select2 option clicks).
             if (e.type === 'change' && e.isTrusted === false) {
                 return;
             }
@@ -360,8 +357,7 @@
                 return;
             }
 
-            // ⭐ NEW: For click events, promote inner SVG/ICON clicks
-            //         to the closest clickable ancestor (button/link/etc.)
+            // ⭐ For click events, promote inner icon/text clicks to clickable ancestor
             if (e.type === 'click' && t.closest) {
                 var clickableAncestor = t.closest('button, a, [role="button"], [role="link"], [onclick]');
                 if (clickableAncestor) {
@@ -375,7 +371,8 @@
             rec.title = document.title;
 
             var accName = getAccessibleName(t);
-            var elementText = t.innerText ? t.innerText.trim() : (t.textContent ? t.textContent.trim() : '');
+            var elementText = t.innerText ? t.innerText.trim() :
+                              (t.textContent ? t.textContent.trim() : '');
 
             // Role detection
             var role = t.getAttribute('role');
@@ -388,7 +385,7 @@
                     } else if (t.type === 'radio') {
                         role = 'radio';
                     } else if (t.type === 'submit' || t.type === 'button') {
-                        role = 'button'; // treat submit as button
+                        role = 'button';
                     } else if (['text', 'password', 'email', 'search', 'number'].includes(t.type)) {
                         role = 'textbox';
                     } else {
@@ -414,22 +411,16 @@
             rec.selector = role;
 
             // Gherkin naming priority
-            // ✅ Gherkin naming priority (prefer label/aria-label over technical name)
             var gherkinName = '';
             if (elementText.length > 0) {
-                // Visible text on the element (e.g. button text, link text)
                 gherkinName = elementText;
             } else if (accName && accName.length > 0) {
-                // Accessible name: aria-label, <label for>, title, SVG <title>, etc.
-                gherkinName = accName;      // 👈 e.g. "Registry ID"
+                gherkinName = accName;
             } else if (t.value && t.type === 'submit') {
-                // Submit button text
-                gherkinName = t.value;      // e.g. "Sign in"
+                gherkinName = t.value;
             } else if (t.name && t.name.length > 0) {
-                // Technical name only if we have nothing better
                 gherkinName = t.name;
             } else if (t.id && t.id.length > 0) {
-                gherkinName = t.id;
                 gherkinName = t.id;
             }
 
@@ -440,59 +431,314 @@
             rec.options.primary_name = gherkinName;
 
             switch (e.type) {
-               case 'click': {
 
-                   // 🔧 Only skip true textboxes, not buttons/links mis-labeled as textbox
-                   if (role === 'textbox' && tag !== 'button' && tag !== 'a') {
-                       return;
-                   }
+                // ================= CLICK HANDLING =================
+                case 'click': {
+                    // Normalize basics
+                    const tag = (t.tagName || '').toLowerCase();
+                    const roleAttr = (t.getAttribute && t.getAttribute('role')) || '';
+                    const roleLower = roleAttr.toLowerCase();
+                    const classList = Array.from(t.classList || []);
 
-                   rec.action = 'click';
-                   rec.raw_selenium =
-                       'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
+                    // Is this click somewhere inside a dropdown widget?
+                    const dropdownContainer =
+                        t.closest && t.closest(
+                            [
+                                '.select2-container',
+                                '.select2',
+                                '[role="combobox"]',
+                                '[aria-haspopup="listbox"]',
+                                '.oj-select-choice',
+                                '.oj-combobox-choice',
+                                '.ui-selectmenu-button',
+                                '.dropdown-toggle'
+                            ].join(',')
+                        );
+                    const insideDropdown = !!dropdownContainer;
 
-                   // ✅ Checkbox handling
-                   if (t.type === 'checkbox' || role === 'checkbox') {
-                       if (t.checked) {
-                           rec.raw_gherkin = 'I check the "' + gherkinName + '" option';
-                       } else {
-                           rec.raw_gherkin = 'I uncheck the "' + gherkinName + '" option';
-                       }
-                       break;
-                   }
+                    // Is this an option inside a dropdown?
+                    const optionEl =
+                        t.closest && t.closest(
+                            [
+                                '.select2-results__option',
+                                'option',
+                                'li[role="option"]',
+                                '[role="option"]',
+                                'li[aria-selected]',
+                                '.ui-menu-item',
+                                '.oj-listbox-result'
+                            ].join(',')
+                        );
+                    const isDropdownOption = !!optionEl;
 
-                   // ✅ Dropdown / select-like widgets
-                   const isSelectDropdown =
-                       tag === 'select' ||                                     // native <select>
-                       (t.closest && t.closest('.select2')) ||                 // Select2 wrapper
-                       t.classList.contains('select2') ||
-                       /select|dropdown/i.test(locatorValue) ||
-                       t.getAttribute('role') === 'option' ||
-                       t.getAttribute('aria-selected') !== null;
+                    // Consider only *real* textboxes as ignorable
+                    const isRealTextbox =
+                        (tag === 'input' && [
+                            'text', 'search', 'email', 'password', 'tel', 'number', 'url'
+                        ].includes(t.type)) ||
+                        tag === 'textarea' ||
+                        t.isContentEditable === true;
 
-                   if (isSelectDropdown) {
-                       rec.raw_gherkin = 'I select the "' + gherkinName + '" option';
+                    // 🔧 Skip real text inputs, but NOT fake dropdown "textbox" spans
+                    if (isRealTextbox && roleLower === 'textbox' && !insideDropdown) {
+                        return;
+                    }
 
-                   } else if (role === 'link' || tag === 'a') {
-                       // Links
-                       rec.raw_gherkin = 'I click on the "' + gherkinName + '" link';
+                    // 🔎 Ignore big container DIV clicks (layout, info panels)
+                    const textForHeuristic = elementText || '';
 
-                   } else if (t.type === 'submit' || t.type === 'button' || role === 'button') {
-                       // 🔧 Explicitly handle <button type="button"> (your SSO button)
-                       rec.raw_gherkin = 'I click on the "' + gherkinName + '" button';
+                    const looksLikeContainerDiv =
+                        tag === 'div' &&
+                        !isDropdownOption &&
+                        !insideDropdown &&
+                        !t.hasAttribute('onclick') &&
+                        !t.getAttribute('role') &&
+                        !t.isContentEditable &&
+                        !classList.includes('input-group-addon') &&
+                        !classList.includes('select2-selection') &&
+                        !classList.includes('oj-select-choice') &&
+                        !classList.includes('oj-combobox-choice');
 
-                   } else {
-                       // Generic click fallback
-                       rec.raw_gherkin = 'I click on the "' + gherkinName + '"';
-                   }
+                    if (looksLikeContainerDiv) {
+                        const hasNewlines = textForHeuristic.indexOf('\n') !== -1;
+                        const isVeryLong  = textForHeuristic.length > 80;
 
-                   break;
-               }
+                        if (isVeryLong && hasNewlines) {
+                            return;   // ✅ treat as non-interactive layout click
+                        }
+                    }
 
+                    // ----- Determine if this click is on something we care about -----
+                    const isNativeSelect = tag === 'select';
+                    const looksLikeDropdownName =
+                        /select|dropdown/i.test(locatorValue || '');
+
+                    const isDropdownActivator =
+                        isNativeSelect ||
+                        insideDropdown ||
+                        roleLower === 'combobox' ||
+                        looksLikeDropdownName;
+
+                    const isCheckboxLike =
+                        t.type === 'checkbox' || roleLower === 'checkbox';
+
+                    const isButtonLike =
+                        t.type === 'submit' ||
+                        t.type === 'button' ||
+                        roleLower === 'button';
+
+                    const isLinkLike =
+                        roleLower === 'link' || tag === 'a';
+
+                    const hasOnclick =
+                        !!t.getAttribute('onclick') || typeof t.onclick === 'function';
+
+                    // ✅ Stimulus controllers and similar: data-action="click->..."
+                    const hasDataActionClick =
+                        !!(t.closest && t.closest('[data-action*="click->"]'));
+
+                    const isDropdownOrOption = isDropdownActivator || isDropdownOption;
+
+                    const isActionable =
+                        isDropdownOrOption ||
+                        isCheckboxLike ||
+                        isButtonLike ||
+                        isLinkLike ||
+                        hasOnclick ||
+                        hasDataActionClick;
+
+                    // Ignore generic layout / header / wrapper clicks (like plain <div>)
+                    if (!isActionable) {
+                        return;
+                    }
+
+                    rec.action = 'click';
+
+                    // ========= SPECIAL CASE: icon-only <a> like hamburger menu =========
+                    const textContent = (t.textContent || '').trim();
+                    const mainClass =
+                        classList.find(c => !c.startsWith('-')) || classList[0] || null;
+
+                    if (tag === 'a' && !textContent && mainClass) {
+                        const css = 'a.' + mainClass.split(/\s+/).join('.');
+
+                        rec.raw_selenium =
+                            'driver.findElement(By.cssSelector("' + css + '")).click();';
+
+                        const niceName = mainClass
+                            .replace(/[-_]+/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim()
+                            .replace(/^./, c => c.toUpperCase());
+
+                        rec.raw_gherkin = 'I click on the "' + niceName + '" button';
+                        rec.options.primary_name = niceName;
+                        break;
+                    }
+
+                    // ---------- 1) OPTION CLICK (generic for many dropdowns) ----------
+                    if (isDropdownOption) {
+                        const opt = optionEl;
+                        const rawOptionText = (opt.innerText || opt.textContent || '').trim();
+                        if (!rawOptionText) return;
+
+                        // Use only the first line as the key
+                        const firstLine = rawOptionText.split(/\r?\n/)[0].trim();
+                        const escapedFirstLine = firstLine.replace(/'/g, "\\'");
+
+                        let dropdownName = accName;
+                        if (!dropdownName && dropdownContainer) {
+                            dropdownName = getAccessibleName(dropdownContainer);
+                        }
+                        if (!dropdownName) {
+                            dropdownName = (gherkinName && gherkinName.length > 0)
+                                ? gherkinName
+                                : 'dropdown';
+                        }
+
+                        let locatorExpr;
+                        if (opt.classList && opt.classList.contains('select2-results__option')) {
+                            locatorExpr =
+                                "By.xpath(\"//li[contains(@class,'select2-results__option') " +
+                                "and contains(normalize-space(.), '" + escapedFirstLine + "')]\")";
+                        } else if (opt.tagName && opt.tagName.toLowerCase() === 'option') {
+                            locatorExpr =
+                                "By.xpath(\"//option[contains(normalize-space(.), '" + escapedFirstLine + "')]\")";
+                        } else {
+                            locatorExpr =
+                                "By.xpath(\"(//*[contains(normalize-space(.), '" + escapedFirstLine + "')])[1]\")";
+                        }
+
+                        rec.raw_gherkin =
+                            'I select "' + firstLine + '" from the "' + dropdownName + '" dropdown';
+
+                        rec.raw_selenium =
+                            'driver.findElement(' + locatorExpr + ').click();';
+
+                        rec.options.element_text = rawOptionText;   // full text in JSON
+                        rec.options.primary_name = firstLine;       // nice display name
+
+                        break;
+                    }
+
+                    // ---------- 2) DROPDOWN "OPEN" CLICK ----------
+                    if (isDropdownActivator) {
+                        let dropdownLabel = accName || gherkinName || 'dropdown';
+
+                        rec.raw_gherkin = 'I open the "' + dropdownLabel + '" dropdown';
+
+                        if (insideDropdown && dropdownContainer) {
+                            // 🔧 Always click a stable element for THIS dropdown instance
+                            const selectionEl =
+                                dropdownContainer.querySelector('.select2-selection') ||
+                                dropdownContainer.querySelector('.oj-select-choice') ||
+                                dropdownContainer.querySelector('.oj-combobox-choice') ||
+                                dropdownContainer;
+
+                            let byExpr;
+
+                            if (selectionEl.id) {
+                                byExpr = 'By.id("' + selectionEl.id + '")';
+                            } else {
+                                const ariaLabelledby = selectionEl.getAttribute('aria-labelledby');
+                                const containerId    = dropdownContainer.id;
+                                const dataSelect2Id  = dropdownContainer.getAttribute('data-select2-id');
+
+                                if (ariaLabelledby) {
+                                    byExpr =
+                                        'By.cssSelector(".select2-selection[aria-labelledby=\'' +
+                                        ariaLabelledby.replace(/'/g, "\\'") +
+                                        '\']")';
+                                } else if (containerId) {
+                                    byExpr =
+                                        'By.cssSelector("#' +
+                                        containerId.replace(/'/g, "\\'") +
+                                        ' .select2-selection")';
+                                } else if (dataSelect2Id) {
+                                    byExpr =
+                                        'By.cssSelector(".select2-container[data-select2-id=\'' +
+                                        dataSelect2Id.replace(/'/g, "\\'") +
+                                        '\'] .select2-selection")';
+                                } else {
+                                    const allSelections = Array.from(
+                                        document.querySelectorAll('.select2-container .select2-selection')
+                                    );
+                                    const idx = allSelections.indexOf(selectionEl); // 0-based
+                                    if (idx >= 0) {
+                                        const nth = idx + 1;
+                                        byExpr =
+                                            'By.cssSelector(".select2-container .select2-selection:nth-of-type(' +
+                                            nth +
+                                            ')")';
+                                    } else {
+                                        byExpr = locator.type + '("' + locatorValue + '")';
+                                    }
+                                }
+                            }
+
+                            rec.raw_selenium =
+                                'driver.findElement(' + byExpr + ').click();';
+
+                        } else if (isNativeSelect) {
+                            rec.raw_selenium =
+                                'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
+
+                        } else {
+                            rec.raw_selenium =
+                                'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
+                        }
+
+                        break;
+                    }
+
+                    // ---------- 3) CHECKBOXES ----------
+                    if (t.type === 'checkbox' || roleLower === 'checkbox') {
+                        rec.raw_gherkin = t.checked
+                            ? 'I check the "' + gherkinName + '" option'
+                            : 'I uncheck the "' + gherkinName + '" option';
+
+                        rec.raw_selenium =
+                            'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
+                        break;
+                    }
+
+                    // ---------- 4) LINKS ----------
+                    if (roleLower === 'link' || tag === 'a') {
+                        rec.raw_gherkin = 'I click on the "' + gherkinName + '" link';
+                        rec.raw_selenium =
+                            'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
+                        break;
+                    }
+
+                    // ---------- 5) BUTTONS ----------
+                    if (t.type === 'submit' || t.type === 'button' || roleLower === 'button') {
+                        rec.raw_gherkin = 'I click on the "' + gherkinName + '" button';
+                        rec.raw_selenium =
+                            'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
+                        break;
+                    }
+
+                    // ---------- 6) GENERIC CLICK (still actionable, e.g. custom widget with onclick) ----------
+                    rec.raw_gherkin = 'I click on the "' + gherkinName + '"';
+                    rec.raw_selenium =
+                        'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
+
+                    break;
+                }
+
+                // ================= CHANGE HANDLING =================
                 case 'change': {
                     // 🔒 Avoid duplicate events for checkbox / radio
-                    if (t.type === 'checkbox' || t.type === 'radio') {
-                        // We already record the click; ignore the change for these controls.
+                    if (t.type === 'checkbox' || t.type === 'radio' || t.type === 'submit' || t.type === 'button') {
+                            return;
+                    }
+
+                    const select2Container =
+                        t.closest && (t.closest('.select2-container') || t.closest('.select2'));
+                    const insideSelect2 = !!select2Container;
+
+                    // Skip change events from Select2 – click on option already recorded
+                    if (insideSelect2) {
                         return;
                     }
 
@@ -503,28 +749,25 @@
                     rec.value = value;
 
                     rec.raw_selenium =
-                        'driver.findElement(' + locator.type + '(\"' + locatorValue + '\")).sendKeys(\"' + value + '\");';
+                        'driver.findElement(' + locator.type + '("' + locatorValue + '")).sendKeys("' + value + '");';
 
                     rec.raw_gherkin = 'I enter "' + value + '" into the "' + gherkinName + '"';
 
                     rec.options.value = value;
                     rec.options.parsedValue = value;
 
-                    // 🔄 NEW: debounce for textboxes so we don't record partial values
+                    // 🔄 Debounce textboxes so we don't record partial values
                     if (role === 'textbox') {
-                        // Identify this field (prefer id, then name, then locator)
                         const fieldKey =
                             (t.id && ('id:' + t.id)) ||
                             (t.name && ('name:' + t.name)) ||
                             ('loc:' + locator.value);
 
-                        // Clear any pending timer for this field
                         const existing = pendingTextChangeTimers[fieldKey];
                         if (existing && existing.timeoutId) {
                             clearTimeout(existing.timeoutId);
                         }
 
-                        // Schedule a new timer; only the last value gets recorded
                         const timeoutId = setTimeout(function () {
                             persistEvent(rec);
                             delete pendingTextChangeTimers[fieldKey];
@@ -532,28 +775,35 @@
 
                         pendingTextChangeTimers[fieldKey] = { timeoutId, rec };
                     } else {
-                        // Non-textbox (e.g. selects) → record immediately
+                        // Non-textbox (e.g. native selects) → record immediately
                         persistEvent(rec);
                     }
+
+                    // We already persisted or scheduled persistence → don't fall through
+                    return;
                 }
+
                 default:
                     return;
             }
 
+            // Common post-processing for click (and any non-returning path):
             if (!gherkinName || gherkinName.length === 0) {
                 rec.raw_gherkin = 'I interact with the unlabeled ' + gherkinRole + ' element';
             }
 
             persistEvent(rec);
+
         } catch (err) {
             console && console.log && console.log('[recorder] recordEvent error', err);
         }
     }
 
+    // Attach listeners
     ['click', 'change'].forEach(function (type) {
         window.addEventListener(type, recordEvent, true);
     });
 
-    // ❌ No submit recording – we only care about click
+    // ❌ No submit recording – we only care about click/change
 
 })();

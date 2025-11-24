@@ -1,137 +1,222 @@
 [ {
   "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Warning: Shopping\" page",
-  "raw_selenium" : "driver.get(\"https://gap.com/\");",
-  "timestamp" : 1763972520074,
-  "title" : "Warning: Shopping",
+  "raw_gherkin" : "I navigate to \"Cryoport - Cryoportal® 2\" page",
+  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/session\");",
+  "timestamp" : 1764000255146,
+  "title" : "Cryoport - Cryoportal® 2",
   "type" : "navigation",
-  "url" : "https://gap.com/"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Shop Latest Offers + Gap Women’s, Men’s, Baby & Kids Clothing\" page",
-  "raw_selenium" : "driver.get(\"https://www.gap.com/\");",
-  "timestamp" : 1763972532132,
-  "title" : "Shop Latest Offers + Gap Women’s, Men’s, Baby & Kids Clothing",
-  "type" : "navigation",
-  "url" : "https://www.gap.com/"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Men",
-    "primary_name" : "Men"
-  },
-  "raw_gherkin" : "I click on the \"Men\" link",
-  "raw_selenium" : "driver.findElement(By.linkText(\"Men\")).click();",
-  "selector" : "link",
-  "timestamp" : 1763972532972,
-  "title" : "Shop Latest Offers + Gap Women’s, Men’s, Baby & Kids Clothing",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Shop Men's Clothing | Gap\" page",
-  "raw_selenium" : "driver.get(\"https://www.gap.com/browse/men?cid=5063&mlink=39813%2C30012485%2CMegnav_Men&clink=30012485&nav=meganav%3AMen%3A%3A\");",
-  "timestamp" : 1763972538723,
-  "title" : "Shop Men's Clothing | Gap",
-  "type" : "navigation",
-  "url" : "https://www.gap.com/browse/men?cid=5063&mlink=39813%2C30012485%2CMegnav_Men&clink=30012485&nav=meganav%3AMen%3A%3A"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Gifts",
-    "primary_name" : "Gifts"
-  },
-  "raw_gherkin" : "I click on the \"Gifts\" link",
-  "raw_selenium" : "driver.findElement(By.linkText(\"Gifts\")).click();",
-  "selector" : "link",
-  "timestamp" : 1763972567093,
-  "title" : "Shop Men's Clothing | Gap",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I am on \"Shop Men's Clothing | Gap\" page",
-  "raw_selenium" : "",
-  "timestamp" : 1763972567205,
-  "title" : "Shop Men's Clothing | Gap",
-  "type" : "navigation",
-  "url" : "https://www.gap.com/browse/men?cid=5063&mlink=39813%2C30012485%2CMegnav_Men&clink=30012485&nav=meganav%3AMen%3A%3A#"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Gifts",
-    "primary_name" : "Gifts"
-  },
-  "raw_gherkin" : "I click on the \"Gifts\" link",
-  "raw_selenium" : "driver.findElement(By.linkText(\"Gifts\")).click();",
-  "selector" : "link",
-  "timestamp" : 1763972573540,
-  "title" : "Shop Men's Clothing | Gap",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "GapStudio",
-    "primary_name" : "GapStudio"
-  },
-  "raw_gherkin" : "I click on the \"GapStudio\" link",
-  "raw_selenium" : "driver.findElement(By.linkText(\"GapStudio\")).click();",
-  "selector" : "link",
-  "timestamp" : 1763972582582,
-  "title" : "Shop Men's Clothing | Gap",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"https://www.gap.com/browse/info.do?cid=3045347&nav=meganav%3AGapStudio%3A%3A\" page",
-  "raw_selenium" : "driver.get(\"https://www.gap.com/browse/info.do?cid=3045347&nav=meganav%3AGapStudio%3A%3A\");",
-  "timestamp" : 1763972596911,
-  "title" : "",
-  "type" : "navigation",
-  "url" : "https://www.gap.com/browse/info.do?cid=3045347&nav=meganav%3AGapStudio%3A%3A"
-}, {
-  "action" : "click",
-  "options" : {
-    "primary_name" : "My account"
-  },
-  "raw_gherkin" : "I click on the \"My account\" button",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//label[normalize-space(.)='My account']/following-sibling::button | //button[@aria-label='My account'] | //button[@placeholder='My account']\")).click();",
-  "selector" : "button",
-  "timestamp" : 1763972603322,
-  "title" : "",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Sign in | Gap\" page",
-  "raw_selenium" : "driver.get(\"https://secure-www.gap.com/my-account/sign-in?_gl=1*17zerfo*_gcl_au*MTA4MDQyNzI3MC4xNzYzOTcyNTQ3\");",
-  "timestamp" : 1763972614222,
-  "title" : "Sign in | Gap",
-  "type" : "navigation",
-  "url" : "https://secure-www.gap.com/my-account/sign-in?_gl=1*17zerfo*_gcl_au*MTA4MDQyNzI3MC4xNzYzOTcyNTQ3"
+  "url" : "https://loadtest-v2.cryoportal.com/session"
 }, {
   "action" : "sendKeys",
   "options" : {
-    "id" : "verify-email-input",
+    "id" : "email",
     "name" : "email",
-    "parsedValue" : "fdsfsfsdfs",
+    "parsedValue" : "cryoadmin@osidigital.com",
     "primary_name" : "email",
-    "value" : "fdsfsfsdfs"
+    "value" : "cryoadmin@osidigital.com"
   },
-  "parsedValue" : "fdsfsfsdfs",
-  "raw_gherkin" : "I enter \"fdsfsfsdfs\" into the \"email\"",
-  "raw_selenium" : "driver.findElement(By.name(\"email\")).sendKeys(\"fdsfsfsdfs\");",
+  "parsedValue" : "cryoadmin@osidigital.com",
+  "raw_gherkin" : "I enter \"cryoadmin@osidigital.com\" into the \"email\"",
+  "raw_selenium" : "driver.findElement(By.name(\"email\")).sendKeys(\"cryoadmin@osidigital.com\");",
   "selector" : "textbox",
-  "timestamp" : 1763972620992,
-  "title" : "Sign in | Gap",
+  "timestamp" : 1764000264125,
+  "title" : "Cryoport - Cryoportal® 2",
   "type" : "change",
-  "value" : "fdsfsfsdfs"
+  "value" : "cryoadmin@osidigital.com"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "password",
+    "name" : "password",
+    "parsedValue" : "EnTropYoSi",
+    "primary_name" : "password",
+    "value" : "EnTropYoSi"
+  },
+  "parsedValue" : "EnTropYoSi",
+  "raw_gherkin" : "I enter \"EnTropYoSi\" into the \"password\"",
+  "raw_selenium" : "driver.findElement(By.name(\"password\")).sendKeys(\"EnTropYoSi\");",
+  "selector" : "textbox",
+  "timestamp" : 1764000270240,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "change",
+  "value" : "EnTropYoSi"
 }, {
   "action" : "click",
   "options" : {
-    "element_text" : "Continue",
-    "primary_name" : "Continue"
+    "id" : "remember_me",
+    "name" : "remember_me",
+    "primary_name" : "remember_me"
   },
-  "raw_gherkin" : "I click on the \"Continue\" button",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Continue']\")).click();",
-  "selector" : "button",
-  "timestamp" : 1763972623870,
-  "title" : "Sign in | Gap",
+  "raw_gherkin" : "I check the \"remember_me\" option",
+  "raw_selenium" : "driver.findElement(By.name(\"remember_me\")).click();",
+  "selector" : "checkbox",
+  "timestamp" : 1764000272456,
+  "title" : "Cryoport - Cryoportal® 2",
   "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "name" : "commit",
+    "primary_name" : "commit"
+  },
+  "raw_gherkin" : "I click on the \"commit\" button",
+  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
+  "selector" : "button",
+  "timestamp" : 1764000273891,
+  "title" : "Cryoport - Cryoportal® 2",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
+  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/enroute\");",
+  "timestamp" : 1764000284073,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "navigation",
+  "url" : "https://loadtest-v2.cryoportal.com/shipments/enroute"
+}, {
+  "action" : "click",
+  "options" : {
+    "primary_name" : "Sidenav hamburger icon"
+  },
+  "raw_gherkin" : "I click on the \"Sidenav hamburger icon\" button",
+  "raw_selenium" : "driver.findElement(By.cssSelector(\"a.sidenav_hamburger-icon\")).click();",
+  "selector" : "link",
+  "timestamp" : 1764000288996,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "New Order",
+    "primary_name" : "New Order"
+  },
+  "raw_gherkin" : "I click on the \"New Order\" link",
+  "raw_selenium" : "driver.findElement(By.linkText(\"New Order\")).click();",
+  "selector" : "link",
+  "timestamp" : 1764000290595,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "I am on \"Cryoport - Science, Logistics, Certainty\" page",
+  "raw_selenium" : "",
+  "timestamp" : 1764000290718,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "navigation",
+  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/new"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Select a client...",
+    "id" : "select2-shipment_wizard_client_id-container",
+    "primary_name" : "Select a client..."
+  },
+  "raw_gherkin" : "I open the \"Select a client...\" dropdown",
+  "raw_selenium" : "driver.findElement(By.cssSelector(\".select2-selection[aria-labelledby='select2-shipment_wizard_client_id-container']\")).click();",
+  "selector" : "textbox",
+  "timestamp" : 1764000295996,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Adina Kern-Goldberger (ANDR153)",
+    "primary_name" : "Adina Kern-Goldberger (ANDR153)"
+  },
+  "raw_gherkin" : "I select \"Adina Kern-Goldberger (ANDR153)\" from the dropdown",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//li[contains(@class,'select2-results__option') and normalize-space()='Adina Kern-Goldberger (ANDR153)']\")).click();",
+  "selector" : "option",
+  "timestamp" : 1764000297499,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "name" : "commit",
+    "primary_name" : "commit"
+  },
+  "raw_gherkin" : "I click on the \"commit\" button",
+  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
+  "selector" : "button",
+  "timestamp" : 1764000301164,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
+  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/410358/steps/route\");",
+  "timestamp" : 1764000305165,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "navigation",
+  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/410358/steps/route"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "None",
+    "id" : "select2-route_site_1_attributes_site_template_id-container",
+    "primary_name" : "None"
+  },
+  "raw_gherkin" : "I open the \"None\" dropdown",
+  "raw_selenium" : "driver.findElement(By.cssSelector(\".select2-selection[aria-labelledby='select2-route_site_1_attributes_site_template_id-container']\")).click();",
+  "selector" : "textbox",
+  "timestamp" : 1764000311644,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157",
+    "primary_name" : "CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157"
+  },
+  "raw_gherkin" : "I select \"CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157\" from the dropdown",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//li[contains(@class,'select2-results__option') and normalize-space()='CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157']\")).click();",
+  "selector" : "option",
+  "timestamp" : 1764000313276,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "None",
+    "id" : "select2-route_site_2_attributes_site_template_id-container",
+    "primary_name" : "None"
+  },
+  "raw_gherkin" : "I open the \"None\" dropdown",
+  "raw_selenium" : "driver.findElement(By.cssSelector(\".select2-selection[aria-labelledby='select2-route_site_2_attributes_site_template_id-container']\")).click();",
+  "selector" : "textbox",
+  "timestamp" : 1764000317868,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331",
+    "primary_name" : "FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331"
+  },
+  "raw_gherkin" : "I select \"FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331\" from the dropdown",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//li[contains(@class,'select2-results__option') and normalize-space()='FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331']\")).click();",
+  "selector" : "option",
+  "timestamp" : 1764000319279,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "name" : "commit",
+    "primary_name" : "commit"
+  },
+  "raw_gherkin" : "I click on the \"commit\" button",
+  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
+  "selector" : "button",
+  "timestamp" : 1764000324093,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
+  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/410358/steps/shippers\");",
+  "timestamp" : 1764000328686,
+  "title" : "Cryoport - Science, Logistics, Certainty",
+  "type" : "navigation",
+  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/410358/steps/shippers"
 } ]

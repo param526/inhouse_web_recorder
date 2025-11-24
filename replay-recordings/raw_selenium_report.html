@@ -155,6 +155,11 @@
       background-color: var(--chip-bg-fail);
       color: var(--chip-text-fail);
     }
+    .status-chip.skipped {
+      background-color: rgba(250, 204, 21, 0.18);
+      color: #854d0e;
+      border: 1px solid rgba(250, 204, 21, 0.55);
+    }
     .mono {
       font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 12px;
@@ -191,7 +196,7 @@
     <div class="header">
       <div class="header-main">
         <div class="header-title">Raw Selenium Replay Report</div>
-        <div class="header-sub">Generated at 2025-11-24 16:01:53 Â· 12 steps Â· Total duration 34375 ms</div>
+        <div class="header-sub">Generated at 2025-11-24 21:36:41 Â· 18 steps Â· Total duration 36019 ms</div>
       </div>
       <div class="status-pill pass">        <span class="status-dot"></span>
         <span>ALL STEPS PASSED</span>
@@ -200,15 +205,19 @@
     <div class="summary-grid">
       <div class="summary-card">
         <div class="summary-label">Total Steps</div>
-        <div class="summary-value">12</div>
+        <div class="summary-value">18</div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Passed</div>
-        <div class="summary-value" style="color: var(--pass);">12</div>
+        <div class="summary-value" style="color: var(--pass);">18</div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Failed</div>
         <div class="summary-value" style="color: var(--fail);">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Skipped</div>
+        <div class="summary-value" style="color: #ca8a04;">0</div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Pass Rate</div>
@@ -234,11 +243,13 @@
           <tbody>
             <tr>
               <td>1</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>9216 ms</td>
-              <td class="mono"><pre>driver.get("https://gap.com/");</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>2813 ms</td>
+              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/session");</pre></td>
               <td class="mono">
-                <pre>I navigate to "Warning: Shopping" page</pre>
+                <pre>I navigate to "Cryoport - Cryoportal® 2" page</pre>
               </td>
               <td>
                 <a href="/screenshots/step_001.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -255,11 +266,13 @@
             </tr>
             <tr>
               <td>2</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>2033 ms</td>
-              <td class="mono"><pre>driver.get("https://www.gap.com/");</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>258 ms</td>
+              <td class="mono"><pre>driver.findElement(By.name("email")).sendKeys("cryoadmin@osidigital.com");</pre></td>
               <td class="mono">
-                <pre>I navigate to "Shop Latest Offers + Gap Women’s, Men’s, Baby &amp; Kids Clothing" page</pre>
+                <pre>I enter "cryoadmin@osidigital.com" into the "email"</pre>
               </td>
               <td>
                 <a href="/screenshots/step_002.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -276,11 +289,13 @@
             </tr>
             <tr>
               <td>3</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>4165 ms</td>
-              <td class="mono"><pre>driver.findElement(By.linkText("Men")).click();</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>144 ms</td>
+              <td class="mono"><pre>driver.findElement(By.name("password")).sendKeys("EnTropYoSi");</pre></td>
               <td class="mono">
-                <pre>I click on the "Men" link</pre>
+                <pre>I enter "EnTropYoSi" into the "password"</pre>
               </td>
               <td>
                 <a href="/screenshots/step_003.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -297,11 +312,13 @@
             </tr>
             <tr>
               <td>4</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>2606 ms</td>
-              <td class="mono"><pre>driver.get("https://www.gap.com/browse/men?cid=5063&amp;mlink=39813%2C30012485%2CMegnav_Men&amp;clink=30012485&amp;nav=meganav%3AMen%3A%3A");</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>188 ms</td>
+              <td class="mono"><pre>driver.findElement(By.name("remember_me")).click();</pre></td>
               <td class="mono">
-                <pre>I navigate to "Shop Men's Clothing | Gap" page</pre>
+                <pre>I check the "remember_me" option</pre>
               </td>
               <td>
                 <a href="/screenshots/step_004.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -318,11 +335,13 @@
             </tr>
             <tr>
               <td>5</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>215 ms</td>
-              <td class="mono"><pre>driver.findElement(By.linkText("Gifts")).click();</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>12813 ms</td>
+              <td class="mono"><pre>driver.findElement(By.name("commit")).click();</pre></td>
               <td class="mono">
-                <pre>I click on the "Gifts" link</pre>
+                <pre>I click on the "commit" button</pre>
               </td>
               <td>
                 <a href="/screenshots/step_005.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -339,11 +358,13 @@
             </tr>
             <tr>
               <td>6</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>145 ms</td>
-              <td class="mono"><pre>driver.findElement(By.linkText("Gifts")).click();</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>6194 ms</td>
+              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/shipments/enroute");</pre></td>
               <td class="mono">
-                <pre>I click on the "Gifts" link</pre>
+                <pre>I navigate to "Cryoport - Science, Logistics, Certainty" page</pre>
               </td>
               <td>
                 <a href="/screenshots/step_006.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -360,11 +381,13 @@
             </tr>
             <tr>
               <td>7</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>8614 ms</td>
-              <td class="mono"><pre>driver.findElement(By.linkText("GapStudio")).click();</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>209 ms</td>
+              <td class="mono"><pre>driver.findElement(By.cssSelector("a.sidenav_hamburger-icon")).click();</pre></td>
               <td class="mono">
-                <pre>I click on the "GapStudio" link</pre>
+                <pre>I click on the "Sidenav hamburger icon" button</pre>
               </td>
               <td>
                 <a href="/screenshots/step_007.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -381,11 +404,13 @@
             </tr>
             <tr>
               <td>8</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>1382 ms</td>
-              <td class="mono"><pre>driver.get("https://www.gap.com/browse/info.do?cid=3045347&amp;nav=meganav%3AGapStudio%3A%3A");</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>146 ms</td>
+              <td class="mono"><pre>driver.findElement(By.linkText("New Order")).click();</pre></td>
               <td class="mono">
-                <pre>I navigate to "https://www.gap.com/browse/info.do?cid=3045347&amp;nav=meganav%3AGapStudio%3A%3A" page</pre>
+                <pre>I click on the "New Order" link</pre>
               </td>
               <td>
                 <a href="/screenshots/step_008.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -402,11 +427,13 @@
             </tr>
             <tr>
               <td>9</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>185 ms</td>
-              <td class="mono"><pre>driver.findElement(By.xpath("//label[normalize-space(.)='My account']/following-sibling::button | //button[@aria-label='My account'] | //button[@placeholder='My account']")).click();</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>759 ms</td>
+              <td class="mono"><pre>driver.findElement(By.cssSelector(".select2-selection[aria-labelledby='select2-shipment_wizard_client_id-container']")).click();</pre></td>
               <td class="mono">
-                <pre>I click on the "My account" button</pre>
+                <pre>I open the "Select a client..." dropdown</pre>
               </td>
               <td>
                 <a href="/screenshots/step_009.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -423,11 +450,13 @@
             </tr>
             <tr>
               <td>10</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>4929 ms</td>
-              <td class="mono"><pre>driver.get("https://secure-www.gap.com/my-account/sign-in?_gl=1*17zerfo*_gcl_au*MTA4MDQyNzI3MC4xNzYzOTcyNTQ3");</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>111 ms</td>
+              <td class="mono"><pre>driver.findElement(By.xpath("//li[contains(@class,'select2-results__option') and normalize-space()='Adina Kern-Goldberger (ANDR153)']")).click();</pre></td>
               <td class="mono">
-                <pre>I navigate to "Sign in | Gap" page</pre>
+                <pre>I select "Adina Kern-Goldberger (ANDR153)" from the dropdown</pre>
               </td>
               <td>
                 <a href="/screenshots/step_010.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -444,11 +473,13 @@
             </tr>
             <tr>
               <td>11</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>575 ms</td>
-              <td class="mono"><pre>driver.findElement(By.name("email")).sendKeys("fdsfsfsdfs");</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>4567 ms</td>
+              <td class="mono"><pre>driver.findElement(By.name("commit")).click();</pre></td>
               <td class="mono">
-                <pre>I enter "fdsfsfsdfs" into the "email"</pre>
+                <pre>I click on the "commit" button</pre>
               </td>
               <td>
                 <a href="/screenshots/step_011.png" target="_blank" style="text-decoration:none; color:inherit;">
@@ -465,15 +496,163 @@
             </tr>
             <tr>
               <td>12</td>
-              <td><span class="status-chip pass">PASS</span></td>
-              <td>310 ms</td>
-              <td class="mono"><pre>driver.findElement(By.xpath("//button[normalize-space(.)='Continue']")).click();</pre></td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>1284 ms</td>
+              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/shipments/wizard/410358/steps/route");</pre></td>
               <td class="mono">
-                <pre>I click on the "Continue" button</pre>
+                <pre>I navigate to "Cryoport - Science, Logistics, Certainty" page</pre>
               </td>
               <td>
                 <a href="/screenshots/step_012.png" target="_blank" style="text-decoration:none; color:inherit;">
                   <img src="/screenshots/step_012.png" style="max-width: 150px; border-radius: 8px; border: 1px solid #1f2937; display:block;">
+                  <span class="small">Open full-size</span>
+                </a>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>13</td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>169 ms</td>
+              <td class="mono"><pre>driver.findElement(By.cssSelector(".select2-selection[aria-labelledby='select2-route_site_1_attributes_site_template_id-container']")).click();</pre></td>
+              <td class="mono">
+                <pre>I open the "None" dropdown</pre>
+              </td>
+              <td>
+                <a href="/screenshots/step_013.png" target="_blank" style="text-decoration:none; color:inherit;">
+                  <img src="/screenshots/step_013.png" style="max-width: 150px; border-radius: 8px; border: 1px solid #1f2937; display:block;">
+                  <span class="small">Open full-size</span>
+                </a>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>14</td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>208 ms</td>
+              <td class="mono"><pre>driver.findElement(By.xpath("//li[contains(@class,'select2-results__option') and normalize-space()='CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)
+Arsela Gishto (gishtoa@ccf.org)
+26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157']")).click();</pre></td>
+              <td class="mono">
+                <pre>I select "CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)
+Arsela Gishto (gishtoa@ccf.org)
+26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157" from the dropdown</pre>
+              </td>
+              <td>
+                <a href="/screenshots/step_014.png" target="_blank" style="text-decoration:none; color:inherit;">
+                  <img src="/screenshots/step_014.png" style="max-width: 150px; border-radius: 8px; border: 1px solid #1f2937; display:block;">
+                  <span class="small">Open full-size</span>
+                </a>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>15</td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>140 ms</td>
+              <td class="mono"><pre>driver.findElement(By.cssSelector(".select2-selection[aria-labelledby='select2-route_site_2_attributes_site_template_id-container']")).click();</pre></td>
+              <td class="mono">
+                <pre>I open the "None" dropdown</pre>
+              </td>
+              <td>
+                <a href="/screenshots/step_015.png" target="_blank" style="text-decoration:none; color:inherit;">
+                  <img src="/screenshots/step_015.png" style="max-width: 150px; border-radius: 8px; border: 1px solid #1f2937; display:block;">
+                  <span class="small">Open full-size</span>
+                </a>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>16</td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>130 ms</td>
+              <td class="mono"><pre>driver.findElement(By.xpath("//li[contains(@class,'select2-results__option') and normalize-space()='FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))
+Kristin Costine (kcostine@colocrm.com)
+10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331']")).click();</pre></td>
+              <td class="mono">
+                <pre>I select "FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))
+Kristin Costine (kcostine@colocrm.com)
+10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331" from the dropdown</pre>
+              </td>
+              <td>
+                <a href="/screenshots/step_016.png" target="_blank" style="text-decoration:none; color:inherit;">
+                  <img src="/screenshots/step_016.png" style="max-width: 150px; border-radius: 8px; border: 1px solid #1f2937; display:block;">
+                  <span class="small">Open full-size</span>
+                </a>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>17</td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>4391 ms</td>
+              <td class="mono"><pre>driver.findElement(By.name("commit")).click();</pre></td>
+              <td class="mono">
+                <pre>I click on the "commit" button</pre>
+              </td>
+              <td>
+                <a href="/screenshots/step_017.png" target="_blank" style="text-decoration:none; color:inherit;">
+                  <img src="/screenshots/step_017.png" style="max-width: 150px; border-radius: 8px; border: 1px solid #1f2937; display:block;">
+                  <span class="small">Open full-size</span>
+                </a>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+              <td>
+                <span class="small">â€”</span>
+              </td>
+            </tr>
+            <tr>
+              <td>18</td>
+              <td>
+                <span class="status-chip pass">PASS</span>
+              </td>
+              <td>1495 ms</td>
+              <td class="mono"><pre>driver.get("https://loadtest-v2.cryoportal.com/shipments/wizard/410358/steps/shippers");</pre></td>
+              <td class="mono">
+                <pre>I navigate to "Cryoport - Science, Logistics, Certainty" page</pre>
+              </td>
+              <td>
+                <a href="/screenshots/step_018.png" target="_blank" style="text-decoration:none; color:inherit;">
+                  <img src="/screenshots/step_018.png" style="max-width: 150px; border-radius: 8px; border: 1px solid #1f2937; display:block;">
                   <span class="small">Open full-size</span>
                 </a>
               </td>

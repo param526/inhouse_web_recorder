@@ -53,14 +53,16 @@ public class RawSeleniumReplayer {
         int index;
         String rawScript;
         String rawGherkin;
-        boolean success;
+        boolean success;          // true = passed, false = failed or skipped
         long durationMs;
         String errorMessage;
         String stackTrace;
-
-        // For screenshots
         String screenshotFileName;
+
+        // NEW: PASSED / FAILED / SKIPPED
+        String status;
     }
+
 
     // ========== PUBLIC ENTRYPOINTS ==========
 
@@ -92,7 +94,6 @@ public class RawSeleniumReplayer {
         boolean allPassed = false;
         WebDriver driver = null;
 
-        // screenshots folder next to the report
         File reportFile = new File(reportPath);
         File screenshotsDir = new File(reportFile.getParentFile(), "screenshots");
         if (!screenshotsDir.exists()) {
@@ -100,13 +101,12 @@ public class RawSeleniumReplayer {
         }
 
         try {
-            // 1) Read events from JSON
             List<RecordedEvent> events = mapper.readValue(
                     new File(jsonPath),
-                    new TypeReference<List<RecordedEvent>>() {}
+                    new TypeReference<List<RecordedEvent>>() {
+                    }
             );
 
-            // 2) Start WebDriver
             WebDriverManager.chromedriver().setup();
             ChromeOptions options = new ChromeOptions();
             options.addArguments("--start-maximized");
@@ -115,10 +115,13 @@ public class RawSeleniumReplayer {
             driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
 
             int index = 1;
-            boolean stopAfterFailure = false;
+            boolean failureOccurred = false;
+            int failStepIndex = -1;
 
-            // 3) Replay all events
-            for (RecordedEvent ev : events) {
+            // 1) Execute steps until first failure
+            int eventPos = 0;
+            for (; eventPos < events.size(); eventPos++) {
+                RecordedEvent ev = events.get(eventPos);
                 if (ev == null || ev.raw_selenium == null || ev.raw_selenium.trim().isEmpty()) {
                     continue;
                 }
@@ -129,55 +132,84 @@ public class RawSeleniumReplayer {
                 StepResult step = new StepResult();
                 step.index = index++;
                 step.rawScript = script;
-                step.rawGherkin = ev.raw_gherkin;  // adjust if your field is named differently
+                step.rawGherkin = ev.raw_gherkin;
                 long start = System.currentTimeMillis();
 
                 try {
                     if (isNavigation(script)) {
                         executeNavigation(script, driver);
+                        waitForPageLoad(driver);  // only for page navigations
                     } else {
-                        executeElement(script, driver);
+                        executeElement(script, driver); // will include waits internally
                     }
 
-                    // add this right here
-                    waitForPageLoad(driver);
-
                     step.success = true;
+                    step.status = "PASSED";
                     step.errorMessage = null;
                     step.stackTrace = null;
                 } catch (Exception e) {
                     step.success = false;
+                    step.status = "FAILED";
                     step.errorMessage = e.getMessage();
                     step.stackTrace = getStackTraceAsString(e);
-                    stopAfterFailure = true;
+                    System.out.println("Error executing step: " + script);
+                    e.printStackTrace();
+
+                    failureOccurred = true;
+                    failStepIndex = step.index;
                 } finally {
                     step.durationMs = System.currentTimeMillis() - start;
 
-                    // Screenshot now happens AFTER waitForPageLoad()
                     if (driver != null) {
                         step.screenshotFileName = captureScreenshot(driver, screenshotsDir, step.index);
-                    }
-
-                    if (driver != null) {
                         clearHighlights(driver);
                     }
 
                     results.add(step);
                 }
 
-                if (stopAfterFailure) {
+                if (failureOccurred) {
                     System.out.println("⚠ Aborting replay after step " + step.index +
-                            " due to failure. Remaining steps will be skipped.");
+                            " due to failure. Remaining steps will be marked as SKIPPED.");
+                    // break from execution loop
+                    eventPos++; // move to next event index for skipped processing
                     break;
                 }
 
                 Thread.sleep(300);
             }
 
+            // 2) For remaining events (if any failure), add SKIPPED rows
+            if (failureOccurred) {
+                for (; eventPos < events.size(); eventPos++) {
+                    RecordedEvent ev = events.get(eventPos);
+                    if (ev == null || ev.raw_selenium == null || ev.raw_selenium.trim().isEmpty()) {
+                        continue;
+                    }
+
+                    String script = ev.raw_selenium.trim();
+
+                    StepResult skipped = new StepResult();
+                    skipped.index = index++;
+                    skipped.rawScript = script;
+                    skipped.rawGherkin = ev.raw_gherkin;
+                    skipped.success = false;              // not executed
+                    skipped.status = "SKIPPED";
+                    skipped.durationMs = 0L;
+                    skipped.errorMessage = "Step not executed due to previous failure at step " + failStepIndex;
+                    skipped.stackTrace = null;
+                    skipped.screenshotFileName = null;    // no screenshot for skipped
+
+                    results.add(skipped);
+                }
+            }
+
             Thread.sleep(1200);
 
-            allPassed = results.stream().allMatch(r -> r.success);
+            // Overall result: FAIL if any FAILED step exists
+            allPassed = results.stream().noneMatch(r -> "FAILED".equals(r.status));
             System.out.println("Overall Result: " + (allPassed ? "PASS" : "FAIL"));
+
             return allPassed;
 
         } finally {
@@ -185,11 +217,10 @@ public class RawSeleniumReplayer {
                 try {
                     driver.quit();
                 } catch (Exception e) {
-                    System.out.println("Warning: error quitting driver: " + e.getMessage());
+                    System.out.println("Warning quitting driver: " + e.getMessage());
                 }
             }
 
-            // Always generate report
             try {
                 generateHtmlReport(results, jsonPath, reportPath, allPassed);
                 System.out.println("HTML report written to: " + reportPath);
@@ -197,7 +228,6 @@ public class RawSeleniumReplayer {
                 System.err.println("Failed to write replay HTML report: " + io.getMessage());
             }
 
-            // Cucumber integration (after report generation)
             if (scenario != null) {
                 scenario.log("RawSeleniumReplayer finished. Result: " +
                         (allPassed ? "PASS" : "FAIL"));
@@ -208,13 +238,13 @@ public class RawSeleniumReplayer {
                     scenario.log(
                             String.format("Step %d: %s - %s (%d ms)",
                                     r.index,
-                                    r.success ? "PASS" : "FAIL",
+                                    r.status,
                                     r.rawScript,
                                     r.durationMs
                             )
                     );
-                    if (!r.success && r.errorMessage != null) {
-                        scenario.log("  Error: " + r.errorMessage);
+                    if (r.errorMessage != null) {
+                        scenario.log("  Note: " + r.errorMessage);
                     }
                 }
 
@@ -255,23 +285,36 @@ public class RawSeleniumReplayer {
             throw new IllegalArgumentException("Unsupported raw_selenium (not element or nav): " + raw);
         }
 
-        String locatorType  = m.group(1);  // id, name, xpath, cssSelector, ...
-        String locatorValue = m.group(2);  // the actual locator string
-        String method       = m.group(3);  // click, sendKeys, clear
-        String arg          = m.group(4);  // value for sendKeys (may be null)
+        String locatorType = m.group(1);
+        String locatorValue = m.group(2);
+        String method = m.group(3);
+        String arg = m.group(4);
+
+        // 🔧 Fix overly strict Select2 option XPaths recorded earlier
+        locatorValue = normalizeLocatorValue(locatorType, locatorValue);
 
         By by = toBy(locatorType, locatorValue);
 
-        // optional explicit wait – keep if you're already using WebDriverWait
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         WebElement element;
         try {
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-            element = wait.until(ExpectedConditions.presenceOfElementLocated(by));
+            if ("click".equals(method)) {
+                // ✅ For clicks: wait until element is *clickable*
+                element = wait.until(ExpectedConditions.elementToBeClickable(by));
+            } else if ("sendKeys".equals(method)) {
+                // ✅ For typing: wait until element is *visible*
+                element = wait.until(ExpectedConditions.visibilityOfElementLocated(by));
+            } else if ("clear".equals(method)) {
+                element = wait.until(ExpectedConditions.visibilityOfElementLocated(by));
+            } else {
+                // fallback to presence if some other method appears
+                element = wait.until(ExpectedConditions.presenceOfElementLocated(by));
+            }
         } catch (TimeoutException e) {
             throw new RuntimeException("Timed out waiting for element: " + by + " | Raw: " + raw, e);
         }
 
-        // 👇 NEW: highlight the element before performing the action
+        // scroll + highlight AFTER it’s visible
         highlightElement(driver, element);
 
         switch (method) {
@@ -292,7 +335,6 @@ public class RawSeleniumReplayer {
                 throw new IllegalArgumentException("Unsupported method: " + method + " in " + raw);
         }
     }
-
 
     private static By toBy(String type, String value) {
         switch (type) {
@@ -360,16 +402,12 @@ public class RawSeleniumReplayer {
     private static void highlightElement(WebDriver driver, WebElement element) {
         try {
             JavascriptExecutor js = (JavascriptExecutor) driver;
-
-            // Scroll into view first
             js.executeScript(
                     "arguments[0].scrollIntoView({behavior:'instant',block:'center',inline:'center'});",
                     element
             );
-
-            // Add a special attribute + highlight styles
             js.executeScript(
-                    "arguments[0].setAttribute('data-replay-highlight', 'true');" +
+                    "arguments[0].setAttribute('data-replay-highlight','true');" +
                             "arguments[0].style.outline='3px solid #f97316';" +
                             "arguments[0].style.outlineOffset='2px';" +
                             "arguments[0].style.boxShadow='0 0 0 3px rgba(249,115,22,0.75)';",
@@ -380,7 +418,6 @@ public class RawSeleniumReplayer {
         }
     }
 
-    /** Remove our temporary highlight from all elements, if any. */
     private static void clearHighlights(WebDriver driver) {
         try {
             JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -397,6 +434,72 @@ public class RawSeleniumReplayer {
         }
     }
 
+    private static String normalizeLocatorValue(String locatorType, String locatorValue) {
+        // Only care about XPaths
+        if (!"xpath".equals(locatorType) || locatorValue == null) {
+            return locatorValue;
+        }
+
+        // Only touch Select2-style locators
+        if (!locatorValue.contains("select2-results__option") ||
+                !locatorValue.contains("normalize-space()=")) {
+            return locatorValue;
+        }
+
+        try {
+            // Find the normalize-space()='<TEXT>' portion
+            int nsIdx = locatorValue.indexOf("normalize-space()=");
+            if (nsIdx == -1) return locatorValue;
+
+            int firstQuote = locatorValue.indexOf('\'', nsIdx);
+            if (firstQuote == -1) return locatorValue;
+
+            int secondQuote = locatorValue.indexOf('\'', firstQuote + 1);
+            if (secondQuote == -1) return locatorValue;
+
+            String fullText = locatorValue.substring(firstQuote + 1, secondQuote);
+
+            // Heuristic: pick a shorter stable token to match on
+            // e.g. first 60 chars, or better – try to use the first line
+            String token = fullText;
+            int newlineIdx = token.indexOf('\n');
+            if (newlineIdx > 0) {
+                token = token.substring(0, newlineIdx);
+            }
+            token = token.trim();
+
+            if (token.length() > 60) {
+                token = token.substring(0, 60);
+            }
+
+            if (token.isEmpty()) {
+                // nothing better to do
+                return locatorValue;
+            }
+
+            // Build a contains(normalize-space(.), 'token') instead of full equals
+            StringBuilder sb = new StringBuilder();
+            sb.append("contains(normalize-space(.), '")
+                    .append(token.replace("'", "\\'"))
+                    .append("')");
+
+            String prefix = locatorValue.substring(0, nsIdx);
+            String suffix = locatorValue.substring(secondQuote + 1); // after closing quote
+
+            String normalized = prefix + sb.toString() + suffix;
+
+            System.out.println("Normalizing Select2 xpath:");
+            System.out.println("  BEFORE: " + locatorValue);
+            System.out.println("  AFTER : " + normalized);
+
+            return normalized;
+        } catch (Exception ex) {
+            // On any parsing error, just fall back to original
+            System.out.println("Failed to normalize Select2 xpath: " + ex.getMessage());
+            return locatorValue;
+        }
+    }
+
 
     private static void generateHtmlReport(List<StepResult> results,
                                            String jsonPath,
@@ -404,9 +507,11 @@ public class RawSeleniumReplayer {
                                            boolean allPassed) throws IOException {
 
         int total = results.size();
-        int passed = (int) results.stream().filter(r -> r.success).count();
-        int failed = total - passed;
+        int passed = (int) results.stream().filter(r -> "PASSED".equals(r.status)).count();
+        int failed = (int) results.stream().filter(r -> "FAILED".equals(r.status)).count();
+        int skipped = (int) results.stream().filter(r -> "SKIPPED".equals(r.status)).count();
         double passPercent = total == 0 ? 0.0 : (passed * 100.0 / total);
+
         long totalDuration = results.stream().mapToLong(r -> r.durationMs).sum();
 
         String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
@@ -571,6 +676,11 @@ public class RawSeleniumReplayer {
             out.println("      background-color: var(--chip-bg-fail);");
             out.println("      color: var(--chip-text-fail);");
             out.println("    }");
+            out.println("    .status-chip.skipped {");
+            out.println("      background-color: rgba(250, 204, 21, 0.18);"); // very light amber
+            out.println("      color: #854d0e;");                           // softer amber text
+            out.println("      border: 1px solid rgba(250, 204, 21, 0.55);");// subtle border
+            out.println("    }");
             out.println("    .mono {");
             out.println("      font-family: SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace;");
             out.println("      font-size: 12px;");
@@ -637,6 +747,11 @@ public class RawSeleniumReplayer {
             out.println("      </div>");
 
             out.println("      <div class=\"summary-card\">");
+            out.println("        <div class=\"summary-label\">Skipped</div>");
+            out.println("        <div class=\"summary-value\" style=\"color: #ca8a04;\">" + skipped + "</div>");
+            out.println("      </div>");
+
+            out.println("      <div class=\"summary-card\">");
             out.println("        <div class=\"summary-label\">Pass Rate</div>");
             out.printf("        <div class=\"summary-value\">%.1f%%</div>%n", passPercent);
             out.println("        <div class=\"summary-sub\">JSON: " + escapeHtml(jsonPath) + "</div>");
@@ -665,20 +780,37 @@ public class RawSeleniumReplayer {
             int idx = 0;
             for (StepResult r : results) {
                 idx++;
-                String rowClass = r.success ? "pass" : "fail";
+                String rowClass;
+                String label;
+
+                if ("PASSED".equals(r.status)) {
+                    rowClass = "pass";
+                    label = "PASS";
+                } else if ("FAILED".equals(r.status)) {
+                    rowClass = "fail";
+                    label = "FAIL";
+                } else { // SKIPPED or null
+                    rowClass = "skipped";
+                    label = "SKIPPED";
+                }
+
                 out.println("            <tr>");
+
+                // # column
                 out.println("              <td>" + r.index + "</td>");
 
-                out.print("              <td>");
-                out.printf("<span class=\"status-chip %s\">%s</span>",
-                        rowClass,
-                        r.success ? "PASS" : "FAIL");
-                out.println("</td>");
+                // Status chip
+                out.println("              <td>");
+                out.printf("                <span class=\"status-chip %s\">%s</span>%n", rowClass, label);
+                out.println("              </td>");
 
+                // Duration
                 out.println("              <td>" + r.durationMs + " ms</td>");
+
+                // Raw Selenium
                 out.println("              <td class=\"mono\"><pre>" + escapeHtml(r.rawScript) + "</pre></td>");
 
-                // Raw Gherkin column
+                // Raw Gherkin
                 out.println("              <td class=\"mono\">");
                 if (r.rawGherkin != null && !r.rawGherkin.isEmpty()) {
                     out.println("                <pre>" + escapeHtml(r.rawGherkin) + "</pre>");
@@ -686,6 +818,8 @@ public class RawSeleniumReplayer {
                     out.println("                <span class=\"small\">—</span>");
                 }
                 out.println("              </td>");
+
+                // Screenshot
                 out.println("              <td>");
                 if (r.screenshotFileName != null && !r.screenshotFileName.isEmpty()) {
                     String imgSrc = "/screenshots/" + r.screenshotFileName;
@@ -755,6 +889,7 @@ public class RawSeleniumReplayer {
             out.println("</html>");
         }
     }
+
 
     private static String escapeHtml(String s) {
         if (s == null) return "";
