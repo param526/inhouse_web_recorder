@@ -13,6 +13,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.interactions.Actions;
 
 
 import java.io.File;
@@ -297,21 +298,63 @@ public class RawSeleniumReplayer {
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         WebElement element;
+
         try {
             if ("click".equals(method)) {
                 // ✅ For clicks: wait until element is *clickable*
                 element = wait.until(ExpectedConditions.elementToBeClickable(by));
+
             } else if ("sendKeys".equals(method)) {
                 // ✅ For typing: wait until element is *visible*
                 element = wait.until(ExpectedConditions.visibilityOfElementLocated(by));
+
             } else if ("clear".equals(method)) {
                 element = wait.until(ExpectedConditions.visibilityOfElementLocated(by));
+
             } else {
                 // fallback to presence if some other method appears
                 element = wait.until(ExpectedConditions.presenceOfElementLocated(by));
             }
+
         } catch (TimeoutException e) {
-            throw new RuntimeException("Timed out waiting for element: " + by + " | Raw: " + raw, e);
+            // ---------- HOVER-TO-REVEAL FIX FOR SIGN OUT ----------
+            if ("click".equals(method) && isSignOutLink(by)) {
+                try {
+                    System.out.println(
+                            "Timed out locating Sign Out directly; " +
+                                    "hovering user sidenav icon (.sidenav_option-icon .fa-user) and retrying."
+                    );
+
+                    WebDriverWait hoverWait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+                    // Hover specifically on the *user* icon, not the help icon
+                    WebElement userIcon = hoverWait.until(
+                            ExpectedConditions.visibilityOfElementLocated(
+                                    By.cssSelector(".sidenav_options .sidenav_option .sidenav_option-icon .fa-user")
+                            )
+                    );
+
+                    // Move to the icon (or its parent) to trigger the hover menu
+                    new Actions(driver)
+                            .moveToElement(userIcon)
+                            .pause(Duration.ofMillis(300))
+                            .perform();
+
+                    // After hover, try again to find Sign Out
+                    element = hoverWait.until(ExpectedConditions.elementToBeClickable(by));
+
+                } catch (TimeoutException hoverEx) {
+                    throw new RuntimeException(
+                            "Timed out waiting for Sign Out even after hovering user icon: "
+                                    + by + " | Raw: " + raw,
+                            hoverEx
+                    );
+                }
+
+            } else {
+                // Regular case: bubble the timeout
+                throw new RuntimeException("Timed out waiting for element: " + by + " | Raw: " + raw, e);
+            }
         }
 
         // scroll + highlight AFTER it’s visible
@@ -335,6 +378,7 @@ public class RawSeleniumReplayer {
                 throw new IllegalArgumentException("Unsupported method: " + method + " in " + raw);
         }
     }
+
 
     private static By toBy(String type, String value) {
         switch (type) {
@@ -433,6 +477,15 @@ public class RawSeleniumReplayer {
             System.out.println("Clear highlight failed (non-fatal): " + e.getMessage());
         }
     }
+
+    private static boolean isSignOutLink(By by) {
+        if (by == null) return false;
+        String s = by.toString(); // e.g. "By.linkText: Sign Out"
+        return s != null
+                && s.startsWith("By.linkText:")
+                && s.trim().endsWith("Sign Out");
+    }
+
 
     private static String normalizeLocatorValue(String locatorType, String locatorValue) {
         // Only care about XPaths
