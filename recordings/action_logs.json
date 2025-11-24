@@ -1,242 +1,166 @@
 [ {
   "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Cryoportal® 2\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/session\");",
-  "timestamp" : 1764004779394,
-  "title" : "Cryoport - Cryoportal® 2",
+  "raw_gherkin" : "I navigate to \"Sign In\" page",
+  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DeoiPzvWljtc5rF5jzf0tLCjSyX62R4X1HAoAQN9djHJh89tKFLxGE9ULyWWJ0h%2B2vFp87xmFAdkAbQckYSi2z%2FlVFVTSeQsdZ4QOA5F%2B4pv5RSEKQ20I2mM8TxLuQkSeicSlTK2mnn3SU2Bt5ZPLIjuVwHt7C58wYR0xmCVIjXTdBjYg8I%2BshvPJZYjP83ofLBeYVv1G1JLjWo6D%2BQnr6JUKcC6jhVCQP9lM1l9AoSMhv2iI2aI2RInzmaxufXbgFjCVWJKz7b6thLI595KbvUJyva8azZDTjE9zcb3gCq6RVCM1rEJGGWG3gots6rh6czVB5MqtPwa6FELdjpLm9DmmUpsUPunBSuQQnjEcb8sKHNmRvu%2Fg8svfDsHa8QYTJDpKINFZyDfgLtNdj2YEOg1KAcUs82hyNgae%2BYJ8ivuZzqfDHXP3ljIcb8keliouGHkAHHzdxNkzwcpKnkMBcvP3cfU9f5VR1k5oWizOf24cuTGshWnpLQFBSxNAgx48t66xL83lYqwK1tGYQv%2BTtNXFU6yKGB3oGkG5yD6%2FkGKL8GqJwdSNp9AA8O9gkvRdb8l0vWwzYZDDmj0LQvapo8RS2FUXYeOjldnsNoJWmDbtSfnZjRhmty1gikZTky9k2arN9gs7bSxoJZjZKgmmr7wczCLLY6uPDn3SNLVRRRPOFF07PbAGvTJrGnEAowOVY1gwWD%2Bviic6Li3tQOp6XzZh5Q7gzimRxZcb%2BjFc3sFhDks6hjPFa7YdOhWO8hKhN4Wol5jGDLWMFjTU4B73ZAGtHnvVQj81rmd4BO8xGyTDUmzYQhsRMP5e5XdScsNbvXTkgxrUQLbcGjrQ7s0q68EOGAftv4W1d8v2eGb0A45Z5JLQ1nSYe60CpT4FCxiJUY%2F%2FDq62Ew6Ia8%2FF8cZNNQh9IdVOLGHtfjlWATBe%2Bs%2BTefjG6IhXlCwK8CvHK6iTMPZz1iaBBoySRZWVW1tmCSJSSH50jgIgC5zDLg98xmnohvqPErLOp5J11pH0i1aujswMeP%2Fxnt7ma06glMgy1%2BurLcBU07rbmJ7goeTiJUxm%2BrzGrj8XEEfCtItUBohtqEhvLgFpXLS0u1BDcqkJYdNQ4kw%2BLszbay7Umrgs4ZHu73iWPDg8AReGeVLcl8BUwy2Pbh4cI0%2FxA5HvyYnYDbP91y%2BYPg6ZuWYolYlCpxt%2FBtP59sw%2FXGrh%2FAherLhYThAukKM8GwqTdZXnR3qpS97twSqzpu9mAO%2FykkZ9Vma7x1VcucS%2BqfYzxUIHPqvaotcXo%2B1hVgN9iseOj%2FB0DSvcwbQZOxlROTBM%2FjJA9xPqmeMFcwfok4kKwpIvr17EZ9vhIqYiXMPjG3yGoPtLgksFCNWu5HIxAfwInf1NWzHx3BiJkqWM3GJbVAJPcnK4%2FOYJD%2BXEtvLGHLJLCL0BkOJNl1yw%2B4w5B%2FOedY4mZpJlQUAAO3kiO4khCFOkY1hjemEfGIbF2Mur3FAQT5d0V2cFC9I%2BL9Gj13iLXCa3jI6KZTm7r9RXuw2uFGsWlTECWaCKHgMzvlm9maLzqT4HZffabtkzuxT%2FnP%2F5LSvXhFgzphL%2BIQRLNv6mhzn0A51nN%2FYxxHaj1y6vjzZaxpVLa%2F0xoX3XaC%2FCuK0x%2B2HUybqOWgvHapzb1LmGkdyTexm%2FK8P3AR2Ez7XC%2FtJ695CQfA%3D%3D%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3Dea6c93c8252412eb3643a57b5f2d10b897f02396&ECID-Context=1.006H5k9iTdh4ykM6yNedMG006cLb0004I6%3BkXjE\");",
+  "timestamp" : 1764011950500,
+  "title" : "Sign In",
   "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/session"
-}, {
-  "action" : "sendKeys",
-  "options" : {
-    "id" : "email",
-    "name" : "email",
-    "parsedValue" : "cryoadmin@osidigital.com",
-    "primary_name" : "email",
-    "value" : "cryoadmin@osidigital.com"
-  },
-  "parsedValue" : "cryoadmin@osidigital.com",
-  "raw_gherkin" : "I enter \"cryoadmin@osidigital.com\" into the \"email\"",
-  "raw_selenium" : "driver.findElement(By.name(\"email\")).sendKeys(\"cryoadmin@osidigital.com\");",
-  "selector" : "textbox",
-  "timestamp" : 1764004786887,
-  "title" : "Cryoport - Cryoportal® 2",
-  "type" : "change",
-  "value" : "cryoadmin@osidigital.com"
-}, {
-  "action" : "sendKeys",
-  "options" : {
-    "id" : "password",
-    "name" : "password",
-    "parsedValue" : "EnTropYoSi",
-    "primary_name" : "password",
-    "value" : "EnTropYoSi"
-  },
-  "parsedValue" : "EnTropYoSi",
-  "raw_gherkin" : "I enter \"EnTropYoSi\" into the \"password\"",
-  "raw_selenium" : "driver.findElement(By.name(\"password\")).sendKeys(\"EnTropYoSi\");",
-  "selector" : "textbox",
-  "timestamp" : 1764004795068,
-  "title" : "Cryoport - Cryoportal® 2",
-  "type" : "change",
-  "value" : "EnTropYoSi"
+  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DeoiPzvWljtc5rF5jzf0tLCjSyX62R4X1HAoAQN9djHJh89tKFLxGE9ULyWWJ0h%2B2vFp87xmFAdkAbQckYSi2z%2FlVFVTSeQsdZ4QOA5F%2B4pv5RSEKQ20I2mM8TxLuQkSeicSlTK2mnn3SU2Bt5ZPLIjuVwHt7C58wYR0xmCVIjXTdBjYg8I%2BshvPJZYjP83ofLBeYVv1G1JLjWo6D%2BQnr6JUKcC6jhVCQP9lM1l9AoSMhv2iI2aI2RInzmaxufXbgFjCVWJKz7b6thLI595KbvUJyva8azZDTjE9zcb3gCq6RVCM1rEJGGWG3gots6rh6czVB5MqtPwa6FELdjpLm9DmmUpsUPunBSuQQnjEcb8sKHNmRvu%2Fg8svfDsHa8QYTJDpKINFZyDfgLtNdj2YEOg1KAcUs82hyNgae%2BYJ8ivuZzqfDHXP3ljIcb8keliouGHkAHHzdxNkzwcpKnkMBcvP3cfU9f5VR1k5oWizOf24cuTGshWnpLQFBSxNAgx48t66xL83lYqwK1tGYQv%2BTtNXFU6yKGB3oGkG5yD6%2FkGKL8GqJwdSNp9AA8O9gkvRdb8l0vWwzYZDDmj0LQvapo8RS2FUXYeOjldnsNoJWmDbtSfnZjRhmty1gikZTky9k2arN9gs7bSxoJZjZKgmmr7wczCLLY6uPDn3SNLVRRRPOFF07PbAGvTJrGnEAowOVY1gwWD%2Bviic6Li3tQOp6XzZh5Q7gzimRxZcb%2BjFc3sFhDks6hjPFa7YdOhWO8hKhN4Wol5jGDLWMFjTU4B73ZAGtHnvVQj81rmd4BO8xGyTDUmzYQhsRMP5e5XdScsNbvXTkgxrUQLbcGjrQ7s0q68EOGAftv4W1d8v2eGb0A45Z5JLQ1nSYe60CpT4FCxiJUY%2F%2FDq62Ew6Ia8%2FF8cZNNQh9IdVOLGHtfjlWATBe%2Bs%2BTefjG6IhXlCwK8CvHK6iTMPZz1iaBBoySRZWVW1tmCSJSSH50jgIgC5zDLg98xmnohvqPErLOp5J11pH0i1aujswMeP%2Fxnt7ma06glMgy1%2BurLcBU07rbmJ7goeTiJUxm%2BrzGrj8XEEfCtItUBohtqEhvLgFpXLS0u1BDcqkJYdNQ4kw%2BLszbay7Umrgs4ZHu73iWPDg8AReGeVLcl8BUwy2Pbh4cI0%2FxA5HvyYnYDbP91y%2BYPg6ZuWYolYlCpxt%2FBtP59sw%2FXGrh%2FAherLhYThAukKM8GwqTdZXnR3qpS97twSqzpu9mAO%2FykkZ9Vma7x1VcucS%2BqfYzxUIHPqvaotcXo%2B1hVgN9iseOj%2FB0DSvcwbQZOxlROTBM%2FjJA9xPqmeMFcwfok4kKwpIvr17EZ9vhIqYiXMPjG3yGoPtLgksFCNWu5HIxAfwInf1NWzHx3BiJkqWM3GJbVAJPcnK4%2FOYJD%2BXEtvLGHLJLCL0BkOJNl1yw%2B4w5B%2FOedY4mZpJlQUAAO3kiO4khCFOkY1hjemEfGIbF2Mur3FAQT5d0V2cFC9I%2BL9Gj13iLXCa3jI6KZTm7r9RXuw2uFGsWlTECWaCKHgMzvlm9maLzqT4HZffabtkzuxT%2FnP%2F5LSvXhFgzphL%2BIQRLNv6mhzn0A51nN%2FYxxHaj1y6vjzZaxpVLa%2F0xoX3XaC%2FCuK0x%2B2HUybqOWgvHapzb1LmGkdyTexm%2FK8P3AR2Ez7XC%2FtJ695CQfA%3D%3D%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3Dea6c93c8252412eb3643a57b5f2d10b897f02396&ECID-Context=1.006H5k9iTdh4ykM6yNedMG006cLb0004I6%3BkXjE"
 }, {
   "action" : "click",
   "options" : {
-    "id" : "remember_me",
-    "name" : "remember_me",
-    "primary_name" : "remember_me"
+    "element_text" : "Company Single Sign-On",
+    "id" : "ssoBtn",
+    "name" : "",
+    "primary_name" : "Company Single Sign-On"
   },
-  "raw_gherkin" : "I check the \"remember_me\" option",
-  "raw_selenium" : "driver.findElement(By.name(\"remember_me\")).click();",
-  "selector" : "checkbox",
-  "timestamp" : 1764004797833,
-  "title" : "Cryoport - Cryoportal® 2",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "name" : "commit",
-    "primary_name" : "commit"
-  },
-  "raw_gherkin" : "I click on the \"commit\" button",
-  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
+  "raw_gherkin" : "I click on the \"Company Single Sign-On\" button",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Company Single Sign-On']\")).click();",
   "selector" : "button",
-  "timestamp" : 1764004799331,
-  "title" : "Cryoport - Cryoportal® 2",
+  "timestamp" : 1764011950500,
+  "title" : "Sign In",
   "type" : "click"
 }, {
   "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/enroute\");",
-  "timestamp" : 1764004815073,
-  "title" : "Cryoport - Science, Logistics, Certainty",
+  "raw_gherkin" : "I navigate to \"Cloud Sign In\" page",
+  "raw_selenium" : "driver.get(\"https://idcs-9efadc0de91342138a85bc6418b7e0d4.identity.oraclecloud.com/ui/v1/signin\");",
+  "timestamp" : 1764011957926,
+  "title" : "Cloud Sign In",
   "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/enroute"
+  "url" : "https://idcs-9efadc0de91342138a85bc6418b7e0d4.identity.oraclecloud.com/ui/v1/signin"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "idcs-signin-basic-signin-form-username",
+    "parsedValue" : "Fatech.user",
+    "primary_name" : "User Name",
+    "value" : "Fatech.user"
+  },
+  "parsedValue" : "Fatech.user",
+  "raw_gherkin" : "I enter \"Fatech.user\" into the \"User Name\"",
+  "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-username\")).sendKeys(\"Fatech.user\");",
+  "selector" : "textbox",
+  "timestamp" : 1764011965780,
+  "title" : "Cloud Sign In",
+  "type" : "change",
+  "value" : "Fatech.user"
+}, {
+  "action" : "sendKeys",
+  "options" : {
+    "id" : "idcs-signin-basic-signin-form-password|input",
+    "parsedValue" : "Intercol@2022b",
+    "primary_name" : "Password",
+    "value" : "Intercol@2022b"
+  },
+  "parsedValue" : "Intercol@2022b",
+  "raw_gherkin" : "I enter \"Intercol@2022b\" into the \"Password\"",
+  "raw_selenium" : "driver.findElement(By.id(\"idcs-signin-basic-signin-form-password|input\")).sendKeys(\"Intercol@2022b\");",
+  "selector" : "textbox",
+  "timestamp" : 1764011974162,
+  "title" : "Cloud Sign In",
+  "type" : "change",
+  "value" : "Intercol@2022b"
 }, {
   "action" : "click",
   "options" : {
-    "primary_name" : "Sidenav hamburger icon"
+    "element_text" : "Sign In",
+    "primary_name" : "Sign In"
   },
-  "raw_gherkin" : "I click on the \"Sidenav hamburger icon\" link",
-  "raw_selenium" : "driver.findElement(By.cssSelector(\"a.sidenav_hamburger-icon\")).click();",
-  "selector" : "link",
-  "timestamp" : 1764004824443,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "New Order",
-    "primary_name" : "New Order"
-  },
-  "raw_gherkin" : "I click on the \"New Order\" link",
-  "raw_selenium" : "driver.findElement(By.linkText(\"New Order\")).click();",
-  "selector" : "link",
-  "timestamp" : 1764004826720,
-  "title" : "Cryoport - Science, Logistics, Certainty",
+  "raw_gherkin" : "I click on the \"Sign In\" button",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Sign In']\")).click();",
+  "selector" : "button",
+  "timestamp" : 1764011976302,
+  "title" : "Cloud Sign In",
   "type" : "click"
 }, {
   "action" : "navigate",
-  "raw_gherkin" : "I am on \"Cryoport - Science, Logistics, Certainty\" page",
+  "raw_gherkin" : "I navigate to \"Welcome\" page",
   "raw_selenium" : "",
-  "timestamp" : 1764004826836,
-  "title" : "Cryoport - Science, Logistics, Certainty",
+  "timestamp" : 1764011981748,
+  "title" : "Welcome",
   "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/new"
+  "url" : "https://eits-test.fa.em2.oraclecloud.com/fscmUI/faces/AtkHomePageWelcome?_adf.ctrl-state=w1mw7vkx2_1&_adf.no-new-window-redirect=true&_afrLoop=55041323793615238&_afrWindowMode=2&_afrWindowId=null&_afrFS=16&_afrMT=screen&_afrMFW=1280&_afrMFH=533&_afrMFDW=1280&_afrMFDH=720&_afrMFC=8&_afrMFCI=0&_afrMFM=0&_afrMFR=144&_afrMFG=0&_afrMFS=0&_afrMFO=0"
 }, {
   "action" : "click",
   "options" : {
-    "element_text" : "Select a client...",
-    "id" : "select2-shipment_wizard_client_id-container",
-    "primary_name" : "Select a client..."
+    "id" : "pt1:_UIScmil3u",
+    "primary_name" : "Xmx"
   },
-  "raw_gherkin" : "I open the \"Select a client...\" dropdown",
-  "raw_selenium" : "driver.findElement(By.cssSelector(\".select2-selection[aria-labelledby='select2-shipment_wizard_client_id-container']\")).click();",
-  "selector" : "textbox",
-  "timestamp" : 1764004837206,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Adina Kern-Goldberger (ANDR153)",
-    "primary_name" : "Adina Kern-Goldberger (ANDR153)"
-  },
-  "raw_gherkin" : "I select \"Adina Kern-Goldberger (ANDR153)\" from the dropdown",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//li[contains(@class,'select2-results__option') and normalize-space()='Adina Kern-Goldberger (ANDR153)']\")).click();",
-  "selector" : "option",
-  "timestamp" : 1764004839953,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "name" : "commit",
-    "primary_name" : "commit"
-  },
-  "raw_gherkin" : "I click on the \"commit\" button",
-  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
-  "selector" : "button",
-  "timestamp" : 1764004843389,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/410365/steps/route\");",
-  "timestamp" : 1764004847429,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/410365/steps/route"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "None",
-    "id" : "select2-route_site_1_attributes_site_template_id-container",
-    "primary_name" : "None"
-  },
-  "raw_gherkin" : "I open the \"None\" dropdown",
-  "raw_selenium" : "driver.findElement(By.cssSelector(\".select2-selection[aria-labelledby='select2-route_site_1_attributes_site_template_id-container']\")).click();",
-  "selector" : "textbox",
-  "timestamp" : 1764004849299,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157",
-    "primary_name" : "CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157"
-  },
-  "raw_gherkin" : "I select \"CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157\" from the dropdown",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//li[contains(@class,'select2-results__option') and normalize-space()='CLEVELAND CLINIC FERTILITY CENTER (CLEVELAND CLINIC FERTILITY CENTER)\nArsela Gishto (gishtoa@ccf.org)\n26900 CEDAR RD STE 220S, BEACHWOOD, OH, 44122-1157']\")).click();",
-  "selector" : "option",
-  "timestamp" : 1764004850491,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "None",
-    "id" : "select2-route_site_2_attributes_site_template_id-container",
-    "primary_name" : "None"
-  },
-  "raw_gherkin" : "I open the \"None\" dropdown",
-  "raw_selenium" : "driver.findElement(By.cssSelector(\".select2-selection[aria-labelledby='select2-route_site_2_attributes_site_template_id-container']\")).click();",
-  "selector" : "textbox",
-  "timestamp" : 1764004854950,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331",
-    "primary_name" : "FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331"
-  },
-  "raw_gherkin" : "I select \"FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331\" from the dropdown",
-  "raw_selenium" : "driver.findElement(By.xpath(\"//li[contains(@class,'select2-results__option') and normalize-space()='FERTILITY LABORATORIES OF COLORADO (CCRM) (FERTILITY LABORATORIES OF COLORADO (CCRM))\nKristin Costine (kcostine@colocrm.com)\n10290 RIDGEGATE CIR, LONE TREE, CO, 80124-5331']\")).click();",
-  "selector" : "option",
-  "timestamp" : 1764004856696,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "click",
-  "options" : {
-    "name" : "commit",
-    "primary_name" : "commit"
-  },
-  "raw_gherkin" : "I click on the \"commit\" button",
-  "raw_selenium" : "driver.findElement(By.name(\"commit\")).click();",
-  "selector" : "button",
-  "timestamp" : 1764004860734,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "click"
-}, {
-  "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Science, Logistics, Certainty\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/shipments/wizard/410365/steps/shippers\");",
-  "timestamp" : 1764004865599,
-  "title" : "Cryoport - Science, Logistics, Certainty",
-  "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/shipments/wizard/410365/steps/shippers"
-}, {
-  "action" : "click",
-  "options" : {
-    "element_text" : "Sign Out",
-    "primary_name" : "Sign Out"
-  },
-  "raw_gherkin" : "I click on the \"Sign Out\" link",
-  "raw_selenium" : "driver.findElement(By.linkText(\"Sign Out\")).click();",
+  "raw_gherkin" : "I click on the \"Xmx\" link",
+  "raw_selenium" : "driver.findElement(By.cssSelector(\"a.xmx\")).click();",
   "selector" : "link",
-  "timestamp" : 1764004868364,
-  "title" : "Cryoport - Science, Logistics, Certainty",
+  "timestamp" : 1764012019185,
+  "title" : "Welcome",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Company Single Sign-On",
+    "id" : "ssoBtn",
+    "primary_name" : "Company Single Sign-On"
+  },
+  "raw_gherkin" : "I click on the \"Company Single Sign-On\" button",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Company Single Sign-On']\")).click();",
+  "selector" : "button",
+  "timestamp" : 1764011951658,
+  "title" : "Sign In",
+  "type" : "click"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Company Single Sign-On",
+    "id" : "ssoBtn",
+    "name" : "",
+    "primary_name" : "Company Single Sign-On"
+  },
+  "raw_gherkin" : "I click on the \"Company Single Sign-On\" button",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Company Single Sign-On']\")).click();",
+  "selector" : "button",
+  "timestamp" : 1764011951659,
+  "title" : "Sign In",
   "type" : "click"
 }, {
   "action" : "navigate",
-  "raw_gherkin" : "I navigate to \"Cryoport - Cryoportal® 2\" page",
-  "raw_selenium" : "driver.get(\"https://loadtest-v2.cryoportal.com/session\");",
-  "timestamp" : 1764004870513,
-  "title" : "Cryoport - Cryoportal® 2",
+  "raw_gherkin" : "I navigate to \"Single Sign-Off consent\" page",
+  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/fusion_apps/pages/logoutConsent.jsp?logout_done_url=https%3A%2F%2Feits-test.fa.em2.oraclecloud.com%3A443%2FfscmUI%2FadfAuthentication%3F_adf.authenticate%3Dtrue&logoutId=3C7BAC514BB5AA6FBD369AAD76556B47169AB66A9F3A221D660A17437C9115CE\");",
+  "timestamp" : 1764012105377,
+  "title" : "Single Sign-Off consent",
   "type" : "navigation",
-  "url" : "https://loadtest-v2.cryoportal.com/session"
+  "url" : "https://eits-test.login.em2.oraclecloud.com/fusion_apps/pages/logoutConsent.jsp?logout_done_url=https%3A%2F%2Feits-test.fa.em2.oraclecloud.com%3A443%2FfscmUI%2FadfAuthentication%3F_adf.authenticate%3Dtrue&logoutId=3C7BAC514BB5AA6FBD369AAD76556B47169AB66A9F3A221D660A17437C9115CE"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Confirm",
+    "id" : "Confirm",
+    "name" : "Confirm",
+    "primary_name" : "Confirm"
+  },
+  "raw_gherkin" : "I click on the \"Confirm\" button",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Confirm']\")).click();",
+  "selector" : "button",
+  "timestamp" : 1764012111205,
+  "title" : "Single Sign-Off consent",
+  "type" : "click"
+}, {
+  "action" : "navigate",
+  "raw_gherkin" : "I navigate to \"Sign In\" page",
+  "raw_selenium" : "driver.get(\"https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DZyJUOJtzoV8LgdU%2BWZSMv1G3Xsi%2B4WrBUnjtvbfv8M%2FxKvN98NP%2Fi4lWTqmZqakOWcWYvbmhNLbPe08DJZdXBZzGJfqIXMluy3RVWJnMML04NA%2B7ZIRO9jGUTSbOa7RUuBgTyQqKNfimQl50%2BslRoU1Nek33%2FUGLreHpc5JqIAF0gGYquUPLXUDVNRnSb%2Fsri9mOqwRXDKDmUqYheAO8a1818zooy%2B5qHaxG%2BoHLA5YYpckFElj%2BmkNXrDxD5w9SE5bNuQXavtemfxWza0qqXB4wNIleHT2OYvpy59OO5UmNSS%2FHgWD0VXSRnWnb5YvRJI%2FHD1t%2Bk7VkRigcHKaXflrlefBQcdSyTPezt8aIONsdSgw95AQdKWRXHda9maVsg7wid%2F0%2Bnj4Gf2y7awl5Tk00ngQBfj7L6DB1ggU2pliSVVdZRLpUuIa2y%2FENrd97%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3De49b08fa512c8b7748fc0dcea661aefb3e1cc863&ECID-Context=1.006H5kJgB_X4ykM6yNedMG007E5o0000Hn%3BkXjE\");",
+  "timestamp" : 1764012114938,
+  "title" : "Sign In",
+  "type" : "navigation",
+  "url" : "https://eits-test.login.em2.oraclecloud.com/oam/server/obrareq.cgi?encquery%3DZyJUOJtzoV8LgdU%2BWZSMv1G3Xsi%2B4WrBUnjtvbfv8M%2FxKvN98NP%2Fi4lWTqmZqakOWcWYvbmhNLbPe08DJZdXBZzGJfqIXMluy3RVWJnMML04NA%2B7ZIRO9jGUTSbOa7RUuBgTyQqKNfimQl50%2BslRoU1Nek33%2FUGLreHpc5JqIAF0gGYquUPLXUDVNRnSb%2Fsri9mOqwRXDKDmUqYheAO8a1818zooy%2B5qHaxG%2BoHLA5YYpckFElj%2BmkNXrDxD5w9SE5bNuQXavtemfxWza0qqXB4wNIleHT2OYvpy59OO5UmNSS%2FHgWD0VXSRnWnb5YvRJI%2FHD1t%2Bk7VkRigcHKaXflrlefBQcdSyTPezt8aIONsdSgw95AQdKWRXHda9maVsg7wid%2F0%2Bnj4Gf2y7awl5Tk00ngQBfj7L6DB1ggU2pliSVVdZRLpUuIa2y%2FENrd97%20agentid%3DOraFusionApp_11AG%20ver%3D1%20crmethod%3D2%26cksum%3De49b08fa512c8b7748fc0dcea661aefb3e1cc863&ECID-Context=1.006H5kJgB_X4ykM6yNedMG007E5o0000Hn%3BkXjE"
+}, {
+  "action" : "click",
+  "options" : {
+    "element_text" : "Company Single Sign-On",
+    "id" : "ssoBtn",
+    "name" : "",
+    "primary_name" : "Company Single Sign-On"
+  },
+  "raw_gherkin" : "I click on the \"Company Single Sign-On\" button",
+  "raw_selenium" : "driver.findElement(By.xpath(\"//button[normalize-space(.)='Company Single Sign-On']\")).click();",
+  "selector" : "button",
+  "timestamp" : 1764012114938,
+  "title" : "Sign In",
+  "type" : "click"
 } ]

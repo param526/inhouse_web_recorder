@@ -57,66 +57,138 @@
         // console.log('[recorder] Event stored:', rec.type, rec.action, rec.raw_gherkin);
     }
 
-    // ---- Navigation logging ----
-    function logNavigation(url) {
-        if (!window.__recordedEvents) {
-            window.__recordedEvents = [];
+        // ---- Navigation logging ----
+        function logNavigation(url) {
+            if (!window.__recordedEvents) {
+                window.__recordedEvents = [];
+            }
+
+            // 🔹 Global nav state (count) – initialize once
+            if (!window.__recorderNavState) {
+                window.__recorderNavState = { navCount: 0 };
+            }
+
+            if (!url || typeof url !== 'string' || url.length === 0) {
+                console.warn('[recorder] Skipping navigation: URL is empty or invalid.');
+                return;
+            }
+            const urlRegex = /^(http|https|file):\/\/[^\s$.?#].[^\s]*$/i;
+            if (!urlRegex.test(url)) {
+                console.warn('[recorder] Skipping navigation: URL does not look like an absolute URL.', url);
+                return;
+            }
+
+            const escapedUrl = url.replace(/\"/g, '\\\"');
+            const pageTitle =
+                document.title && document.title.trim().length > 0
+                    ? document.title.trim()
+                    : '';
+
+            // If title is empty, fall back to URL as the "page" label
+            let pageName = pageTitle || url;
+            pageName = pageName.trim().replace(/\"/g, '\\"');
+
+            const isFirstNav = window.__recorderNavState.navCount === 0;
+            window.__recorderNavState.navCount += 1;
+
+            let stepText;
+            let rawSelenium;
+
+            if (isFirstNav) {
+                // ✅ First navigation
+                stepText = `I navigate to "${pageName}" page`;
+                rawSelenium = 'driver.get(\"' + escapedUrl + '\");';
+            } else {
+                // ✅ Subsequent navigations
+                stepText = `I am on "${pageName}" page`;
+                rawSelenium = ''; // no driver.get for later navigations
+            }
+
+            // Build the navigation record FIRST
+            const navRec = {
+                timestamp: Date.now(),
+                type: 'navigation',
+                action: 'navigate',
+                url: url,
+                title: pageTitle,
+                raw_gherkin: stepText,
+                raw_selenium: rawSelenium
+            };
+
+            // 👇 We may add a synthetic SSO click AFTER this nav
+            let syntheticSsoClick = null;
+
+            try {
+                // 💡 Oracle SSO special case: obrareq.cgi redirect
+                if (/\/oam\/server\/obrareq\.cgi/i.test(url)) {
+                    var now = Date.now();
+
+                    // Avoid spamming duplicates
+                    if (!window.__lastSsoSyntheticClickTs ||
+                        now - window.__lastSsoSyntheticClickTs > 3000) {
+
+                        var ssoBtn = document.getElementById('ssoBtn');
+                        if (ssoBtn && window.__recordingInstalled) {
+
+                            var accName = getAccessibleName(ssoBtn);
+                            var elementText = (ssoBtn.innerText || ssoBtn.textContent || '').trim();
+
+                            var gherkinName =
+                                elementText ||
+                                accName ||
+                                ssoBtn.id ||
+                                'Company Single Sign-On';
+
+                            var locator = generateSeleniumLocator(ssoBtn, accName);
+                            var locatorValue = locator.value.replace(/\"/g, '\\\"');
+
+                            syntheticSsoClick = {
+                                timestamp: now,
+                                type: 'click',
+                                title: document.title,
+                                action: 'click',
+                                selector: 'button',
+                                raw_gherkin: 'I click on the "' + gherkinName + '" button',
+                                raw_selenium:
+                                    'driver.findElement(' +
+                                    locator.type + '("' + locatorValue + '")).click();',
+                                options: {
+                                    id: ssoBtn.id,
+                                    name: ssoBtn.name || '',
+                                    element_text: elementText,
+                                    primary_name: gherkinName
+                                }
+                            };
+
+                            window.__lastSsoSyntheticClickTs = now;
+                        }
+                    }
+                }
+            } catch (e) {
+                console && console.log &&
+                    console.log('[recorder] SSO synthetic click prepare error', e);
+            }
+
+            // 1️⃣ Persist the navigation FIRST
+            persistEvent(navRec);
+            window.__currentUrl = url;
+
+            // 2️⃣ Then (if we built it) persist the synthetic SSO click AFTER
+            if (syntheticSsoClick) {
+                persistEvent(syntheticSsoClick);
+
+                try {
+                    // Immediate flush, since SSO redirects fast
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents || []));
+                } catch (e) {
+                    console && console.log &&
+                        console.log('[recorder] SSO synthetic click flush failed', e);
+                }
+
+                console && console.log &&
+                    console.log('[recorder] Synthetic SSO click recorded AFTER navigation');
+            }
         }
-
-        // 🔹 Global nav state (count) – initialize once
-        if (!window.__recorderNavState) {
-            window.__recorderNavState = { navCount: 0 };
-        }
-
-        if (!url || typeof url !== 'string' || url.length === 0) {
-            console.warn('[recorder] Skipping navigation: URL is empty or invalid.');
-            return;
-        }
-        const urlRegex = /^(http|https|file):\/\/[^\s$.?#].[^\s]*$/i;
-        if (!urlRegex.test(url)) {
-            console.warn('[recorder] Skipping navigation: URL does not look like an absolute URL.', url);
-            return;
-        }
-
-        const escapedUrl = url.replace(/\"/g, '\\\"');
-        const pageTitle =
-            document.title && document.title.trim().length > 0
-                ? document.title.trim()
-                : '';
-
-        // If title is empty, fall back to URL as the "page" label
-        let pageName = pageTitle || url;
-        pageName = pageName.trim().replace(/\"/g, '\\"');
-
-        const isFirstNav = window.__recorderNavState.navCount === 0;
-        window.__recorderNavState.navCount += 1;
-
-        let stepText;
-        let rawSelenium;
-
-        if (isFirstNav) {
-            // ✅ First navigation
-            stepText = `I navigate to "${pageName}" page`;
-            rawSelenium = 'driver.get(\"' + escapedUrl + '\");';
-        } else {
-            // ✅ Subsequent navigations
-            stepText = `I am on "${pageName}" page`;
-            rawSelenium = ''; // no driver.get for later navigations
-        }
-
-        const rec = {
-            timestamp: Date.now(),
-            type: 'navigation',
-            action: 'navigate',
-            url: url,
-            title: pageTitle,
-            raw_gherkin: stepText,
-            raw_selenium: rawSelenium
-        };
-
-        persistEvent(rec);
-        window.__currentUrl = url;
-    }
 
     // Expose for manual debug if needed
     window.__logNavigation = logNavigation;
@@ -822,6 +894,114 @@
             console && console.log && console.log('[recorder] recordEvent error', err);
         }
     }
+
+     // --- Oracle SSO: wrap #ssoBtn.onclick so we always record it ---
+        (function installOracleSsoOnclickWrapper() {
+            var attempts = 0;
+            var maxAttempts = 40;   // ~20 seconds with 500ms interval
+            var intervalMs = 500;
+
+            function tryWrap() {
+                attempts++;
+
+                try {
+                    var btn = document.getElementById('ssoBtn');
+
+                    // Button not present yet → keep polling
+                    if (!btn) {
+                        if (attempts >= maxAttempts) {
+                            window.clearInterval(poller);
+                        }
+                        return;
+                    }
+
+                    // Prevent double wrapping
+                    if (btn.__recorderSsoWrapped) {
+                        window.clearInterval(poller);
+                        return;
+                    }
+
+                    btn.__recorderSsoWrapped = true;
+
+                    var originalOnclick = btn.onclick; // may be null or a function
+
+                    // ⬇️ THIS is the btn.onclick = function (event) { ... } block you sent
+                    btn.onclick = function (event) {
+                        try {
+                            if (window.__recordingInstalled) {
+                                var accName = getAccessibleName(btn);
+                                var elementText = (btn.innerText || btn.textContent || '').trim();
+
+                                var gherkinName =
+                                    elementText ||
+                                    accName ||
+                                    btn.id ||
+                                    'Company Single Sign-On';
+
+                                var locator = generateSeleniumLocator(btn, accName);
+                                var locatorValue = locator.value.replace(/\"/g, '\\\"');
+
+                                var rec = {
+                                    timestamp: Date.now(),
+                                    type: 'click',
+                                    title: document.title,
+                                    action: 'click',
+                                    selector: 'button',
+                                    raw_gherkin: 'I click on the "' + gherkinName + '" button',
+                                    raw_selenium:
+                                        'driver.findElement(' +
+                                        locator.type + '("' + locatorValue + '")).click();',
+                                    options: {
+                                        id: btn.id,
+                                        name: btn.name || '',
+                                        element_text: elementText,
+                                        primary_name: gherkinName
+                                    }
+                                };
+
+                                // Add to in-memory array
+                                persistEvent(rec);
+
+                                // 🔒 Force immediate flush for this SSO case
+                                try {
+                                    localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents || []));
+                                } catch (e) {
+                                    console && console.log &&
+                                        console.log('[recorder] Oracle SSO immediate flush failed', e);
+                                }
+
+                                console && console.log &&
+                                    console.log('[recorder] Oracle SSO onclick recorded');
+                            }
+                        } catch (err) {
+                            console && console.log &&
+                                console.log('[recorder] Oracle SSO onclick wrapper error', err);
+                        }
+
+                        // Always call original onclick so Oracle behavior still works
+                        if (typeof originalOnclick === 'function') {
+                            return originalOnclick.call(this, event);
+                        }
+                    };
+
+                    console && console.log &&
+                        console.log('[recorder] Wrapped #ssoBtn.onclick for Oracle SSO');
+
+                    window.clearInterval(poller);
+                } catch (err) {
+                    console && console.log &&
+                        console.log('[recorder] Oracle SSO onclick wrap install error', err);
+                    if (attempts >= maxAttempts) {
+                        window.clearInterval(poller);
+                    }
+                }
+            }
+
+            var poller = window.setInterval(tryWrap, intervalMs);
+            // Try once immediately as well
+            tryWrap();
+        })();
+
 
     // Attach listeners
     ['click', 'change'].forEach(function (type) {
