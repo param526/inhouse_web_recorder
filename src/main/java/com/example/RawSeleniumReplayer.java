@@ -134,10 +134,13 @@ public class RawSeleniumReplayer {
 
                 try {
                     if (isNavigation(script)) {
-                        executeNavigation(script, driver);     // you can have this wait for page load
+                        executeNavigation(script, driver);
                     } else {
-                        executeElement(script, driver);        // with explicit waits internally
+                        executeElement(script, driver);
                     }
+
+                    // add this right here
+                    waitForPageLoad(driver);
 
                     step.success = true;
                     step.errorMessage = null;
@@ -146,17 +149,17 @@ public class RawSeleniumReplayer {
                     step.success = false;
                     step.errorMessage = e.getMessage();
                     step.stackTrace = getStackTraceAsString(e);
-                    System.out.println("Error executing step: " + script);
-                    e.printStackTrace();
-
-                    // stop replaying after first failure
                     stopAfterFailure = true;
                 } finally {
                     step.durationMs = System.currentTimeMillis() - start;
 
-                    // 👇 capture screenshot for this step (whether PASS or FAIL)
+                    // Screenshot now happens AFTER waitForPageLoad()
                     if (driver != null) {
                         step.screenshotFileName = captureScreenshot(driver, screenshotsDir, step.index);
+                    }
+
+                    if (driver != null) {
+                        clearHighlights(driver);
                     }
 
                     results.add(step);
@@ -252,23 +255,24 @@ public class RawSeleniumReplayer {
             throw new IllegalArgumentException("Unsupported raw_selenium (not element or nav): " + raw);
         }
 
-        String locatorType = m.group(1);  // id, name, xpath, cssSelector, ...
+        String locatorType  = m.group(1);  // id, name, xpath, cssSelector, ...
         String locatorValue = m.group(2);  // the actual locator string
-        String method = m.group(3);  // click, sendKeys, clear
-        String arg = m.group(4);  // value for sendKeys (may be null)
+        String method       = m.group(3);  // click, sendKeys, clear
+        String arg          = m.group(4);  // value for sendKeys (may be null)
 
         By by = toBy(locatorType, locatorValue);
 
-        // ✅ Wait for element to be present (and optionally visible)
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        // optional explicit wait – keep if you're already using WebDriverWait
         WebElement element;
         try {
-            // If you want just presence, use presenceOfElementLocated(by)
-            // If you want visible, use visibilityOfElementLocated(by)
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
             element = wait.until(ExpectedConditions.presenceOfElementLocated(by));
         } catch (TimeoutException e) {
             throw new RuntimeException("Timed out waiting for element: " + by + " | Raw: " + raw, e);
         }
+
+        // 👇 NEW: highlight the element before performing the action
+        highlightElement(driver, element);
 
         switch (method) {
             case "click":
@@ -288,6 +292,7 @@ public class RawSeleniumReplayer {
                 throw new IllegalArgumentException("Unsupported method: " + method + " in " + raw);
         }
     }
+
 
     private static By toBy(String type, String value) {
         switch (type) {
@@ -349,6 +354,46 @@ public class RawSeleniumReplayer {
         } catch (Exception e) {
             System.err.println("Failed to capture screenshot for step " + stepIndex + ": " + e.getMessage());
             return null;
+        }
+    }
+
+    private static void highlightElement(WebDriver driver, WebElement element) {
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+
+            // Scroll into view first
+            js.executeScript(
+                    "arguments[0].scrollIntoView({behavior:'instant',block:'center',inline:'center'});",
+                    element
+            );
+
+            // Add a special attribute + highlight styles
+            js.executeScript(
+                    "arguments[0].setAttribute('data-replay-highlight', 'true');" +
+                            "arguments[0].style.outline='3px solid #f97316';" +
+                            "arguments[0].style.outlineOffset='2px';" +
+                            "arguments[0].style.boxShadow='0 0 0 3px rgba(249,115,22,0.75)';",
+                    element
+            );
+        } catch (Exception e) {
+            System.out.println("Highlight failed (non-fatal): " + e.getMessage());
+        }
+    }
+
+    /** Remove our temporary highlight from all elements, if any. */
+    private static void clearHighlights(WebDriver driver) {
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript(
+                    "document.querySelectorAll('[data-replay-highlight]').forEach(function(el){" +
+                            "  el.style.outline='';" +
+                            "  el.style.outlineOffset='';" +
+                            "  el.style.boxShadow='';" +
+                            "  el.removeAttribute('data-replay-highlight');" +
+                            "});"
+            );
+        } catch (Exception e) {
+            System.out.println("Clear highlight failed (non-fatal): " + e.getMessage());
         }
     }
 
