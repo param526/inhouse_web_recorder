@@ -1,14 +1,18 @@
 (function () {
     const STORAGE_KEY = '__recordedEvents';
-    // 🔥 Debounce config for text input recording
+
     const TEXT_CHANGE_DEBOUNCE_MS = 700;
     const pendingTextChangeTimers = {};   // key -> { timeoutId, rec }
+
+    // ✅ FIX 1: Deduplication State
+    let lastEventSignature = '';
+    let lastEventTimestamp = 0;
 
     let lsDirty = false;
     let lsFlushTimer = null;
     const LS_FLUSH_INTERVAL_MS = 1000;
 
-    // ---- Load existing events from localStorage (if any) ----
+    // ---- Load existing events ----
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
         window.__recordedEvents = saved ? JSON.parse(saved) : [];
@@ -20,7 +24,14 @@
         window.__recordedEvents = [];
     }
 
-    // Avoid double-installing listeners
+    // ✅ NEW: detect if we've already recorded an initial driver.get nav earlier (for this origin)
+    window.__recorderHasInitialNavGet = (window.__recordedEvents || []).some(ev =>
+        ev &&
+        ev.type === 'navigation' &&
+        typeof ev.raw_selenium === 'string' &&
+        ev.raw_selenium.trim().startsWith('driver.get(')
+    );
+
     if (window.__recordingInstalled) {
         console.log('[recorder] Already installed on this page');
         return;
@@ -31,9 +42,9 @@
     console.log('[recorder] Installed on', window.location.href);
 
     function scheduleLocalStorageFlush() {
-        if (lsFlushTimer !== null) return; // already scheduled
+        if (lsFlushTimer !== null) return;
 
-        lsFlushTimer = setTimeout(function() {
+        lsFlushTimer = setTimeout(function () {
             lsFlushTimer = null;
             if (!lsDirty) return;
 
@@ -48,63 +59,66 @@
 
     // ---- Central place to store and persist each event ----
     function persistEvent(rec) {
+        // ✅ FIX 2: Strict Deduplication Logic
+        const signature = `${rec.type}|${rec.action}|${rec.raw_selenium}|${rec.raw_gherkin}`;
+        const now = Date.now();
+
+        if (signature === lastEventSignature && (now - lastEventTimestamp < 150)) {
+            return;
+        }
+
+        lastEventSignature = signature;
+        lastEventTimestamp = now;
+
         (window.__recordedEvents || (window.__recordedEvents = [])).push(rec);
 
-        // mark as dirty & schedule a flush
         lsDirty = true;
         scheduleLocalStorageFlush();
-
-        // console.log('[recorder] Event stored:', rec.type, rec.action, rec.raw_gherkin);
     }
 
-    // ---- Navigation logging ----
+    // ===================== UPDATED logNavigation =====================
     function logNavigation(url) {
         if (!window.__recordedEvents) {
             window.__recordedEvents = [];
         }
 
-        // 🔹 Global nav state (count) – initialize once
         if (!window.__recorderNavState) {
+            // navCount = count of navigation events we've already logged in THIS page session
             window.__recorderNavState = { navCount: 0 };
         }
 
-        if (!url || typeof url !== 'string' || url.length === 0) {
-            console.warn('[recorder] Skipping navigation: URL is empty or invalid.');
-            return;
-        }
-        const urlRegex = /^(http|https|file):\/\/[^\s$.?#].[^\s]*$/i;
-        if (!urlRegex.test(url)) {
-            console.warn('[recorder] Skipping navigation: URL does not look like an absolute URL.', url);
-            return;
-        }
+        if (!url || typeof url !== 'string' || url.length === 0) return;
+
+        // Basic check for valid protocol
+        if (!/^(http|https|file):/i.test(url)) return;
 
         const escapedUrl = url.replace(/\"/g, '\\\"');
-        const pageTitle =
-            document.title && document.title.trim().length > 0
-                ? document.title.trim()
-                : '';
+        const pageTitle = document.title && document.title.trim().length > 0 ? document.title.trim() : '';
 
-        // If title is empty, fall back to URL as the "page" label
         let pageName = pageTitle || url;
         pageName = pageName.trim().replace(/\"/g, '\\"');
 
-        const isFirstNav = window.__recorderNavState.navCount === 0;
+        const alreadyHadInitialGet = !!window.__recorderHasInitialNavGet;
+        const isFirstNav = !alreadyHadInitialGet && window.__recorderNavState.navCount === 0;
+
         window.__recorderNavState.navCount += 1;
 
         let stepText;
         let rawSelenium;
 
         if (isFirstNav) {
-            // ✅ First navigation
+            // ✅ FIRST navigation only (and only if we never wrote driver.get before on this origin):
             stepText = `I navigate to "${pageName}" page`;
             rawSelenium = 'driver.get(\"' + escapedUrl + '\");';
+
+            // Mark that we've now produced the initial driver.get nav
+            window.__recorderHasInitialNavGet = true;
         } else {
-            // ✅ Subsequent navigations
+            // ✅ Later navigations: keep metadata + Gherkin, but no raw_selenium
             stepText = `I am on "${pageName}" page`;
-            rawSelenium = ''; // no driver.get for later navigations
+            rawSelenium = '';
         }
 
-        // Build the navigation record FIRST
         const navRec = {
             timestamp: Date.now(),
             type: 'navigation',
@@ -115,32 +129,17 @@
             raw_selenium: rawSelenium
         };
 
-        // 👇 We may add a synthetic SSO click AFTER this nav
+        // SSO handling logic (Original logic restored)
         let syntheticSsoClick = null;
-
         try {
-            // 💡 Oracle SSO special case: obrareq.cgi redirect
             if (/\/oam\/server\/obrareq\.cgi/i.test(url)) {
                 var now = Date.now();
-
-                // Avoid spamming duplicates
-                if (!window.__lastSsoSyntheticClickTs ||
-                    now - window.__lastSsoSyntheticClickTs > 3000) {
-
+                if (!window.__lastSsoSyntheticClickTs || now - window.__lastSsoSyntheticClickTs > 3000) {
                     var ssoBtn = document.getElementById('ssoBtn');
                     if (ssoBtn && window.__recordingInstalled) {
-
                         var accName = getAccessibleName(ssoBtn);
-                        var elementText = (ssoBtn.innerText || ssoBtn.textContent || '').trim();
-
-                        var gherkinName =
-                            elementText ||
-                            accName ||
-                            ssoBtn.id ||
-                            'Company Single Sign-On';
-
+                        var gherkinName = (ssoBtn.innerText || ssoBtn.textContent || accName || ssoBtn.id || 'Company Single Sign-On').trim();
                         var locator = generateSeleniumLocator(ssoBtn, accName);
-                        var locatorValue = locator.value.replace(/\"/g, '\\\"');
 
                         syntheticSsoClick = {
                             timestamp: now,
@@ -149,72 +148,52 @@
                             action: 'click',
                             selector: 'button',
                             raw_gherkin: 'I click on the "' + gherkinName + '" button',
-                            raw_selenium:
-                                'driver.findElement(' +
-                                locator.type + '("' + locatorValue + '")).click();',
-                            options: {
-                                id: ssoBtn.id,
-                                name: ssoBtn.name || '',
-                                element_text: elementText,
-                                primary_name: gherkinName
-                            }
+                            raw_selenium: 'driver.findElement(' + locator.type + '("' + locator.value.replace(/\"/g, '\\\"') + '")).click();',
+                            options: { id: ssoBtn.id, primary_name: gherkinName }
                         };
-
                         window.__lastSsoSyntheticClickTs = now;
                     }
                 }
             }
-        } catch (e) {
-            console && console.log &&
-                console.log('[recorder] SSO synthetic click prepare error', e);
-        }
+        } catch (e) {}
 
-        // 1️⃣ Persist the navigation FIRST
         persistEvent(navRec);
         window.__currentUrl = url;
 
-        // 2️⃣ Then (if we built it) persist the synthetic SSO click AFTER
         if (syntheticSsoClick) {
             persistEvent(syntheticSsoClick);
-
             try {
-                // Immediate flush, since SSO redirects fast
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents || []));
             } catch (e) {
-                console && console.log &&
-                    console.log('[recorder] SSO synthetic click flush failed', e);
+                console.log('[recorder] Failed to persist synthetic SSO click', e);
             }
-
-            console && console.log &&
-                console.log('[recorder] Synthetic SSO click recorded AFTER navigation');
         }
     }
+    // ===================== END UPDATED logNavigation =====================
 
-    // Expose for manual debug if needed
-    window.__logNavigation = logNavigation;
+    // --- URL Change Detection ---
+    setTimeout(() => { logNavigation(window.location.href); }, 500);
 
-    // --- URL Change Detection (for initial load and SPAs) ---
-    setTimeout(() => {
-        logNavigation(window.location.href);
-    }, 500); // small delay so title is set
-
-    window.addEventListener('popstate', () => {
+    const checkNav = () => {
         setTimeout(() => {
             if (window.location.href !== window.__currentUrl) {
                 logNavigation(window.location.href);
             }
         }, 100);
-    });
+    };
 
-    window.addEventListener('hashchange', () => {
-        setTimeout(() => {
-            if (window.location.href !== window.__currentUrl) {
-                logNavigation(window.location.href);
-            }
-        }, 100);
-    });
+    window.addEventListener('popstate', checkNav);
+    window.addEventListener('hashchange', checkNav);
 
+    // ✅ FIX 3: Unload Flusher
     window.addEventListener('beforeunload', function () {
+        Object.keys(pendingTextChangeTimers).forEach(key => {
+            const item = pendingTextChangeTimers[key];
+            if (item && item.rec) {
+                (window.__recordedEvents || (window.__recordedEvents = [])).push(item.rec);
+            }
+        });
+
         try {
             if (window.__recordedEvents) {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents));
@@ -224,243 +203,449 @@
         }
     });
 
-    // --- Dedicated handler for Select2 / dropdown options --
-
     (function (history) {
         const pushState = history.pushState;
         history.pushState = function () {
             const result = pushState.apply(history, arguments);
-            setTimeout(() => {
-                if (window.location.href !== window.__currentUrl) {
-                    logNavigation(window.location.href);
-                }
-            }, 100);
+            checkNav();
             return result;
         };
     })(window.history);
 
-    // ---- Helpers for click/change recording ----
+    // ---- Helper Functions ----
+
+    // ================= LOCATOR ENGINE (multi-locator bundle) =================
+
+    function le_collectAttributes(el) {
+        var attrs = {};
+        var list = el.attributes;
+        for (var i = 0; i < list.length; i++) {
+            var a = list[i];
+            attrs[a.name] = a.value;
+        }
+        return attrs;
+    }
+
+    function le_getElementText(el) {
+        var text = (el.innerText || el.textContent || '').trim();
+        return text.length > 120 ? text.slice(0, 120) : text;
+    }
+
+    function le_normalizeText(text) {
+        return text.replace(/\s+/g, ' ').trim();
+    }
+
+    function le_isProbablyRandomId(id) {
+        if (!id) return false;
+
+        var digits = id.match(/\d/g);
+        var digitCount = digits ? digits.length : 0;
+        var digitRatio = digitCount / id.length;
+        if (digitRatio > 0.4 && id.length > 6) return true;
+
+        if (/:/.test(id)) return true;                          // e.g. pt1:_UIScmil3u
+        if (/^[a-f0-9\-]{8,}$/i.test(id)) return true;          // GUID-ish
+
+        return false;
+    }
+
+    function le_addCandidate(candidates, type, value, score) {
+        if (!value) return;
+        candidates.push({ type: type, value: value, score: score });
+    }
+
+    function le_addDataTestCandidates(el, attrs, candidates) {
+        for (var key in attrs) {
+            if (!attrs.hasOwnProperty(key)) continue;
+            if (/^data-(testid|test-id|qa|test|cy)$/i.test(key)) {
+                var v = attrs[key];
+                if (v) {
+                    le_addCandidate(candidates, 'dataTest', '[' + key + '="' + v + '"]', 100);
+                }
+            }
+        }
+    }
+
+    function le_addIdCandidates(el, attrs, candidates) {
+        var id = attrs.id;
+        if (!id) return;
+
+        if (le_isProbablyRandomId(id)) {
+            le_addCandidate(candidates, 'id', id, 40);
+        } else {
+            le_addCandidate(candidates, 'id', id, 90);
+        }
+    }
+
+    function le_addNameCandidates(el, attrs, candidates) {
+        var name = attrs.name;
+        if (!name) return;
+        var tag = el.tagName.toLowerCase();
+
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+            le_addCandidate(candidates, 'name', name, 80);
+        } else {
+            le_addCandidate(candidates, 'name', name, 60);
+        }
+    }
+
+    function le_addAccessibleTextCandidates(el, attrs, candidates) {
+        var ariaLabel = attrs['aria-label'];
+        var titleAttr = attrs['title'];
+        var altAttr = attrs['alt'];
+
+        var texts = [];
+        if (ariaLabel) texts.push(ariaLabel);
+        if (titleAttr) texts.push(titleAttr);
+        if (altAttr) texts.push(altAttr);
+
+        for (var i = 0; i < texts.length; i++) {
+            var norm = le_normalizeText(texts[i]);
+            if (!norm) continue;
+
+            le_addCandidate(
+                candidates,
+                'aria',
+                '[aria-label="' + norm + '"], [title="' + norm + '"], [alt="' + norm + '"]',
+                75
+            );
+        }
+    }
+
+    function le_addTextBasedCandidates(el, text, attrs, candidates) {
+        var tag = el.tagName.toLowerCase();
+        var normText = le_normalizeText(text);
+        if (!normText) return;
+
+        var typeAttr = (attrs.type || '').toLowerCase();
+        var roleAttr = (attrs.role || '').toLowerCase();
+
+        var isButtonLike =
+            tag === 'button' ||
+            (tag === 'input' && (typeAttr === 'button' || typeAttr === 'submit')) ||
+            roleAttr === 'button';
+
+        var isLinkLike = tag === 'a' || roleAttr === 'link';
+
+        if (isButtonLike || isLinkLike) {
+            le_addCandidate(
+                candidates,
+                'xpathText',
+                '//' + tag + "[normalize-space(.)='" + normText + "']",
+                65
+            );
+            le_addCandidate(
+                candidates,
+                'xpathText',
+                "//span[normalize-space(.)='" + normText + "']/ancestor::" + tag + "[1]",
+                60
+            );
+        }
+
+        if (roleAttr && normText) {
+            le_addCandidate(
+                candidates,
+                'roleText',
+                "//*[@role='" + roleAttr + "'][normalize-space(.)='" + normText + "']",
+                60
+            );
+        }
+    }
+
+    function le_addLabelTextCandidates(el, attrs, candidates) {
+        var doc = el.ownerDocument;
+        if (!doc) return;
+
+        var id = attrs.id;
+        if (id) {
+            var label = doc.querySelector('label[for="' + id + '"]');
+            if (label) {
+                var lbl = le_normalizeText(label.innerText || label.textContent || '');
+                if (lbl) {
+                    le_addCandidate(
+                        candidates,
+                        'labelText',
+                        "//label[normalize-space(.)='" + lbl + "']/following::" + el.tagName.toLowerCase() + "[1]",
+                        60
+                    );
+                }
+            }
+        }
+
+        var labelParent = el.closest ? el.closest('label') : null;
+        if (labelParent) {
+            var lbl2 = le_normalizeText(labelParent.innerText || labelParent.textContent || '');
+            if (lbl2) {
+                le_addCandidate(
+                    candidates,
+                    'labelText',
+                    "//label[normalize-space(.)='" + lbl2 + "']//" + el.tagName.toLowerCase() + "[1]",
+                    55
+                );
+            }
+        }
+    }
+
+    function le_isUglyClass(c) {
+        if (c.length > 25) return true;
+        if (/^[a-f0-9]{8,}$/i.test(c)) return true;
+        if (/^x[A-Za-z0-9]{2,}$/.test(c)) return true; // Oracle-like xmx, xo0, etc.
+        return false;
+    }
+
+    function le_getElementIndexAmongSiblings(el) {
+        var parent = el.parentElement;
+        if (!parent) return null;
+
+        var tag = el.tagName;
+        var children = parent.children;
+        var sameTag = [];
+        for (var i = 0; i < children.length; i++) {
+            if (children[i].tagName === tag) sameTag.push(children[i]);
+        }
+        for (var j = 0; j < sameTag.length; j++) {
+            if (sameTag[j] === el) return j;
+        }
+        return null;
+    }
+
+    function le_addCssFallbackCandidates(el, attrs, candidates) {
+        var tag = el.tagName.toLowerCase();
+        var classAttr = attrs['class'] || '';
+        var classes = classAttr.split(/\s+/).filter(function (c) { return !!c; });
+
+        if (classes.length === 1 && !le_isUglyClass(classes[0])) {
+            le_addCandidate(candidates, 'css', tag + '.' + classes[0], 50);
+        }
+
+        if (classes.length > 1) {
+            var good = [];
+            for (var i = 0; i < classes.length; i++) {
+                if (!le_isUglyClass(classes[i])) good.push(classes[i]);
+            }
+            if (good.length > 0) {
+                var css = tag;
+                for (var j = 0; j < good.length; j++) {
+                    css += '.' + good[j];
+                }
+                le_addCandidate(candidates, 'css', css, 45);
+            }
+        }
+
+        var idx = le_getElementIndexAmongSiblings(el);
+        if (idx !== null && idx < 10) {
+            le_addCandidate(
+                candidates,
+                'css',
+                tag + ':nth-of-type(' + (idx + 1) + ')',
+                20
+            );
+        }
+    }
+
+    function le_dedupeAndSort(candidates) {
+        var map = {};
+        for (var i = 0; i < candidates.length; i++) {
+            var c = candidates[i];
+            var key = c.type + '|' + c.value;
+            if (!map[key] || c.score > map[key].score) {
+                map[key] = c;
+            }
+        }
+        var out = [];
+        for (var k in map) {
+            if (map.hasOwnProperty(k)) out.push(map[k]);
+        }
+        out.sort(function (a, b) { return b.score - a.score; });
+        return out;
+    }
+
+    // 🔹 PUBLIC: buildRecordedTarget(el)
+    function buildRecordedTarget(el) {
+        if (!el || el.nodeType !== 1) return null;
+        var element = el;
+        var attrs = le_collectAttributes(element);
+        var text = le_getElementText(element);
+        var candidates = [];
+
+        le_addDataTestCandidates(element, attrs, candidates);
+        le_addIdCandidates(element, attrs, candidates);
+        le_addNameCandidates(element, attrs, candidates);
+        le_addAccessibleTextCandidates(element, attrs, candidates);
+        le_addTextBasedCandidates(element, text, attrs, candidates);
+        le_addLabelTextCandidates(element, attrs, candidates);
+        le_addCssFallbackCandidates(element, attrs, candidates);
+
+        var locators = le_dedupeAndSort(candidates);
+
+        return {
+            tagName: element.tagName.toLowerCase(),
+            text: text,
+            attributes: attrs,
+            locators: locators
+        };
+    }
+
+    // ---- Existing helpers: accessible name + basic locator for raw_selenium ----
 
     function getAccessibleName(t) {
         if (!t) return '';
-
         var original = t;
-
-        // 1️⃣ Walk up ancestors and look for aria-label / title / img alt
         var el = t;
+
+        // 1. Ancestor check
         while (el) {
             if (el.getAttribute) {
                 var aria = el.getAttribute('aria-label');
-                if (aria && aria.trim().length > 0) {
-                    return aria.trim();
-                }
+                if (aria && aria.trim().length > 0) return aria.trim();
 
                 var titleAttr = el.getAttribute('title');
-                if (titleAttr && titleAttr.trim().length > 0) {
-                    return titleAttr.trim();
-                }
+                if (titleAttr && titleAttr.trim().length > 0) return titleAttr.trim();
 
                 if (el.tagName && el.tagName.toLowerCase() === 'img') {
                     var alt = el.getAttribute('alt');
-                    if (alt && alt.trim().length > 0) {
-                        return alt.trim();
-                    }
+                    if (alt && alt.trim().length > 0) return alt.trim();
                 }
             }
             el = el.parentElement;
         }
 
-        // 2️⃣ <label for="id"> for the original element
+        // 2. Label for
         var id = original.id;
         if (id) {
             var labelEl = document.querySelector('label[for="' + id + '"]');
-            if (labelEl) {
-                return (labelEl.innerText || labelEl.textContent || '').trim();
-            }
+            if (labelEl) return (labelEl.innerText || labelEl.textContent || '').trim();
         }
 
-        // 3️⃣ name attribute on the original element
-        if (original.name) {
-            return original.name.trim();
-        }
+        // 3. Name
+        if (original.name) return original.name.trim();
 
-        // 4️⃣.b Descendant <img> alt/title (icon-only buttons/links)
-        try {
-            if (original.querySelector) {
-                var imgDesc = original.querySelector('img[alt], img[title]');
-                if (imgDesc) {
-                    var imgLabel =
-                        (imgDesc.getAttribute('alt') || imgDesc.getAttribute('title') || '').trim();
-                    if (imgLabel.length > 0) {
-                        return imgLabel;
-                    }
-                }
-            }
-        } catch (e) {
-            // ignore
-        }
-
-        // 5️⃣ Last resort: any visible text on the element or its ancestors
+        // 4. Inner Text fallback
         el = original;
         while (el) {
             var txt = (el.innerText || el.textContent || '').trim();
-            if (txt.length > 0) {
-                return txt;
-            }
+            if (txt.length > 0) return txt;
             el = el.parentElement;
         }
-
         return '';
     }
 
     function generateSeleniumLocator(t, accName) {
-        if (!t) {
-            return { type: 'By.cssSelector', value: '*' };
-        }
+        if (!t) return { type: 'By.cssSelector', value: '*' };
 
-        var id   = t.id || '';
+        var id = t.id || '';
         var name = t.name || '';
-        var tag  = (t.tagName || '').toLowerCase();
-
-        var elementText       = (t.innerText || t.textContent || '').trim();
-        var normalizedText    = elementText.replace(/'/g, "\\'");
+        var tag = (t.tagName || '').toLowerCase();
+        var elementText = (t.innerText || t.textContent || '').trim();
+        var normalizedText = elementText.replace(/'/g, "\\'");
         var normalizedAccName = (accName || '').replace(/'/g, "\\'");
 
-        // 🔹 Special case: links → By.linkText when we have text
         if (tag === 'a' && elementText.length > 0) {
             return { type: 'By.linkText', value: elementText };
         }
 
-        // 🔹 PRIORITY 1: Element Text (XPath by Text) for non-input/textarea
         if (elementText.length > 0 && tag !== 'input' && tag !== 'textarea') {
             var xpath = "//" + tag + "[normalize-space(.)='" + normalizedText + "']";
             return { type: 'By.xpath', value: xpath };
         }
+        if (name && name.length > 0) return { type: 'By.name', value: name };
+        if (id && id.length > 0) return { type: 'By.id', value: id };
 
-        // 🔹 PRIORITY 2: By Name
-        if (name && name.length > 0) {
-            return { type: 'By.name', value: name };
-        }
-
-        // 🔹 PRIORITY 3: By ID
-        if (id && id.length > 0) {
-            return { type: 'By.id', value: id };
-        }
-
-        // 🔹 PRIORITY 4: Accessible name–based XPath
         if (normalizedAccName.length > 0) {
-            var xpath2 =
-                "//label[normalize-space(.)='" + normalizedAccName + "']/following-sibling::" + tag +
+            var xpath2 = "//label[normalize-space(.)='" + normalizedAccName + "']/following-sibling::" + tag +
                 " | //" + tag + "[@aria-label='" + normalizedAccName + "']" +
                 " | //" + tag + "[@placeholder='" + normalizedAccName + "']";
             return { type: 'By.xpath', value: xpath2 };
         }
 
-        // 🔹 Final Fallback: tag selector
         return { type: 'By.cssSelector', value: tag || '*' };
     }
 
-    // --- Dedicated handler for dropdown options (Select2 & friends) ---
+    // --- Specific Dropdown Option Handler ---
     function handleDropdownOptionEvent(e) {
         try {
             if (!e || !e.target || !e.target.closest) return;
 
-            // Cover Select2 + generic ARIA options
             const optionEl = e.target.closest(
-                '.select2-results__option,' +
-                'li[role="option"],' +
-                '[role="option"],' +
-                'li[aria-selected]'
+                '.select2-results__option, li[role="option"], [role="option"], li[aria-selected]'
             );
 
-            if (!optionEl) return;  // not a dropdown option → ignore
+            if (!optionEl) return;
 
             const optionText = (optionEl.innerText || optionEl.textContent || '').trim();
             if (!optionText) return;
 
-            const rec = {};
-            rec.timestamp = Date.now();
-            rec.type = 'click';
-            rec.title = document.title;
-            rec.action = 'click';
-
-            // 🔒 Build a stable locator for this option
-            const escapedText = optionText.replace(/'/g, "\\'");
-
-            let locatorExpr;
-
-            // Select2-style option
-            if (optionEl.classList.contains('select2-results__option')) {
-                locatorExpr =
-                    'By.xpath("//li[contains(@class,\'select2-results__option\') and normalize-space()=\'' +
-                    escapedText + '\']")';
-            }
-            // Generic ARIA role="option"
-            else if (optionEl.getAttribute('role') === 'option' ||
-                     optionEl.getAttribute('aria-selected') != null) {
-                locatorExpr =
-                    'By.xpath("(//*[@role=\'option\' and normalize-space()=\'' +
-                    escapedText + '\'])[1]")';
-            }
-            // Fallback – any element with that text
-            else {
-                locatorExpr =
-                    'By.xpath("(//*[normalize-space()=\'' + escapedText + '\'])[1]")';
-            }
-
-            rec.raw_selenium =
-                'driver.findElement(' + locatorExpr + ').click();';
-
-            rec.raw_gherkin = 'I select "' + optionText + '" from the dropdown';
-
-            rec.selector = 'option';
-            rec.options = {
-                element_text: optionText,
-                primary_name: optionText
+            const rec = {
+                timestamp: Date.now(),
+                type: 'click',
+                title: document.title,
+                action: 'click',
+                selector: 'option',
+                options: { element_text: optionText, primary_name: optionText }
             };
 
+            const escapedText = optionText.replace(/'/g, "\\'");
+            let locatorExpr;
+
+            if (optionEl.classList.contains('select2-results__option')) {
+                locatorExpr = 'By.xpath("//li[contains(@class,\'select2-results__option\') and normalize-space()=\'' + escapedText + '\']")';
+            } else if (optionEl.getAttribute('role') === 'option') {
+                locatorExpr = 'By.xpath("(//*[@role=\'option\' and normalize-space()=\'' + escapedText + '\'])[1]")';
+            } else {
+                locatorExpr = 'By.xpath("(//*[normalize-space()=\'' + escapedText + '\'])[1]")';
+            }
+
+            rec.raw_selenium = 'driver.findElement(' + locatorExpr + ').click();';
+            rec.raw_gherkin = 'I select "' + optionText + '" from the dropdown';
+
+            // optional: we could attach a target here too using buildRecordedTarget(optionEl)
             persistEvent(rec);
-        } catch (err) {
-            console && console.log && console.log('[recorder] dropdown option handler error', err);
-        }
+        } catch (err) {}
     }
 
-    // Attach to BOTH mouseup + click so we catch whatever the widget uses
     document.addEventListener('mouseup', handleDropdownOptionEvent, true);
     document.addEventListener('click', handleDropdownOptionEvent, true);
 
-    // ---- Main event recorder for click & change ----
+    // ---- Main Event Recorder (patched with normalizeClickableTarget + target bundle) ----
     function recordEvent(e) {
         try {
-            if (!e) return;
-
-            // 🔇 Ignore script-generated events (we only want real user actions)
-            if (!e.isTrusted) {
-                return;
-            }
+            if (!e || !e.isTrusted) return;
 
             var t = e.target;
+            if (!t || t.nodeType !== 1) return;
 
-            // If there's no usable target, bail out
-            if (!t || t.nodeType !== 1) { // 1 = ELEMENT_NODE
-                return;
+            // ✅ Normalize custom radios/checkboxes etc.
+            if (e.type === 'click') {
+                t = normalizeClickableTarget(t);
+                if (!t || t.nodeType !== 1) return;
             }
 
-            // ⭐ For click events, normalize to the *real* clickable element.
-            // This makes mega-menu tiles like "New Order" work even if the click
-            // lands on the <li> background, icon <i>, or nested <span>.
+            // ✅ Bubble up to semantic clickable, but don't override real radio/checkbox input
             if (e.type === 'click' && t.closest) {
-                // 1️⃣ Prefer an ancestor that is inherently clickable
-                let clickable = t.closest('a[href], button, [role="button"], [role="link"], [onclick]');
+                const isCheckLike =
+                    t.tagName &&
+                    t.tagName.toLowerCase() === 'input' &&
+                    (t.type === 'checkbox' || t.type === 'radio');
 
-                // 2️⃣ If the event target is a container (LI/DIV), look *inside* it
-                //    for the first inner link/button widget (mega-menu tiles, cards, etc.).
-                if (!clickable && (t.tagName === 'LI' || t.tagName === 'DIV') && t.querySelector) {
-                    clickable = t.querySelector('a[href], button, [role="button"], [role="link"]');
+                if (!isCheckLike) {
+                    let clickable = t.closest('a[href], button, [role="button"], [role="link"], [onclick]');
+                    if (clickable) t = clickable;
                 }
+            }
 
-                if (clickable) {
-                    t = clickable;
+            const tag = t.tagName.toLowerCase();
+
+            // Filter out non-interactive clicks
+            const isInteractive =
+                ['a', 'button', 'input', 'select', 'textarea'].includes(tag) ||
+                t.getAttribute('role') ||
+                t.onclick ||
+                (t.closest && t.closest('[onclick]'));
+
+            if (e.type === 'click' && !isInteractive) {
+                const txt = (t.innerText || t.textContent || '').trim();
+                if (!t.id && (!txt || txt.length > 20)) {
+                    return;
                 }
             }
 
@@ -470,591 +655,273 @@
             rec.title = document.title;
 
             var accName = getAccessibleName(t);
-            var elementText = t.innerText ? t.innerText.trim() :
-                              (t.textContent ? t.textContent.trim() : '');
+            var elementText = (t.innerText || t.textContent || '').trim();
 
-            // Role detection
-            var role = t.getAttribute('role');
-            const tag = t.tagName.toLowerCase();
+            // 🔹 NEW: attach full locator bundle for this target
+            var targetInfo = buildRecordedTarget(t);
+            if (targetInfo) {
+                rec.target = targetInfo;
+            }
 
-            if (!role) {
-                if (tag === 'input') {
-                    if (t.type === 'checkbox') {
-                        role = 'checkbox';
-                    } else if (t.type === 'radio') {
-                        role = 'radio';
-                    } else if (t.type === 'submit' || t.type === 'button') {
-                        role = 'button';
-                    } else if (['text', 'password', 'email', 'search', 'number'].includes(t.type)) {
-                        role = 'textbox';
-                    } else {
-                        role = t.type;
+            // 🔸 SPECIAL CASE 1: icon-only hamburger menu link
+            if (
+                e.type === 'click' &&
+                tag === 'a' &&
+                (!elementText || elementText.length === 0) &&
+                t.classList &&
+                t.classList.contains('sidenav_hamburger-icon')
+            ) {
+                var gherkinNameHamburger = 'navigation menu';
+                var cssHamburger = 'a.sidenav_hamburger-icon';
+
+                rec.action = 'click';
+                rec.selector = 'a';
+                rec.options = {
+                    element_text: '',
+                    primary_name: gherkinNameHamburger
+                };
+
+                rec.raw_gherkin = 'I click on the "' + gherkinNameHamburger + '" link';
+                rec.raw_selenium =
+                    'driver.findElement(By.cssSelector("' + cssHamburger + '")).click();';
+
+                persistEvent(rec);
+                return;
+            }
+
+            // 🔸 SPECIAL CASE 2: Select2 "open dropdown" click
+            if (e.type === 'click' && t.closest) {
+                const select2Container =
+                    t.closest('.select2-container') || t.closest('.select2');
+
+                const isOption =
+                    t.closest('.select2-results__option') ||
+                    t.closest('[role="option"]') ||
+                    t.closest('li[aria-selected]');
+
+                if (select2Container && !isOption) {
+                    let selectionEl =
+                        select2Container.querySelector('.select2-selection[id], .select2-selection__rendered[id]') ||
+                        select2Container.querySelector('[id^="select2-"][id$="-container"]');
+
+                    if (!selectionEl) {
+                        selectionEl = select2Container;
                     }
-                } else if (tag === 'textarea') {
-                    role = 'textbox';
-                } else if (tag === 'a') {
-                    role = 'link';
-                } else {
-                    role = tag;
+
+                    const idToUse = (selectionEl && selectionEl.id) ? selectionEl.id : '';
+
+                    const currentLabel = elementText || accName || idToUse || 'dropdown';
+
+                    rec.action = 'click';
+                    rec.selector = 'dropdown';
+                    rec.options = {
+                        element_text: elementText,
+                        primary_name: currentLabel
+                    };
+
+                    rec.raw_gherkin = 'I open the "' + currentLabel + '" dropdown';
+
+                    if (idToUse) {
+                        rec.raw_selenium =
+                            'driver.findElement(By.id("' + idToUse + '")).click();';
+                    } else {
+                        rec.raw_selenium =
+                            'driver.findElement(By.cssSelector(".select2-container .select2-selection")).click();';
+                    }
+
+                    persistEvent(rec);
+                    return;
                 }
             }
 
-            var gherkinRole = role;
-            if (role === 'radio') gherkinRole = 'radio button';
-            else if (role === 'checkbox') gherkinRole = 'checkbox button';
-            else if (role === 'textbox') gherkinRole = 'textbox field';
-
+            // --- Normal path for everything else ---
             var locator = generateSeleniumLocator(t, accName);
             var locatorValue = locator.value.replace(/\"/g, '\\\"');
 
-            rec.selector = role;
+            var gherkinName = elementText || accName || t.name || t.id || 'element';
 
-            // Gherkin naming priority
-            var gherkinName = '';
-            if (elementText.length > 0) {
-                gherkinName = elementText;
-            } else if (accName && accName.length > 0) {
-                gherkinName = accName;
-            } else if (t.value && t.type === 'submit') {
-                gherkinName = t.value;
-            } else if (t.name && t.name.length > 0) {
-                gherkinName = t.name;
-            } else if (t.id && t.id.length > 0) {
-                gherkinName = t.id;
-            }
+            rec.options = {
+                element_text: elementText,
+                primary_name: gherkinName
+            };
 
-            rec.options = {};
-            if (elementText.length > 0) rec.options.element_text = elementText;
-            if (t.id) rec.options.id = t.id;
-            if (t.name) rec.options.name = t.name;
-            rec.options.primary_name = gherkinName;
+            // === Click Handling ===
+            if (e.type === 'click') {
+                rec.action = 'click';
+                rec.selector = tag;
 
-            switch (e.type) {
-
-                // ================= CLICK HANDLING =================
-                case 'click': {
-                    // Normalize basics
-                    const tagName = (t.tagName || '').toLowerCase();
-                    const roleAttr = (t.getAttribute && t.getAttribute('role')) || '';
-                    const roleLower = roleAttr.toLowerCase();
-                    const classList = Array.from(t.classList || []);
-
-                    // Is this click somewhere inside a dropdown widget?
-                    const dropdownContainer =
-                        t.closest && t.closest(
-                            [
-                                '.select2-container',
-                                '.select2',
-                                '[role="combobox"]',
-                                '[aria-haspopup="listbox"]',
-                                '.oj-select-choice',
-                                '.oj-combobox-choice',
-                                '.ui-selectmenu-button',
-                                '.dropdown-toggle'
-                            ].join(',')
-                        );
-                    const insideDropdown = !!dropdownContainer;
-
-                    // Is this an option inside a dropdown?
-                    const optionEl =
-                        t.closest && t.closest(
-                            [
-                                '.select2-results__option',
-                                'option',
-                                'li[role="option"]',
-                                '[role="option"]',
-                                'li[aria-selected]',
-                                '.ui-menu-item',
-                                '.oj-listbox-result'
-                            ].join(',')
-                        );
-                    const isDropdownOption = !!optionEl;
-
-                    // Consider only *real* textboxes as ignorable
-                    const isRealTextbox =
-                        (tagName === 'input' && [
-                            'text', 'search', 'email', 'password', 'tel', 'number', 'url'
-                        ].includes(t.type)) ||
-                        tagName === 'textarea' ||
-                        t.isContentEditable === true;
-
-                    // 🔧 Skip real text inputs, but NOT fake dropdown "textbox" spans
-                    if (isRealTextbox && roleLower === 'textbox' && !insideDropdown) {
-                        return;
-                    }
-
-                    // 🔎 Ignore big container DIV clicks (layout, info panels)
-                    const textForHeuristic = elementText || '';
-                    const looksLikeContainerDiv =
-                        tagName === 'div' &&
-                        !isDropdownOption &&
-                        !insideDropdown &&
-                        !t.hasAttribute('onclick') &&
-                        !t.getAttribute('role') &&
-                        !t.isContentEditable;
-
-                    if (looksLikeContainerDiv) {
-                        const hasNewlines = textForHeuristic.indexOf('\n') !== -1;
-                        const isVeryLong  = textForHeuristic.length > 80;
-                        if (isVeryLong && hasNewlines) {
-                            // ✅ treat as non-interactive layout click
-                            return;
-                        }
-                    }
-
-                    // ----- Determine whether this element is "actionable" -----
-                    const isNativeSelect = tagName === 'select';
-                    const looksLikeDropdownName =
-                        /select|dropdown/i.test(locatorValue || '');
-
-                    const isDropdownActivator =
-                        isNativeSelect ||
-                        insideDropdown ||
-                        roleLower === 'combobox' ||
-                        looksLikeDropdownName;
-
-                    const isCheckboxLike =
-                        t.type === 'checkbox' || roleLower === 'checkbox';
-
-                    const isButtonLike =
-                        t.type === 'submit' ||
-                        t.type === 'button' ||
-                        roleLower === 'button';
-
-                    const isLinkLike =
-                        roleLower === 'link' || tagName === 'a';
-
-                    const hasOnclick =
-                        !!t.getAttribute('onclick') || typeof t.onclick === 'function';
-
-                    // Stimulus / data-action click handlers
-                    const hasDataActionClick =
-                        !!(t.closest && t.closest('[data-action*="click->"]'));
-
-                    const isActionable =
-                        isDropdownActivator ||
-                        isDropdownOption ||
-                        isCheckboxLike ||
-                        isButtonLike ||
-                        isLinkLike ||
-                        hasOnclick ||
-                        hasDataActionClick;
-
-                    // ❌ Ignore generic non-actionable layout clicks
-                    if (!isActionable) {
-                        return;
-                    }
-
-                    rec.action = 'click';
-
-                    // ========= SPECIAL CASE: icon-only <a> like menu icons / avatar icons =========
-                    const textContent = (t.textContent || '').trim();
-                    const mainClass =
-                        classList.find(c => !c.startsWith('-')) || classList[0] || null;
-
-                    if (tagName === 'a' && !textContent) {
-                        // Prefer a stable, semantic label on the <a> itself:
-                        //  - aria-label
-                        //  - title
-                        //  - child <img> alt/title
-                        const ariaSelf      = (t.getAttribute('aria-label') || '').trim();
-                        const linkTitleAttr = (t.getAttribute('title') || '').trim();
-
-                        let iconLabel = '';
-
-                        if (ariaSelf) {
-                            iconLabel = ariaSelf;
-                        } else if (linkTitleAttr) {
-                            iconLabel = linkTitleAttr;
-                        } else if (t.querySelector) {
-                            const img = t.querySelector('img[alt], img[title]');
-                            if (img) {
-                                iconLabel = (img.getAttribute('alt') || img.getAttribute('title') || '').trim();
-                            }
-                        }
-
-                        // If we found a SHORT, direct label on the element, use it
-                        if (iconLabel && iconLabel.length > 0 && iconLabel.length <= 40) {
-                            const escapedLabel = iconLabel.replace(/\"/g, '\\\"');
-
-                            let byExpr;
-                            const img = t.querySelector && t.querySelector('img[alt], img[title]');
-                            if (img) {
-                                byExpr =
-                                    'By.xpath("//a[.//img[@title=\\"' + escapedLabel +
-                                    '\\" or @alt=\\"' + escapedLabel + '\\"]]")';
-                            } else {
-                                byExpr =
-                                    'By.cssSelector("a[title=\\"' + escapedLabel + '\\"]")';
-                            }
-
-                            rec.raw_selenium =
-                                'driver.findElement(' + byExpr + ').click();';
-
-                            rec.raw_gherkin =
-                                'I click on the "' + iconLabel + '" link';
-
-                            rec.options.primary_name = iconLabel;
-                            break;
-                        }
-
-                        // 🔁 Fallback: derive name from class (e.g. sidenav_hamburger-icon → "Sidenav hamburger icon")
-                        if (mainClass) {
-                            const css = 'a.' + mainClass.split(/\s+/).join('.');
-                            rec.raw_selenium =
-                                'driver.findElement(By.cssSelector("' + css + '")).click();';
-
-                            const niceName = mainClass
-                                .replace(/[-_]+/g, ' ')
-                                .replace(/\s+/g, ' ')
-                                .trim()
-                                .replace(/^./, c => c.toUpperCase());
-
-                            rec.raw_gherkin = 'I click on the "' + niceName + '" link';
-                            rec.options.primary_name = niceName;
-                            break;
-                        }
-
-                        // If absolutely nothing else, fall through to generic handling
-                    }
-
-                    // ---------- 1) OPTION CLICK (Select2 / dropdowns) ----------
-                    if (isDropdownOption) {
-                        const opt = optionEl;
-                        const rawOptionText = (opt.innerText || opt.textContent || '').trim();
-                        if (!rawOptionText) return;
-
-                        // Use only the first line as the key (some options have multi-line details)
-                        const firstLine = rawOptionText.split(/\r?\n/)[0].trim();
-                        const escapedFirstLine = firstLine.replace(/'/g, "\\'");
-
-                        let dropdownName = accName;
-                        if (!dropdownName && dropdownContainer) {
-                            dropdownName = getAccessibleName(dropdownContainer);
-                        }
-                        if (!dropdownName) {
-                            dropdownName = (gherkinName && gherkinName.length > 0)
-                                ? gherkinName
-                                : 'dropdown';
-                        }
-
-                        let locatorExpr;
-                        if (opt.classList && opt.classList.contains('select2-results__option')) {
-                            locatorExpr =
-                                "By.xpath(\"//li[contains(@class,'select2-results__option') " +
-                                "and contains(normalize-space(.), '" + escapedFirstLine + "')]\")";
-                        } else if (opt.tagName && opt.tagName.toLowerCase() === 'option') {
-                            locatorExpr =
-                                "By.xpath(\"//option[contains(normalize-space(.), '" + escapedFirstLine + "')]\")";
-                        } else {
-                            locatorExpr =
-                                "By.xpath(\"(//*[contains(normalize-space(.), '" + escapedFirstLine + "')])[1]\")";
-                        }
-
-                        rec.raw_gherkin =
-                            'I select "' + firstLine + '" from the "' + dropdownName + '" dropdown';
-
-                        rec.raw_selenium =
-                            'driver.findElement(' + locatorExpr + ').click();';
-
-                        rec.options.element_text = rawOptionText;   // full text in JSON
-                        rec.options.primary_name = firstLine;       // nice display name
-
-                        break;
-                    }
-
-                    // ---------- 2) DROPDOWN "OPEN" CLICK ----------
-                    if (isDropdownActivator) {
-                        let dropdownLabel = accName || gherkinName || 'dropdown';
-
-                        rec.raw_gherkin = 'I open the "' + dropdownLabel + '" dropdown';
-
-                        if (insideDropdown && dropdownContainer) {
-                            const selectionEl =
-                                dropdownContainer.querySelector('.select2-selection') ||
-                                dropdownContainer.querySelector('.oj-select-choice') ||
-                                dropdownContainer.querySelector('.oj-combobox-choice') ||
-                                dropdownContainer;
-
-                            let byExpr;
-
-                            if (selectionEl.id) {
-                                byExpr = 'By.id("' + selectionEl.id + '")';
-                            } else {
-                                const ariaLabelledby = selectionEl.getAttribute('aria-labelledby');
-                                const containerId    = dropdownContainer.id;
-                                const dataSelect2Id  = dropdownContainer.getAttribute('data-select2-id');
-
-                                if (ariaLabelledby) {
-                                    byExpr =
-                                        'By.cssSelector(".select2-selection[aria-labelledby=\'' +
-                                        ariaLabelledby.replace(/'/g, "\\'") +
-                                        '\']")';
-                                } else if (containerId) {
-                                    byExpr =
-                                        'By.cssSelector("#' +
-                                        containerId.replace(/'/g, "\\'") +
-                                        ' .select2-selection")';
-                                } else if (dataSelect2Id) {
-                                    byExpr =
-                                        'By.cssSelector(".select2-container[data-select2-id=\'' +
-                                        dataSelect2Id.replace(/'/g, "\\'") +
-                                        '\'] .select2-selection")';
-                                } else {
-                                    const allSelections = Array.from(
-                                        document.querySelectorAll('.select2-container .select2-selection')
-                                    );
-                                    const idx = allSelections.indexOf(selectionEl);
-                                    if (idx >= 0) {
-                                        const nth = idx + 1;
-                                        byExpr =
-                                            'By.cssSelector(".select2-container .select2-selection:nth-of-type(' +
-                                            nth +
-                                            ')")';
-                                    } else {
-                                        byExpr = locator.type + '("' + locatorValue + '")';
-                                    }
-                                }
-                            }
-
-                            rec.raw_selenium =
-                                'driver.findElement(' + byExpr + ').click();';
-
-                        } else if (isNativeSelect) {
-                            rec.raw_selenium =
-                                'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
-                        } else {
-                            rec.raw_selenium =
-                                'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
-                        }
-
-                        break;
-                    }
-
-                    // ---------- 3) CHECKBOXES ----------
-                    if (t.type === 'checkbox' || roleLower === 'checkbox') {
-                        rec.raw_gherkin = t.checked
-                            ? 'I check the "' + gherkinName + '" option'
-                            : 'I uncheck the "' + gherkinName + '" option';
-
-                        rec.raw_selenium =
-                            'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
-                        break;
-                    }
-
-                    // ---------- 4) LINKS ----------
-                    if (isLinkLike) {
-                        const linkText = (t.innerText || t.textContent || '').trim();
-                        const escaped = linkText.replace(/\"/g, '\\\"');
-
-                        rec.raw_gherkin = 'I click on the "' + linkText + '" link';
-                        rec.raw_selenium =
-                            'driver.findElement(By.linkText(\"' + escaped + '\")).click();';
-
-                        rec.options.primary_name = linkText;
-                        break;
-                    }
-
-                    // ---------- 5) BUTTONS ----------
-                    if (isButtonLike) {
-                        rec.raw_gherkin = 'I click on the "' + gherkinName + '" button';
-                        rec.raw_selenium =
-                            'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
-                        break;
-                    }
-
-                    // ---------- 6) GENERIC CLICK (custom widgets with onclick / data-action) ----------
-                    rec.raw_gherkin = 'I click on the "' + gherkinName + '"';
-                    rec.raw_selenium =
-                        'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
-
-                    break;
+                // Don't record clicks on text inputs (we only care about what is typed)
+                if (tag === 'input' && ['text', 'password', 'email', 'search'].includes(t.type)) {
+                    return;
                 }
 
-                // ================= CHANGE HANDLING =================
-                case 'change': {
-                    // 🔒 Avoid duplicate events for checkbox / radio
-                    if (t.type === 'checkbox' || t.type === 'radio' || t.type === 'submit' || t.type === 'button') {
-                            return;
-                    }
+                if (tag === 'a') {
+                    rec.raw_gherkin = 'I click on the "' + gherkinName + '" link';
+                } else if (tag === 'button' || t.getAttribute('role') === 'button') {
+                    rec.raw_gherkin = 'I click on the "' + gherkinName + '" button';
+                } else {
+                    rec.raw_gherkin = 'I click on "' + gherkinName + '"';
+                }
 
-                    const select2Container =
-                        t.closest && (t.closest('.select2-container') || t.closest('.select2'));
-                    const insideSelect2 = !!select2Container;
+                rec.raw_selenium =
+                    'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();';
 
-                    // Skip change events from Select2 – click on option already recorded
-                    if (insideSelect2) {
-                        return;
-                    }
+                persistEvent(rec);
+            }
 
-                    var value = t.value !== undefined ? t.value : null;
+            // === Change Handling ===
+            if (e.type === 'change') {
+                // Skip checkbox / radio – usually handled by click
+                if (t.type === 'checkbox' || t.type === 'radio') return;
 
-                    rec.action = 'sendKeys';
-                    rec.parsedValue = value;
-                    rec.value = value;
+                var value = t.value;
+                rec.action = 'sendKeys';
+                rec.selector = tag;
+                rec.value = value;
 
-                    rec.raw_selenium =
-                        'driver.findElement(' + locator.type + '("' + locatorValue + '")).sendKeys("' + value + '");';
+                rec.raw_gherkin = 'I enter "' + value + '" into "' + gherkinName + '"';
+                rec.raw_selenium =
+                    'driver.findElement(' + locator.type + '("' + locatorValue + '")).sendKeys("' + value + '");';
 
-                    rec.raw_gherkin = 'I enter "' + value + '" into the "' + gherkinName + '"';
+                const fieldKey = (t.id ? 'id:' + t.id : 'loc:' + locator.value);
 
-                    rec.options.value = value;
-                    rec.options.parsedValue = value;
+                if (pendingTextChangeTimers[fieldKey]) {
+                    clearTimeout(pendingTextChangeTimers[fieldKey].timeoutId);
+                }
 
-                    // 🔄 Debounce textboxes so we don't record partial values
-                    if (role === 'textbox') {
-                        const fieldKey =
-                            (t.id && ('id:' + t.id)) ||
-                            (t.name && ('name:' + t.name)) ||
-                            ('loc:' + locator.value);
-
-                        const existing = pendingTextChangeTimers[fieldKey];
-                        if (existing && existing.timeoutId) {
-                            clearTimeout(existing.timeoutId);
-                        }
-
-                        const timeoutId = setTimeout(function () {
-                            persistEvent(rec);
-                            delete pendingTextChangeTimers[fieldKey];
-                        }, TEXT_CHANGE_DEBOUNCE_MS);
-
-                        pendingTextChangeTimers[fieldKey] = { timeoutId, rec };
-                    } else {
-                        // Non-textbox (e.g. native selects) → record immediately
+                pendingTextChangeTimers[fieldKey] = {
+                    timeoutId: setTimeout(function () {
                         persistEvent(rec);
-                    }
-
-                    // We already persisted or scheduled persistence → don't fall through
-                    return;
-                }
-
-                default:
-                    return;
+                        delete pendingTextChangeTimers[fieldKey];
+                    }, TEXT_CHANGE_DEBOUNCE_MS),
+                    rec: rec
+                };
             }
-
-            // Common post-processing for click (and any non-returning path):
-            if (!gherkinName || gherkinName.length === 0) {
-                rec.raw_gherkin = 'I interact with the unlabeled ' + gherkinRole + ' element';
-            }
-
-            persistEvent(rec);
 
         } catch (err) {
-            console && console.log && console.log('[recorder] recordEvent error', err);
+            console.log('[recorder] recordEvent error', err);
         }
     }
 
-    // --- Oracle SSO: wrap #ssoBtn.onclick so we always record it ---
-    (function installOracleSsoOnclickWrapper() {
-        var attempts = 0;
-        var maxAttempts = 40;   // ~20 seconds with 500ms interval
-        var intervalMs = 500;
+    // ✅ Target normalizer (custom radios/checkboxes)
+    function normalizeClickableTarget(target) {
+        if (!target || !target.closest) return target;
 
-        function tryWrap() {
-            attempts++;
+        let t = target;
 
-            try {
-                var btn = document.getElementById('ssoBtn');
-
-                // Button not present yet → keep polling
-                if (!btn) {
-                    if (attempts >= maxAttempts) {
-                        window.clearInterval(poller);
-                    }
-                    return;
-                }
-
-                // Prevent double wrapping
-                if (btn.__recorderSsoWrapped) {
-                    window.clearInterval(poller);
-                    return;
-                }
-
-                btn.__recorderSsoWrapped = true;
-
-                var originalOnclick = btn.onclick; // may be null or a function
-
-                btn.onclick = function (event) {
-                    try {
-                        if (window.__recordingInstalled) {
-                            var accName = getAccessibleName(btn);
-                            var elementText = (btn.innerText || btn.textContent || '').trim();
-
-                            var gherkinName =
-                                elementText ||
-                                accName ||
-                                btn.id ||
-                                'Company Single Sign-On';
-
-                            var locator = generateSeleniumLocator(btn, accName);
-                            var locatorValue = locator.value.replace(/\"/g, '\\\"');
-
-                            var rec = {
-                                timestamp: Date.now(),
-                                type: 'click',
-                                title: document.title,
-                                action: 'click',
-                                selector: 'button',
-                                raw_gherkin: 'I click on the "' + gherkinName + '" button',
-                                raw_selenium:
-                                    'driver.findElement(' +
-                                    locator.type + '("' + locatorValue + '")).click();',
-                                options: {
-                                    id: btn.id,
-                                    name: btn.name || '',
-                                    element_text: elementText,
-                                    primary_name: gherkinName
-                                }
-                            };
-
-                            // Add to in-memory array
-                            persistEvent(rec);
-
-                            // 🔒 Force immediate flush for this SSO case
-                            try {
-                                localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents || []));
-                            } catch (e) {
-                                console && console.log &&
-                                    console.log('[recorder] Oracle SSO immediate flush failed', e);
-                            }
-
-                            console && console.log &&
-                                console.log('[recorder] Oracle SSO onclick recorded');
-                        }
-                    } catch (err) {
-                        console && console.log &&
-                            console.log('[recorder] Oracle SSO onclick wrapper error', err);
-                    }
-
-                    // Always call original onclick so Oracle behavior still works
-                    if (typeof originalOnclick === 'function') {
-                        return originalOnclick.call(this, event);
-                    }
-                };
-
-                console && console.log &&
-                    console.log('[recorder] Wrapped #ssoBtn.onclick for Oracle SSO');
-
-                window.clearInterval(poller);
-            } catch (err) {
-                console && console.log &&
-                    console.log('[recorder] Oracle SSO onclick wrap install error', err);
-                if (attempts >= maxAttempts) {
-                    window.clearInterval(poller);
+        // Special case: custom radio/checkbox like <span class="fds_radio__custom-radio">
+        if (t.matches && t.matches('.fds_radio__custom-radio')) {
+            const wrapper = t.closest('label, .fds_radio, .fds_radio__wrapper, .fds_radio__container');
+            if (wrapper) {
+                const realInput = wrapper.querySelector('input[type="radio"], input[type="checkbox"]');
+                if (realInput) {
+                    return realInput;
                 }
             }
         }
 
-        var poller = window.setInterval(tryWrap, intervalMs);
-        // Try once immediately as well
-        tryWrap();
+        // Generic case: anything inside a label that owns an input
+        const label = t.closest('label');
+        if (label) {
+            const input = label.querySelector('input[type="radio"], input[type="checkbox"], input[type="checkbox"]');
+            if (input) {
+                return input;
+            }
+        }
+
+        return t;
+    }
+
+    function buildLocatorsForElement(el, accName) {
+        const locators = [];
+        const attrs = el.attributes || {};
+
+        const titleAttr = el.getAttribute('title');
+        const innerText = (el.innerText || el.textContent || '').trim();
+
+        // existing candidates...
+        // id / name / data-testid / aria / labelText etc
+
+        // 🔹 New: pure title-based locator (high score)
+        if (titleAttr && titleAttr.trim().length > 0) {
+            const title = titleAttr.trim();
+
+            // CSS version
+            locators.push({
+                score: 85,
+                type: 'titleCss',
+                value: `[title="${title.replace(/"/g, '\\"')}"]`
+            });
+
+            // Optional XPath version too
+            locators.push({
+                score: 80,
+                type: 'titleXpath',
+                value: `//*[@title=${xpathLiteral(title)}]`
+            });
+        }
+
+        return locators;
+    }
+
+    function xpathLiteral(text) {
+        if (!text.includes("'")) {
+            return `'${text}'`;
+        }
+        const parts = text.split("'");
+        return "concat(" + parts.map((p, i) =>
+            (i > 0 ? "\"'\", " : "") + `'${p}'`
+        ).join("") + ")";
+    }
+
+    // --- Oracle SSO Wrapper (Restored) ---
+    (function installOracleSsoOnclickWrapper() {
+        var attempts = 0;
+        var maxAttempts = 40;
+        function tryWrap() {
+            attempts++;
+            try {
+                var btn = document.getElementById('ssoBtn');
+                if (!btn) {
+                    if (attempts < maxAttempts) return;
+                    else return clearInterval(poller);
+                }
+                if (btn.__recorderSsoWrapped) return clearInterval(poller);
+
+                btn.__recorderSsoWrapped = true;
+                var originalOnclick = btn.onclick;
+
+                btn.onclick = function (event) {
+                    if (window.__recordingInstalled) {
+                        var accName = getAccessibleName(btn);
+                        var gherkinName = (btn.innerText || accName || 'SSO Button').trim();
+                        var rec = {
+                            timestamp: Date.now(),
+                            type: 'click',
+                            action: 'click',
+                            raw_gherkin: 'I click on "' + gherkinName + '"',
+                            raw_selenium: 'driver.findElement(By.id("ssoBtn")).click();'
+                        };
+                        // attach target bundle for SSO also
+                        var targetInfo = buildRecordedTarget(btn);
+                        if (targetInfo) {
+                            rec.target = targetInfo;
+                        }
+                        persistEvent(rec);
+                        try {
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents));
+                        } catch (e) {
+                            console.log('[recorder] Failed to persist SSO wrapper click', e);
+                        }
+                    }
+                    if (typeof originalOnclick === 'function') return originalOnclick.call(this, event);
+                };
+                clearInterval(poller);
+            } catch (err) { if (attempts >= maxAttempts) clearInterval(poller); }
+        }
+        var poller = window.setInterval(tryWrap, 500);
     })();
 
-    // Attach listeners
-    ['click', 'change'].forEach(function (type) {
-        window.addEventListener(type, recordEvent, true);
-    });
-
-    // ❌ No submit recording – we only care about click/change
+    ['click', 'change'].forEach(type => window.addEventListener(type, recordEvent, true));
 
 })();
