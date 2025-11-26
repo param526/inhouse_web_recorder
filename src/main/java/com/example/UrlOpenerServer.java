@@ -205,15 +205,21 @@ public class UrlOpenerServer {
                     transferActionsFromBrowserToHistory(currentDriver);
                 }
 
-                String json = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(ALL_RECORDED_ACTIONS);
+                String json = MAPPER.writerWithDefaultPrettyPrinter()
+                        .writeValueAsString(ALL_RECORDED_ACTIONS);
 
                 Path dir = Paths.get("recordings");
                 Files.createDirectories(dir);
-                String fileName = "action_logs" + ".json";
+
+                // 🔹 NEW: read custom fileName from query param (from index.html)
+                String requestedName = req.queryParams("fileName");
+                String fileName = sanitizeFileName(requestedName);   // helper below
+
                 Path file = dir.resolve(fileName);
                 Files.writeString(file, json);
 
                 res.type("text/plain");
+                // UI just shows this string – we keep same style
                 return "Recorded actions saved to: " + file.toAbsolutePath();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -229,23 +235,35 @@ public class UrlOpenerServer {
                 String workingDir = System.getProperty("user.dir");
                 System.out.println("Working directory: " + workingDir);
 
-                // recordings/action_logs.json
-                String jsonPath = workingDir
-                        + File.separator + "recordings"
-                        + File.separator + "action_logs.json";
+                // 🔹 Read requested file name from UI
+                String requestedName = req.queryParams("fileName");
+                File jsonFile;
 
-                File jsonFile = new File(jsonPath);
-                System.out.println("Replay JSON path: " + jsonFile.getAbsolutePath());
+                if (requestedName != null && !requestedName.isBlank()) {
+                    String safeName = sanitizeFileName(requestedName);
+                    jsonFile = Paths.get("recordings").resolve(safeName).toFile();
 
-                if (!jsonFile.exists()) {
-                    String msg = "JSON file not found at: " + jsonFile.getAbsolutePath();
-                    System.err.println(msg);
-                    res.status(500);
-                    res.type("text/plain");
-                    return msg;
+                    if (!jsonFile.exists()) {
+                        String msg = "Requested recording not found: " + jsonFile.getAbsolutePath();
+                        System.err.println(msg);
+                        res.status(404);
+                        res.type("text/plain");
+                        return msg;
+                    }
+                } else {
+                    // Fallback: same behavior as before (last / latest)
+                    jsonFile = getLatestRecordingJsonFile();
+                    if (jsonFile == null || !jsonFile.exists()) {
+                        String msg = "No recording JSON file found in recordings/ folder.";
+                        System.err.println(msg);
+                        res.status(500);
+                        res.type("text/plain");
+                        return msg;
+                    }
                 }
 
-                // replay-recordings/raw_selenium_report.html
+                System.out.println("Replay JSON path: " + jsonFile.getAbsolutePath());
+
                 String reportDirPath = workingDir + File.separator + "replay-recordings";
                 File reportDir = new File(reportDirPath);
                 if (!reportDir.exists()) {
@@ -262,7 +280,6 @@ public class UrlOpenerServer {
                 res.type("text/plain");
                 if (ok) {
                     res.status(200);
-                    // UI knows the report is always at /view-replay-report
                     return "OK";
                 } else {
                     res.status(500);
@@ -276,6 +293,9 @@ public class UrlOpenerServer {
                 return "Replay failed: " + e.toString();
             }
         });
+
+
+
 
         get("/view-replay-report", (req, res) -> {
             String workingDir = System.getProperty("user.dir");
@@ -334,6 +354,35 @@ public class UrlOpenerServer {
         String color = error ? "red" : "green";
         return "<html><body><p style='color:" + color + "'>" + msg +
                 "</p><a href='/index.html'>Back</a></body></html>";
+    }
+
+    // Ensure we don't allow path traversal and always end with .json
+    private static String sanitizeFileName(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "action_logs.json";
+        }
+
+        String name = raw.trim();
+
+        // strip any directory components if user somehow sends them
+        name = name.replace("\\", "/");
+        int idx = name.lastIndexOf('/');
+        if (idx >= 0) {
+            name = name.substring(idx + 1);
+        }
+
+        // allow only safe characters
+        name = name.replaceAll("[^A-Za-z0-9_.-]", "_");
+
+        if (!name.toLowerCase().endsWith(".json")) {
+            name = name + ".json";
+        }
+
+        if (name.isBlank()) {
+            name = "action_logs.json";
+        }
+
+        return name;
     }
 
     private static String normalize(String input) {
@@ -518,5 +567,28 @@ public class UrlOpenerServer {
             return null;
         }
     }
+
+    // Returns the most recently modified .json file from recordings/
+    private static File getLatestRecordingJsonFile() {
+        String workingDir = System.getProperty("user.dir");
+        File dir = new File(workingDir, "recordings");
+        if (!dir.exists() || !dir.isDirectory()) {
+            return null;
+        }
+
+        File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".json"));
+        if (files == null || files.length == 0) {
+            return null;
+        }
+
+        File latest = files[0];
+        for (File f : files) {
+            if (f.lastModified() > latest.lastModified()) {
+                latest = f;
+            }
+        }
+        return latest;
+    }
+
 
 }

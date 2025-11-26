@@ -990,4 +990,203 @@
 
     ['click', 'change'].forEach(type => window.addEventListener(type, recordEvent, true));
 
+    // ============================================================
+    //  Recording Save UI: custom name, timestamp, recent names, preview
+    // ============================================================
+
+    const LS_KEY_LAST_NAME = '__recorder_lastRecordingName';
+    const LS_KEY_RECENT_NAMES = '__recorder_recentRecordingNames';
+    const MAX_RECENT_NAMES = 10;
+
+    function sanitizeName(raw) {
+        if (!raw) return '';
+        // Only allow letters, numbers, underscore, hyphen; others → "_"
+        return raw.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    }
+
+    function makeTimestampForFile() {
+        const now = new Date();
+        return (
+            now.getFullYear().toString() +
+            String(now.getMonth() + 1).padStart(2, '0') +
+            String(now.getDate()).padStart(2, '0') + '_' +
+            String(now.getHours()).toString().padStart(2, '0') +
+            String(now.getMinutes()).toString().padStart(2, '0') +
+            String(now.getSeconds()).toString().padStart(2, '0')
+        );
+    }
+
+    function buildFilename(baseName, withTimestamp) {
+        const clean = sanitizeName(baseName || 'recording');
+        if (withTimestamp) {
+            return `${clean}_${makeTimestampForFile()}.json`;
+        }
+        return `${clean}.json`;
+    }
+
+    function loadRecentNames() {
+        try {
+            const raw = localStorage.getItem(LS_KEY_RECENT_NAMES);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.warn('[recorder] Failed to load recent names', e);
+            return [];
+        }
+    }
+
+    function saveRecentName(name) {
+        const clean = sanitizeName(name);
+        if (!clean) return;
+
+        let arr = loadRecentNames();
+        // Remove if already present, then unshift to front
+        arr = arr.filter(n => n !== clean);
+        arr.unshift(clean);
+        if (arr.length > MAX_RECENT_NAMES) {
+            arr = arr.slice(0, MAX_RECENT_NAMES);
+        }
+
+        try {
+            localStorage.setItem(LS_KEY_RECENT_NAMES, JSON.stringify(arr));
+            localStorage.setItem(LS_KEY_LAST_NAME, clean);
+        } catch (e) {
+            console.warn('[recorder] Failed to save recent name', e);
+        }
+    }
+
+    function initRecordingNameUi() {
+        if (window.__recorderNameUiInitialized) return;
+        window.__recorderNameUiInitialized = true;
+
+        const nameInput = document.getElementById('recordingName');
+        const tsCheckbox = document.getElementById('addTimestamp');
+        const preview = document.getElementById('recordingFilenamePreview');
+        const recentSelect = document.getElementById('recordingRecentNames');
+        const saveBtn = document.getElementById('saveQuitBtn');
+        const statusBox = document.getElementById('status-message');
+
+        // If none of these exist on this page, do nothing.
+        if (!nameInput && !saveBtn) {
+            return;
+        }
+
+        // Load last used name
+        if (nameInput) {
+            try {
+                const last = localStorage.getItem(LS_KEY_LAST_NAME);
+                if (last) {
+                    nameInput.value = last;
+                }
+            } catch (e) {
+                console.warn('[recorder] Failed to load last recording name', e);
+            }
+        }
+
+        // Populate recent names dropdown
+        if (recentSelect) {
+            const recent = loadRecentNames();
+            recent.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                recentSelect.appendChild(opt);
+            });
+
+            recentSelect.addEventListener('change', () => {
+                if (recentSelect.value && nameInput) {
+                    nameInput.value = recentSelect.value;
+                    updatePreview();
+                }
+            });
+        }
+
+        function updatePreview() {
+            if (!preview || !nameInput) return;
+            const withTs = tsCheckbox ? tsCheckbox.checked : true;
+            const fn = buildFilename(nameInput.value.trim(), withTs);
+            preview.textContent = fn;
+        }
+
+        if (nameInput) {
+            nameInput.addEventListener('input', updatePreview);
+
+            // Enter key = Save
+            nameInput.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    if (saveBtn) {
+                        saveBtn.click();
+                    }
+                }
+            });
+        }
+
+        if (tsCheckbox) {
+            tsCheckbox.addEventListener('change', updatePreview);
+        }
+
+        // Initial preview
+        updatePreview();
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                try {
+                    const events = window.__recordedEvents || [];
+                    if (!Array.isArray(events) || events.length === 0) {
+                        alert('No recorded events to save.');
+                        return;
+                    }
+
+                    const nameEl = nameInput;
+                    const tsEl = tsCheckbox;
+
+                    let customName = nameEl ? nameEl.value.trim() : '';
+                    if (!customName) {
+                        alert('Please enter a name for this recording.');
+                        if (nameEl) nameEl.focus();
+                        return;
+                    }
+
+                    const withTs = tsEl ? tsEl.checked : true;
+                    const fileName = buildFilename(customName, withTs);
+
+                    // Remember name for next time
+                    saveRecentName(customName);
+
+                    const blob = new Blob([JSON.stringify(events, null, 2)], {
+                        type: 'application/json'
+                    });
+
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    console.log('[recorder] Saved recording as', fileName);
+                    if (statusBox) {
+                        statusBox.textContent = `Saved recording as ${fileName}`;
+                    } else {
+                        alert(`Saved recording as ${fileName}`);
+                    }
+                } catch (e) {
+                    console.error('[recorder] Failed to save recording', e);
+                    alert('Failed to save recording: ' + e.message);
+                }
+            });
+        }
+    }
+
+    // Initialize UI once DOM is ready (if this page actually has those elements)
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(initRecordingNameUi, 0);
+    } else {
+        document.addEventListener('DOMContentLoaded', initRecordingNameUi);
+    }
+
 })();
