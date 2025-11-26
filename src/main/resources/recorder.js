@@ -8,6 +8,8 @@
     let lastEventSignature = '';
     let lastEventTimestamp = 0;
 
+    let lastHoverInfo = null;
+
     let lsDirty = false;
     let lsFlushTimer = null;
     const LS_FLUSH_INTERVAL_MS = 1000;
@@ -745,6 +747,52 @@
                 primary_name: gherkinName
             };
 
+            // 🔹 Synthetic HOVER step before click, if needed
+            if (e.type === 'click' && lastHoverInfo && lastHoverInfo.element && lastHoverInfo.locator) {
+                try {
+                    const hoverAge = Date.now() - lastHoverInfo.timestamp;
+                    const HOVER_MAX_AGE_MS = 800;
+
+                    // Only if recent and the click is inside the hover root
+                    if (hoverAge <= HOVER_MAX_AGE_MS &&
+                        lastHoverInfo.element.contains(t)) {
+
+                        const hoverLoc = lastHoverInfo.locator;
+                        const hoverLocValue = hoverLoc.value.replace(/\"/g, '\\\"');
+                        const hoverName = lastHoverInfo.gherkinName || 'element';
+
+                        const hoverRec = {
+                            timestamp: Date.now(),
+                            type: 'hover',
+                            action: 'hover',
+                            title: document.title,
+                            selector: (lastHoverInfo.element.tagName || '').toLowerCase(),
+                            options: {
+                                element_text: lastHoverInfo.element.innerText || lastHoverInfo.element.textContent || '',
+                                primary_name: hoverName
+                            },
+                            raw_gherkin: 'I hover over "' + hoverName + '"',
+                            raw_selenium:
+                                'new org.openqa.selenium.interactions.Actions(driver)' +
+                                '.moveToElement(driver.findElement(' + hoverLoc.type + '("' + hoverLocValue + '")))' +
+                                '.pause(java.time.Duration.ofMillis(300)).perform();'
+                        };
+
+                        if (lastHoverInfo.targetInfo) {
+                            hoverRec.target = lastHoverInfo.targetInfo;
+                        }
+
+                        // Persist hover BEFORE the actual click step
+                        persistEvent(hoverRec);
+
+                        // We only want one hover per click sequence
+                        lastHoverInfo = null;
+                    }
+                } catch (hoverErr) {
+                    console.log('[recorder] synthetic hover generation error', hoverErr);
+                }
+            }
+
             // === Click Handling ===
             if (e.type === 'click') {
                 rec.action = 'click';
@@ -832,38 +880,6 @@
         return t;
     }
 
-    function buildLocatorsForElement(el, accName) {
-        const locators = [];
-        const attrs = el.attributes || {};
-
-        const titleAttr = el.getAttribute('title');
-        const innerText = (el.innerText || el.textContent || '').trim();
-
-        // existing candidates...
-        // id / name / data-testid / aria / labelText etc
-
-        // 🔹 New: pure title-based locator (high score)
-        if (titleAttr && titleAttr.trim().length > 0) {
-            const title = titleAttr.trim();
-
-            // CSS version
-            locators.push({
-                score: 85,
-                type: 'titleCss',
-                value: `[title="${title.replace(/"/g, '\\"')}"]`
-            });
-
-            // Optional XPath version too
-            locators.push({
-                score: 80,
-                type: 'titleXpath',
-                value: `//*[@title=${xpathLiteral(title)}]`
-            });
-        }
-
-        return locators;
-    }
-
     function xpathLiteral(text) {
         if (!text.includes("'")) {
             return `'${text}'`;
@@ -873,6 +889,56 @@
             (i > 0 ? "\"'\", " : "") + `'${p}'`
         ).join("") + ")";
     }
+
+    function isHoverRoot(el) {
+        if (!el || !el.tagName) return false;
+        const tag = el.tagName.toLowerCase();
+        const cls = el.className || '';
+        const role = (el.getAttribute && el.getAttribute('role')) || '';
+
+        // You can tune this list based on your app
+        if (tag === 'a' || tag === 'button') return true;
+        if (role === 'button' || role === 'menuitem') return true;
+
+        // Typical "user menu" / navbar icons etc.
+        if (cls.indexOf('sidenav_option-icon') !== -1) return true;
+        if (cls.indexOf('menu') !== -1 || cls.indexOf('dropdown') !== -1) return true;
+
+        return false;
+    }
+
+    function handleMouseOver(e) {
+        try {
+            if (!e || !e.target || !e.isTrusted) return;
+            let el = e.target;
+            if (!el.closest) return;
+
+            // Walk up to a reasonable "hover root"
+            let root = el.closest('a, button, [role="button"], [role="menuitem"], .sidenav_option-icon, .menu, .dropdown-toggle, .oj-menu');
+            if (!root || !isHoverRoot(root)) return;
+
+            const accName = getAccessibleName(root);
+            const elementText = (root.innerText || root.textContent || '').trim();
+            const gherkinName = elementText || accName || root.id || root.name || 'element';
+
+            const locator = generateSeleniumLocator(root, accName);
+            const targetInfo = buildRecordedTarget(root);
+
+            lastHoverInfo = {
+                element: root,
+                timestamp: Date.now(),
+                locator: locator,
+                targetInfo: targetInfo,
+                gherkinName: gherkinName
+            };
+        } catch (err) {
+            console.log('[recorder] handleMouseOver error', err);
+        }
+    }
+
+    // Register the hover listener (capture = true to see it early)
+    window.addEventListener('mouseover', handleMouseOver, true);
+
 
     // --- Oracle SSO Wrapper (Restored) ---
     (function installOracleSsoOnclickWrapper() {

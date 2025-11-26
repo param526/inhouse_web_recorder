@@ -141,6 +141,8 @@ public class RawSeleniumReplayer {
                         replayClick(ev, driver);
                     } else if ("sendkeys".equals(action)) {
                         replaySendKeys(ev, driver);
+                    } else if ("hover".equals(action)) {
+                        replayHover(ev, driver);
                     } else if (rawSel != null && !rawSel.trim().isEmpty()) {
                         // Fallback to old raw_selenium regex parser
                         String script = rawSel.trim();
@@ -454,6 +456,63 @@ public class RawSeleniumReplayer {
         throw new RuntimeException("Failed to sendKeys for step: " + ev.getRaw_gherkin(), lastError);
     }
 
+    /**
+     * Replays a synthetic "hover" action:
+     *  - Uses target.locators (high score first)
+     *  - Moves the mouse to the element and pauses briefly
+     */
+    private static void replayHover(RecordedEvent ev, WebDriver driver) {
+        RecordedTarget target = ev.getTarget();
+        String raw = ev.getRaw_selenium();
+
+        // If no target/locators → we can optionally fall back, but usually
+        // our recorder will always send target.locators for hover.
+        if (target == null || target.getLocators() == null || target.getLocators().isEmpty()) {
+            System.out.println("No target.locators for hover step: " + ev.getRaw_gherkin());
+            // If you really want, you could try to interpret raw_selenium here,
+            // but the hover raw_selenium is Java code that doesn't match our regex,
+            // so we just log and return.
+            return;
+        }
+
+        List<LocatorCandidate> locators = new ArrayList<>(target.getLocators());
+        locators.sort(Comparator.comparingInt(LocatorCandidate::getScore).reversed());
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        Exception lastError = null;
+
+        for (LocatorCandidate loc : locators) {
+            By by;
+            try {
+                by = toBy(loc);
+            } catch (Exception ex) {
+                lastError = ex;
+                continue;
+            }
+
+            try {
+                WebElement el = wait.until(ExpectedConditions.visibilityOfElementLocated(by));
+                highlightElement(driver, el);
+
+                System.out.println("Hovering using locator [" + loc.getType() + "] " + loc.getValue());
+
+                Actions actions = new Actions(driver);
+                actions.moveToElement(el)
+                        .pause(Duration.ofMillis(300))
+                        .perform();
+
+                return; // hover successful
+            } catch (TimeoutException | NoSuchElementException | StaleElementReferenceException e) {
+                lastError = e;
+                System.out.println("Failed hover locator [" + loc.getType() + "] " + loc.getValue()
+                        + " -> " + e.getClass().getSimpleName());
+            }
+        }
+
+        // If we reach here, all locators failed
+        throw new RuntimeException("Failed to hover for step: " + ev.getRaw_gherkin(), lastError);
+    }
+
     // Literal builder for XPath (handles `'` inside text)
     private static String buildXPathLiteral(String text) {
         if (!text.contains("'")) {
@@ -630,17 +689,35 @@ public class RawSeleniumReplayer {
         if (!(driver instanceof TakesScreenshot)) {
             return null;
         }
+
         try {
+            // ✅ Try to ensure the page has finished loading before we capture
+            try {
+                waitForPageLoad(driver);
+            } catch (Exception e) {
+                // Non-fatal – in some SPAs this may throw; we still attempt screenshot
+                System.out.println("captureScreenshot: waitForPageLoad skipped/failed: " + e.getMessage());
+            }
+
+            // Small extra buffer to let last-moment UI changes settle
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
             File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
             String fileName = String.format("step_%03d.png", stepIndex);
             File dest = new File(screenshotsDir, fileName);
             java.nio.file.Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return fileName;
+
         } catch (Exception e) {
             System.err.println("Failed to capture screenshot for step " + stepIndex + ": " + e.getMessage());
             return null;
         }
     }
+
 
     private static void highlightElement(WebDriver driver, WebElement element) {
         try {
