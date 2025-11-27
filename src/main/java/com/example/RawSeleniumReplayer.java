@@ -39,6 +39,10 @@ import com.example.ReplayStatusHolder;
 
 public class RawSeleniumReplayer {
 
+    // 🔴 NEW: global replay driver + stop flag (used by /replay-stop)
+    private static volatile WebDriver currentReplayDriver = null;
+    private static volatile boolean stopRequested = false;
+
     // ========== REGEX PATTERNS (fallback mode) ==========
 
     private static final Pattern ELEMENT_PATTERN = Pattern.compile(
@@ -77,6 +81,9 @@ public class RawSeleniumReplayer {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+        // reset stop flag at the beginning of every run
+        stopRequested = false;
+
         List<StepResult> results = new ArrayList<>();
         boolean allPassed = false;
         WebDriver driver = null;
@@ -111,14 +118,27 @@ public class RawSeleniumReplayer {
             );
 
             driver = new ChromeDriver(options);
+            // 🔴 NEW: expose this driver for /replay-stop
+            currentReplayDriver = driver;
+
             driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
 
             int index = 1;
             boolean failureOccurred = false;
             int failStepIndex = -1;
+            boolean stoppedByUser = false;
 
             int eventPos = 0;
             for (; eventPos < events.size(); eventPos++) {
+
+                // 🔴 NEW: check stop flag before processing next step
+                if (stopRequested) {
+                    System.out.println("Stop requested — aborting replay loop at event index " + eventPos);
+                    stoppedByUser = true;
+                    eventPos++;   // next unexecuted event will be the first SKIPPED
+                    break;
+                }
+
                 RecordedEvent ev = events.get(eventPos);
                 if (ev == null) {
                     continue;
@@ -223,8 +243,8 @@ public class RawSeleniumReplayer {
                 Thread.sleep(300);
             }
 
-            // Mark remaining steps as SKIPPED
-            if (failureOccurred) {
+            // Mark remaining steps as SKIPPED (either because of failure OR stop request)
+            if (failureOccurred || stoppedByUser) {
                 for (; eventPos < events.size(); eventPos++) {
                     RecordedEvent ev = events.get(eventPos);
                     if (ev == null) {
@@ -250,7 +270,15 @@ public class RawSeleniumReplayer {
                     skipped.success = false;
                     skipped.status = "SKIPPED";
                     skipped.durationMs = 0L;
-                    skipped.errorMessage = "Step not executed due to previous failure at step " + failStepIndex;
+
+                    if (failureOccurred) {
+                        skipped.errorMessage = "Step not executed due to previous failure at step " + failStepIndex;
+                    } else if (stoppedByUser) {
+                        skipped.errorMessage = "Step not executed because replay was stopped by user.";
+                    } else {
+                        skipped.errorMessage = null;
+                    }
+
                     skipped.stackTrace = null;
                     skipped.screenshotFileName = null;
 
@@ -269,6 +297,7 @@ public class RawSeleniumReplayer {
             // 🔴 NEW: mark replay as done for the live UI
             ReplayStatusHolder.done();
 
+            // 🔴 NEW: always try to quit driver and clear global ref, even if /replay-stop already quit it
             if (driver != null) {
                 try {
                     driver.quit();
@@ -276,6 +305,8 @@ public class RawSeleniumReplayer {
                     System.out.println("Warning quitting driver: " + e.getMessage());
                 }
             }
+            currentReplayDriver = null;
+            stopRequested = false;
 
             try {
                 generateHtmlReport(results, jsonPath, reportPath, allPassed);
@@ -310,6 +341,24 @@ public class RawSeleniumReplayer {
                 } catch (IOException e) {
                     scenario.log("Failed to attach HTML report: " + e.getMessage());
                 }
+            }
+        }
+    }
+
+    // 🔴 NEW: API for `/replay-stop` endpoint
+    public static synchronized void stopCurrentReplay() {
+        System.out.println("stopCurrentReplay() invoked.");
+        stopRequested = true;
+
+        WebDriver driver = currentReplayDriver;
+        if (driver != null) {
+            try {
+                driver.quit();
+                System.out.println("Replay driver quit successfully by stopCurrentReplay().");
+            } catch (Exception e) {
+                System.err.println("Error quitting replay driver in stopCurrentReplay(): " + e.getMessage());
+            } finally {
+                currentReplayDriver = null;
             }
         }
     }
@@ -506,7 +555,7 @@ public class RawSeleniumReplayer {
         List<LocatorCandidate> locators = new ArrayList<>(target.getLocators());
         locators.sort(Comparator.comparingInt(LocatorCandidate::getScore).reversed());
 
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         Exception lastError = null;
 
         for (LocatorCandidate loc : locators) {
@@ -1019,7 +1068,7 @@ public class RawSeleniumReplayer {
             out.println("    body {");
             out.println("      margin: 0;");
             out.println("      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;");
-            out.println("      background-color: #f1f5f9;"); // fixed typo here
+            out.println("      background-color: #f1f5f9;");
             out.println("      color: var(--text-main);");
             out.println("    }");
             out.println("    .page {");

@@ -186,6 +186,12 @@ public class UrlOpenerServer {
             return MAPPER.writeValueAsString(ReplayStatusHolder.get());
         });
 
+        post("/replay-stop", (req, res) -> {
+            RawSeleniumReplayer.stopCurrentReplay();
+            res.status(200);
+            return "Replay stopped";
+        });
+
         // Read recorded actions (in-memory) - Reads from persistent list
         get("/recorded-actions", (req, res) -> {
             try {
