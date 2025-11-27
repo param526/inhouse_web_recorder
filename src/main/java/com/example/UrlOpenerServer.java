@@ -9,6 +9,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.WebDriverException;
+import java.util.Comparator;
+import java.util.stream.Stream;
+import java.util.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +31,7 @@ public class UrlOpenerServer {
 
     // Persistent list to store ALL actions across page navigations and closures
     private static final List<Object> ALL_RECORDED_ACTIONS = new CopyOnWriteArrayList<>();
+    private static final Path RECORDINGS_DIR = Paths.get("recordings");
 
     public static void main(String[] args) {
 
@@ -43,31 +47,29 @@ public class UrlOpenerServer {
 
         // Define the endpoint the UI will hit when the user clicks 'Generate Test'
         post("/generate-test", (request, response) -> {
-            // ObjectMapper is used to convert the JSON string into a Java object
             ObjectMapper mapper = new ObjectMapper();
-
-            //  Step 1: Parse the incoming JSON body
-            // The request body will look like: {"feature": "Login Flow", "scenario": "Successful Login"}
             FeatureInfo info = mapper.readValue(request.body(), FeatureInfo.class);
 
-            // Step 2: Validate the required fields
-            if (info.getFeature() == null || info.getFeature().trim().isEmpty() ||
-                    info.getScenario() == null || info.getScenario().trim().isEmpty()) {
+            String featureName = info.getFeature();
+            String scenarioName = info.getScenario();
+            String recordingName = info.getRecording(); // logical name from dropdown (e.g. "user_login_flow")
 
-                response.status(400); // Bad Request
+            if (featureName == null || featureName.trim().isEmpty()
+                    || scenarioName == null || scenarioName.trim().isEmpty()) {
+                response.status(400);
                 response.type("application/json");
-                return "{\"status\": \"Error\", \"message\": \"Both Feature and Scenario names are required.\"}";
+                return "{\"status\":\"Error\",\"message\":\"Both Feature and Scenario names are required.\"}";
             }
 
-            // Step 3: Call the generator with both values
-            String featureName = info.getFeature().trim();
-            String scenarioName = info.getScenario().trim();
+            // 🔥 Resolve JSON path for that recording (same logic you use in /replay)
+            String jsonPath = resolveRecordingJsonPath(recordingName);
 
-            GherkinGenerator.generateFeatureFile(featureName, scenarioName);
+            GherkinGenerator.generateFeatureFile(featureName.trim(), scenarioName.trim(), jsonPath);
 
             response.type("application/json");
-            return "{\"status\": \"Success\", \"message\": \"Feature file generated for: " + scenarioName + "\"}";
+            return "{\"status\":\"Success\",\"message\":\"Feature file generated for: " + scenarioName + "\"}";
         });
+
 
         // Ensure the server is ready to handle requests
         awaitInitialization();
@@ -200,27 +202,34 @@ public class UrlOpenerServer {
         // Save to JSON file - Saves the persistent list
         get("/save-recorded-actions", (req, res) -> {
             try {
-                // Read and transfer any pending actions from the browser before saving
+                // 1) Get requested filename from query param (sent by JS)
+                String requestedFileName = req.queryParams("fileName");
+
+                // 2) Sanitize and normalize
+                String fileName = sanitizeFileName(requestedFileName);
+
+                // 3) Pull any remaining actions from browser into ALL_RECORDED_ACTIONS
                 if (currentDriver != null) {
                     transferActionsFromBrowserToHistory(currentDriver);
                 }
 
-                String json = MAPPER.writerWithDefaultPrettyPrinter()
+                // 4) Serialize ALL_RECORDED_ACTIONS
+                String json = MAPPER
+                        .writerWithDefaultPrettyPrinter()
                         .writeValueAsString(ALL_RECORDED_ACTIONS);
 
+                // 5) Ensure "recordings" directory exists
                 Path dir = Paths.get("recordings");
                 Files.createDirectories(dir);
 
-                // 🔹 NEW: read custom fileName from query param (from index.html)
-                String requestedName = req.queryParams("fileName");
-                String fileName = sanitizeFileName(requestedName);   // helper below
-
+                // 6) Save using EXACTLY the name from the UI
                 Path file = dir.resolve(fileName);
-                Files.writeString(file, json);
+                Files.writeString(file, json, StandardCharsets.UTF_8);
 
                 res.type("text/plain");
-                // UI just shows this string – we keep same style
-                return "Recorded actions saved to: " + file.toAbsolutePath();
+                // Return the absolute path so UI can display it
+                return file.toAbsolutePath().toString();
+
             } catch (Exception e) {
                 e.printStackTrace();
                 res.status(500);
@@ -228,38 +237,33 @@ public class UrlOpenerServer {
             }
         });
 
+
         post("/replay", (req, res) -> {
             System.out.println("Received /replay request");
-
             try {
                 String workingDir = System.getProperty("user.dir");
                 System.out.println("Working directory: " + workingDir);
 
-                // 🔹 Read requested file name from UI
-                String requestedName = req.queryParams("fileName");
+                String recordingParam = req.queryParams("recording"); // from UI dropdown
                 File jsonFile;
 
-                if (requestedName != null && !requestedName.isBlank()) {
-                    String safeName = sanitizeFileName(requestedName);
-                    jsonFile = Paths.get("recordings").resolve(safeName).toFile();
-
-                    if (!jsonFile.exists()) {
-                        String msg = "Requested recording not found: " + jsonFile.getAbsolutePath();
-                        System.err.println(msg);
-                        res.status(404);
-                        res.type("text/plain");
-                        return msg;
-                    }
+                if (recordingParam != null && !recordingParam.isBlank()) {
+                    // Use the latest JSON for that recording
+                    jsonFile = resolveLatestJsonForRecording(recordingParam.trim());
                 } else {
-                    // Fallback: same behavior as before (last / latest)
-                    jsonFile = getLatestRecordingJsonFile();
-                    if (jsonFile == null || !jsonFile.exists()) {
-                        String msg = "No recording JSON file found in recordings/ folder.";
-                        System.err.println(msg);
-                        res.status(500);
-                        res.type("text/plain");
-                        return msg;
-                    }
+                    // Fallback: original action_logs.json
+                    String jsonPath = workingDir
+                            + File.separator + "recordings"
+                            + File.separator + "action_logs.json";
+                    jsonFile = new File(jsonPath);
+                }
+
+                if (jsonFile == null || !jsonFile.exists()) {
+                    String msg = "JSON file not found for recording: " + recordingParam;
+                    System.err.println(msg);
+                    res.status(404);
+                    res.type("text/plain");
+                    return msg;
                 }
 
                 System.out.println("Replay JSON path: " + jsonFile.getAbsolutePath());
@@ -293,9 +297,6 @@ public class UrlOpenerServer {
                 return "Replay failed: " + e.toString();
             }
         });
-
-
-
 
         get("/view-replay-report", (req, res) -> {
             String workingDir = System.getProperty("user.dir");
@@ -344,6 +345,51 @@ public class UrlOpenerServer {
             return res.raw();
         });
 
+        get("/recordings-list", (req, res) -> {
+            try {
+                Files.createDirectories(RECORDINGS_DIR);
+
+                Map<String, File> latestByName = new HashMap<>();
+
+                try (Stream<Path> stream = Files.list(RECORDINGS_DIR)) {
+                    stream
+                            .filter(p -> Files.isRegularFile(p) && p.getFileName().toString().endsWith(".json"))
+                            .forEach(p -> {
+                                File f = p.toFile();
+                                String fileName = f.getName();
+                                String recordingName = extractRecordingName(fileName);
+                                if (recordingName == null || recordingName.isBlank()) return;
+
+                                File existing = latestByName.get(recordingName);
+                                if (existing == null || f.lastModified() > existing.lastModified()) {
+                                    latestByName.put(recordingName, f);
+                                }
+                            });
+                }
+
+                List<Map<String, String>> payload = new ArrayList<>();
+                for (Map.Entry<String, File> e : latestByName.entrySet()) {
+                    Map<String, String> row = new HashMap<>();
+                    row.put("name", e.getKey());              // logical recording name
+                    row.put("fileName", e.getValue().getName()); // actual JSON filename
+                    payload.add(row);
+                }
+
+                // sort alphabetically by name if you like
+                payload.sort(Comparator.comparing(m -> m.getOrDefault("name", "")));
+
+                res.type("application/json");
+                return MAPPER.writeValueAsString(payload);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                res.status(500);
+                res.type("text/plain");
+                return "Error listing recordings: " + e.getMessage();
+            }
+        });
+
+
 
         System.out.println("Selenium URL Launcher + Recorder running on http://localhost:4567");
 
@@ -357,32 +403,59 @@ public class UrlOpenerServer {
     }
 
     // Ensure we don't allow path traversal and always end with .json
-    private static String sanitizeFileName(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return "action_logs.json";
+    private static String sanitizeFileName(String rawName) {
+        String base = (rawName == null || rawName.isBlank())
+                ? "recording"
+                : rawName.trim();
+
+        // Remove any path characters
+        base = base.replaceAll("[\\\\/:*?\"<>|]", "_");
+
+        // Be sure it ends with .json
+        if (!base.toLowerCase().endsWith(".json")) {
+            base = base + ".json";
         }
+        return base;
+    }
 
-        String name = raw.trim();
+    /**
+     * Extract a logical "recording name" from a filename.
+     * - "user_login_flow_20251127_153607.json" -> "user_login_flow"
+     * - "plain_name.json" -> "plain_name"
+     */
+    private static String extractRecordingName(String fileName) {
+        if (fileName == null || !fileName.endsWith(".json")) return null;
 
-        // strip any directory components if user somehow sends them
-        name = name.replace("\\", "/");
-        int idx = name.lastIndexOf('/');
-        if (idx >= 0) {
-            name = name.substring(idx + 1);
+        String base = fileName.substring(0, fileName.length() - 5); // strip .json
+        String[] parts = base.split("_");
+        if (parts.length >= 3) {
+            String last = parts[parts.length - 1];
+            String secondLast = parts[parts.length - 2];
+            if (last.matches("\\d{6}") && secondLast.matches("\\d{8}")) {
+                // drop last two parts (timestamp)
+                return String.join("_", Arrays.copyOf(parts, parts.length - 2));
+            }
         }
+        return base;
+    }
 
-        // allow only safe characters
-        name = name.replaceAll("[^A-Za-z0-9_.-]", "_");
+    /**
+     * Find the latest JSON file for a recording name (by lastModified).
+     */
+    private static File resolveLatestJsonForRecording(String recordingName) throws IOException {
+        Files.createDirectories(RECORDINGS_DIR);
 
-        if (!name.toLowerCase().endsWith(".json")) {
-            name = name + ".json";
+        try (Stream<Path> stream = Files.list(RECORDINGS_DIR)) {
+            return stream
+                    .filter(p -> Files.isRegularFile(p) && p.getFileName().toString().endsWith(".json"))
+                    .map(Path::toFile)
+                    .filter(f -> {
+                        String baseName = extractRecordingName(f.getName());
+                        return recordingName.equals(baseName);
+                    })
+                    .max(Comparator.comparingLong(File::lastModified))
+                    .orElse(null);
         }
-
-        if (name.isBlank()) {
-            name = "action_logs.json";
-        }
-
-        return name;
     }
 
     private static String normalize(String input) {
@@ -590,5 +663,142 @@ public class UrlOpenerServer {
         return latest;
     }
 
+    private static String resolveRecordingJsonPath(String recordingName) {
+        String workingDir = System.getProperty("user.dir");
+        File recordingsDir = new File(workingDir, "recordings");
+
+        File[] files = recordingsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
+        if (files == null || files.length == 0) {
+            throw new RuntimeException("No JSON recordings found in " + recordingsDir.getAbsolutePath());
+        }
+
+        if (recordingName != null && !recordingName.isBlank()) {
+            String prefix = recordingName + "_";
+            String exact = recordingName + ".json";
+
+            for (File f : files) {
+                String name = f.getName();
+                if (name.equalsIgnoreCase(exact) || name.startsWith(prefix)) {
+                    return f.getAbsolutePath();
+                }
+            }
+            throw new RuntimeException("No JSON file found for recording name: " + recordingName);
+        }
+
+        // fallback: latest file
+        File latest = files[0];
+        for (File f : files) {
+            if (f.lastModified() > latest.lastModified()) {
+                latest = f;
+            }
+        }
+        return latest.getAbsolutePath();
+    }
+
+
+    private static File resolveLatestRecordingJson(String recordingName) {
+        try {
+            Path dir = Paths.get("recordings");
+            if (!Files.exists(dir)) {
+                return null;
+            }
+
+            try (Stream<Path> stream = Files.list(dir)) {
+                return stream
+                        .filter(p -> Files.isRegularFile(p))
+                        .filter(p -> {
+                            String fn = p.getFileName().toString();
+                            if (!fn.endsWith(".json")) return false;
+                            if (recordingName == null || recordingName.isBlank()) {
+                                // no specific recording: accept any json
+                                return true;
+                            }
+                            String prefix = recordingName + "_";
+                            return fn.startsWith(prefix);
+                        })
+                        .max(Comparator.comparingLong(p -> {
+                            try {
+                                return Files.getLastModifiedTime(p).toMillis();
+                            } catch (IOException e) {
+                                return 0L;
+                            }
+                        }))
+                        .map(Path::toFile)
+                        .orElse(null);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static File resolveJsonForReplay(String fileParam) {
+        Path dir = Paths.get("recordings");
+        if (!Files.exists(dir)) {
+            return null;
+        }
+
+        try {
+            // No param → try default action_logs.json, else latest *.json
+            if (fileParam == null || fileParam.isBlank()) {
+                Path defaultFile = dir.resolve("action_logs.json");
+                if (Files.exists(defaultFile)) {
+                    return defaultFile.toFile();
+                }
+
+                // Fallback: latest any .json
+                try (Stream<Path> stream = Files.list(dir)) {
+                    return stream
+                            .filter(p -> Files.isRegularFile(p))
+                            .filter(p -> p.getFileName().toString().toLowerCase().endsWith(".json"))
+                            .max(Comparator.comparingLong(p -> {
+                                try {
+                                    return Files.getLastModifiedTime(p).toMillis();
+                                } catch (IOException e) {
+                                    return 0L;
+                                }
+                            }))
+                            .map(Path::toFile)
+                            .orElse(null);
+                }
+            }
+
+            String candidateName = fileParam;
+            if (!candidateName.toLowerCase().endsWith(".json")) {
+                candidateName = candidateName + ".json";
+            }
+
+            Path candidate = dir.resolve(candidateName);
+            if (Files.exists(candidate)) {
+                return candidate.toFile();
+            }
+
+            // If base name without timestamp → find latest matching prefix
+            String base = fileParam;
+            String prefix = base + "_";
+
+            try (Stream<Path> stream = Files.list(dir)) {
+                return stream
+                        .filter(p -> Files.isRegularFile(p))
+                        .filter(p -> {
+                            String fn = p.getFileName().toString();
+                            return fn.startsWith(prefix) && fn.toLowerCase().endsWith(".json");
+                        })
+                        .max(Comparator.comparingLong(p -> {
+                            try {
+                                return Files.getLastModifiedTime(p).toMillis();
+                            } catch (IOException e) {
+                                return 0L;
+                            }
+                        }))
+                        .map(Path::toFile)
+                        .orElse(null);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 }

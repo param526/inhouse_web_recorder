@@ -340,7 +340,7 @@ public class RawSeleniumReplayer {
         List<LocatorCandidate> locators = new ArrayList<>(target.getLocators());
         locators.sort(Comparator.comparingInt(LocatorCandidate::getScore).reversed());
 
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         Exception lastError = null;
 
         // Try each locator in order of score

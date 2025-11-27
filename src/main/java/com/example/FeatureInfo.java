@@ -3,12 +3,8 @@ package com.example;
 public class FeatureInfo {
     private String feature;
     private String scenario;
+    private String recording; // <-- NEW
 
-    // Default constructor is required by Jackson
-    public FeatureInfo() {
-    }
-
-    // Getters and Setters for 'feature'
     public String getFeature() {
         return feature;
     }
@@ -17,12 +13,19 @@ public class FeatureInfo {
         this.feature = feature;
     }
 
-    // Getters and Setters for 'scenario'
     public String getScenario() {
         return scenario;
     }
 
     public void setScenario(String scenario) {
         this.scenario = scenario;
+    }
+
+    public String getRecording() {
+        return recording;
+    }
+
+    public void setRecording(String recording) {
+        this.recording = recording;
     }
 }
