@@ -9,6 +9,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.WebDriverException;
+
 import java.util.Comparator;
 import java.util.stream.Stream;
 import java.util.*;
@@ -24,6 +25,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+// 🔴 NEW: for background replay
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 public class UrlOpenerServer {
 
     private static WebDriver currentDriver;
@@ -32,6 +38,10 @@ public class UrlOpenerServer {
     // Persistent list to store ALL actions across page navigations and closures
     private static final List<Object> ALL_RECORDED_ACTIONS = new CopyOnWriteArrayList<>();
     private static final Path RECORDINGS_DIR = Paths.get("recordings");
+
+    // 🔴 NEW: background replay executor + handle to current replay
+    private static final ExecutorService REPLAY_EXECUTOR = Executors.newSingleThreadExecutor();
+    private static volatile Future<?> currentReplayFuture = null;
 
     public static void main(String[] args) {
 
@@ -183,11 +193,20 @@ public class UrlOpenerServer {
 
         get("/replay-status", (req, res) -> {
             res.type("application/json");
+            // whatever your ReplayStatusHolder exposes
             return MAPPER.writeValueAsString(ReplayStatusHolder.get());
         });
 
         post("/replay-stop", (req, res) -> {
+            // signal the replayer loop to stop
             RawSeleniumReplayer.stopCurrentReplay();
+
+            // 🔴 NEW: also cancel background future if still running
+            Future<?> f = currentReplayFuture;
+            if (f != null && !f.isDone()) {
+                f.cancel(true); // may interrupt sleep inside replay
+            }
+
             res.status(200);
             return "Replay stopped";
         });
@@ -251,69 +270,86 @@ public class UrlOpenerServer {
             }
         });
 
-
+        // 🔴 UPDATED: run replay in BACKGROUND so status/stop keep working
         post("/replay", (req, res) -> {
             System.out.println("Received /replay request");
-            res.type("text/plain");
+            res.type("application/json");
 
-            try {
-                String workingDir = System.getProperty("user.dir");
-                System.out.println("Working directory: " + workingDir);
-
-                String recordingParam = req.queryParams("recording"); // from UI dropdown
-                System.out.println("Requested recording: " + recordingParam);
-
-                File jsonFile;
-
-                if (recordingParam != null && !recordingParam.isBlank()) {
-                    // Use the latest JSON for that logical recording name
-                    jsonFile = resolveLatestJsonForRecording(workingDir, recordingParam.trim());
-                } else {
-                    // Fallback: latest JSON in /recordings or action_logs.json
-                    jsonFile = resolveDefaultJson(workingDir);
+            synchronized (UrlOpenerServer.class) {
+                // If a replay is already running, reject this one
+                if (currentReplayFuture != null && !currentReplayFuture.isDone()) {
+                    res.status(409);
+                    return "{\"error\":\"Replay already running\"}";
                 }
 
-                if (jsonFile == null || !jsonFile.exists()) {
-                    String msg = "JSON file not found for recording: " +
-                            (recordingParam == null ? "(default)" : recordingParam);
-                    System.err.println(msg);
-                    res.status(404);
-                    return msg;
-                }
+                try {
+                    String workingDir = System.getProperty("user.dir");
+                    System.out.println("Working directory: " + workingDir);
 
-                System.out.println("Replay JSON path: " + jsonFile.getAbsolutePath());
+                    String recordingParam = req.queryParams("recording"); // from UI dropdown
+                    System.out.println("Requested recording: " + recordingParam);
 
-                String reportDirPath = workingDir + File.separator + "replay-recordings";
-                File reportDir = new File(reportDirPath);
-                if (!reportDir.exists() && !reportDir.mkdirs()) {
-                    String msg = "Could not create report directory: " + reportDirPath;
-                    System.err.println(msg);
-                    res.status(500);
-                    return msg;
-                }
+                    File jsonFile;
 
-                String reportPath = reportDirPath + File.separator + "raw_selenium_report.html";
+                    if (recordingParam != null && !recordingParam.isBlank()) {
+                        // Use the latest JSON for that logical recording name
+                        jsonFile = resolveLatestJsonForRecording(workingDir, recordingParam.trim());
+                    } else {
+                        // Fallback: latest JSON in /recordings or action_logs.json
+                        jsonFile = resolveDefaultJson(workingDir);
+                    }
 
-                boolean ok = RawSeleniumReplayer.replayFromJson(
-                        jsonFile.getAbsolutePath(),
-                        reportPath
-                );
+                    if (jsonFile == null || !jsonFile.exists()) {
+                        String msg = "JSON file not found for recording: " +
+                                (recordingParam == null ? "(default)" : recordingParam);
+                        System.err.println(msg);
+                        res.status(404);
+                        return "{\"error\":\"" + msg.replace("\"", "\\\"") + "\"}";
+                    }
 
-                if (ok) {
+                    System.out.println("Replay JSON path: " + jsonFile.getAbsolutePath());
+
+                    String reportDirPath = workingDir + File.separator + "replay-recordings";
+                    File reportDir = new File(reportDirPath);
+                    if (!reportDir.exists() && !reportDir.mkdirs()) {
+                        String msg = "Could not create report directory: " + reportDirPath;
+                        System.err.println(msg);
+                        res.status(500);
+                        return "{\"error\":\"" + msg.replace("\"", "\\\"") + "\"}";
+                    }
+
+                    String reportPath = reportDirPath + File.separator + "raw_selenium_report.html";
+
+                    // 🔴 Submit replay job to background executor
+                    File finalJsonFile = jsonFile;
+                    currentReplayFuture = REPLAY_EXECUTOR.submit(() -> {
+                        try {
+                            System.out.println("[REPLAY] Starting background replay");
+                            boolean ok = RawSeleniumReplayer.replayFromJson(
+                                    finalJsonFile.getAbsolutePath(),
+                                    reportPath
+                            );
+                            System.out.println("[REPLAY] Finished. allPassed=" + ok);
+                        } catch (InterruptedException ie) {
+                            // ✅ Graceful handling when replay was cancelled via /replay-stop
+                            System.out.println("[REPLAY] Replay interrupted (likely stopped by user): " + ie.getMessage());
+                            Thread.currentThread().interrupt();
+                        } catch (Exception e) {
+                            System.err.println("[REPLAY] Error while replaying: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    });
+
                     res.status(200);
-                    return "OK";
-                } else {
-                    res.status(500);
-                    return "Replay had failures. Report is still available at /view-replay-report";
-                }
+                    return "{\"started\":true}";
 
-            } catch (Exception e) {
-                e.printStackTrace();
-                res.status(500);
-                return "Replay failed: " + e.toString();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    res.status(500);
+                    return "{\"error\":\"Replay failed to start: " + e.toString().replace("\"", "\\\"") + "\"}";
+                }
             }
         });
-
 
         get("/view-replay-report", (req, res) -> {
             String workingDir = System.getProperty("user.dir");
@@ -331,7 +367,6 @@ public class UrlOpenerServer {
             res.type("text/html; charset=UTF-8");
             return Files.readString(reportFile.toPath(), StandardCharsets.UTF_8);
         });
-
 
         get("/screenshots/:fileName", (req, res) -> {
             String fileName = req.params(":fileName");
@@ -404,8 +439,6 @@ public class UrlOpenerServer {
                 return "Error listing recordings: " + e.getMessage();
             }
         });
-
-
 
         System.out.println("Selenium URL Launcher + Recorder running on http://localhost:4567");
 
@@ -487,8 +520,6 @@ public class UrlOpenerServer {
         System.out.println("Using latest JSON in recordings dir: " + latest.getName());
         return latest;
     }
-
-
 
     /**
      * Extract a logical "recording name" from a filename.
@@ -595,8 +626,6 @@ public class UrlOpenerServer {
             }
         } catch (WebDriverException e) {
             // Catch WebDriver errors (like 'no such window') during transfer
-            // This is expected if the browser is closed right before this call.
-            // System.err.println("Error transferring actions (page may be closing): " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Error transferring recorded actions: " + e.getMessage());
         }
@@ -702,8 +731,6 @@ public class UrlOpenerServer {
 
                     Thread.sleep(500); // Check every 0.5 seconds
                 } catch (WebDriverException e) {
-                    // WebDriver closed manually (NoSuchWindowException) or crashed.
-                    // Actions were captured periodically before this exception.
                     System.out.println("WebDriver closed manually. Final actions should be saved. Stopping monitor thread.");
                     break;
                 } catch (Exception e) {
@@ -779,7 +806,6 @@ public class UrlOpenerServer {
         return latest.getAbsolutePath();
     }
 
-
     private static File resolveLatestRecordingJson(String recordingName) {
         try {
             Path dir = Paths.get("recordings");
@@ -846,7 +872,6 @@ public class UrlOpenerServer {
         System.out.println("Resolved latest JSON for '" + logicalName + "': " + latest.getName());
         return latest;
     }
-
 
     private static File resolveJsonForReplay(String fileParam) {
         Path dir = Paths.get("recordings");

@@ -1130,6 +1130,7 @@
     const liveSelEl = document.getElementById('liveReplaySelenium');
 
     let replayPollTimer = null;
+    let replayRequested = false;     // ✅ NEW: we only treat /replay-status as “finished” if a replay was requested
 
     const LS_KEY_LAST_NAME = '__recorder_lastRecordingName';
 
@@ -1497,6 +1498,61 @@
         }
     }
 
+    // ✅ NEW: handle completion message & report visibility based on /replay-status
+    function handleReplayStatusCompletion(st) {
+        const running = !!st.running;
+
+        if (!replayRequested) {
+            // No replay currently tracked by UI; ignore idle status.
+            return;
+        }
+
+        if (!running) {
+            // We had requested a replay, and now status says it's no longer running ⇒ finished
+            replayRequested = false;
+            stopReplayPolling();
+
+            if (stopReplayBtn) {
+                stopReplayBtn.disabled = true;
+            }
+
+            if (liveDot && livePill) {
+                liveDot.classList.remove('live');
+                livePill.classList.remove('running');
+                livePill.classList.add('idle');
+                livePill.textContent = 'IDLE';
+            }
+            if (liveStateEl) liveStateEl.textContent = 'IDLE';
+
+            const hadError = !!st.lastError;
+
+            if (statusBox) {
+                statusBox.className = hadError ? 'status-box error' : 'status-box success';
+                statusBox.innerHTML = `
+                    <div class="status-label">Script Replay</div>
+                    <p>${hadError ? 'Replay completed with failures.' : 'Replay completed.'}</p>
+                    <p class="small">Open the detailed HTML report using the button on the right card.</p>
+                `;
+            }
+
+            if (replayStatus) {
+                replayStatus.textContent = hadError
+                    ? 'Replay completed with failures. See report for details.'
+                    : 'Replay completed. See report for details.';
+                replayStatus.style.color = hadError ? '#f97316' : '#22c55e';
+            }
+
+            if (openReportBtn) {
+                openReportBtn.style.display = 'inline-block';
+            }
+
+            if (replayBtn) {
+                replayBtn.disabled = false;
+                replayBtn.classList.remove('is-loading');
+            }
+        }
+    }
+
     function startReplayPolling() {
         stopReplayPolling();
         replayPollTimer = setInterval(async () => {
@@ -1505,14 +1561,12 @@
                 if (r.ok) {
                     const d = await r.json();
                     updateReplayConsole(d);
-                    if (!d.running) {
-                        stopReplayPolling();
-                        if (stopReplayBtn) stopReplayBtn.disabled = true;
-                    }
+                    handleReplayStatusCompletion(d);   // ✅ new hook
                 }
             } catch (e) {
                 stopReplayPolling();
                 if (stopReplayBtn) stopReplayBtn.disabled = true;
+                console.warn('Error polling /replay-status:', e);
             }
         }, 400);
     }
@@ -1522,8 +1576,15 @@
         replayPollTimer = null;
     }
 
+    // ✅ UPDATED: Replay button handler → only marks “completed” when /replay-status says so
     if (replayBtn) {
         replayBtn.addEventListener('click', async () => {
+            if (replayRequested) {
+                // prevent double-click during an in-flight replay
+                return;
+            }
+
+            replayRequested = false;           // will flip to true only if /replay accepted
             replayBtn.disabled = true;
             replayBtn.classList.add('is-loading');
 
@@ -1532,19 +1593,21 @@
             }
 
             if (openReportBtn) {
-                openReportBtn.style.display = "none";
+                openReportBtn.style.display = "none";   // hide until we truly finish
             }
 
             if (replayStatus) {
-                replayStatus.textContent = "Replaying recorded script...";
+                replayStatus.textContent = "Sending replay request...";
                 replayStatus.style.color = "#eab308";
             }
 
-            statusBox.className = 'status-box info';
-            statusBox.innerHTML = `
-                <div class="status-label">Script Replay</div>
-                <p>⏳ Replaying recorded script...</p>
-            `;
+            if (statusBox) {
+                statusBox.className = 'status-box info';
+                statusBox.innerHTML = `
+                    <div class="status-label">Script Replay</div>
+                    <p>⏳ Starting replay...</p>
+                `;
+            }
 
             startReplayPolling();
 
@@ -1557,56 +1620,73 @@
                     replayUrl = `${BASE_URL}/replay?recording=${encodeURIComponent(recName)}`;
                 }
 
-                const resp = await fetch(replayUrl, {method: "POST"});
+                const resp = await fetch(replayUrl, { method: "POST" });
                 const text = await resp.text();
 
                 if (resp.ok) {
-                    statusBox.className = 'status-box success';
-                    statusBox.innerHTML = `
-                        <div class="status-label">Script Replay</div>
-                        <p>✅ Replay completed successfully.</p>
-                        <p class="small">You can open the detailed HTML report using the button on the right card.</p>
-                    `;
+                    // ✅ Treat this as “replay started”, not “completed”
+                    replayRequested = true;
+
                     if (replayStatus) {
-                        replayStatus.textContent = "Replay completed successfully.";
-                        replayStatus.style.color = "#22c55e";
+                        replayStatus.textContent = "Replay started. Live Replay Console is updating...";
+                        replayStatus.style.color = "#eab308";
+                    }
+
+                    if (statusBox) {
+                        statusBox.className = 'status-box info';
+                        statusBox.innerHTML = `
+                            <div class="status-label">Script Replay</div>
+                            <p>⏳ Replay running. Watch the Live Replay Console for step-by-step status.</p>
+                        `;
+                    }
+                    // Button stays disabled & loading until /replay-status tells us it's finished
+                } else {
+                    // Server rejected replay start
+                    stopReplayPolling();
+                    replayRequested = false;
+
+                    if (statusBox) {
+                        statusBox.className = 'status-box error';
+                        statusBox.innerHTML = `
+                            <div class="status-label">Script Replay</div>
+                            <p>🛑 Failed to start replay:</p>
+                            <p><code>${text}</code></p>
+                        `;
+                    }
+                    if (replayStatus) {
+                        replayStatus.textContent = "Failed to start replay.";
+                        replayStatus.style.color = "#ef4444";
                     }
                     if (openReportBtn) {
-                        openReportBtn.style.display = "inline-block";
+                        // We don't show report automatically here; last report (if any) is still accessible via the button if you want
+                        openReportBtn.style.display = "none";
                     }
-                } else {
+                    replayBtn.disabled = false;
+                    replayBtn.classList.remove('is-loading');
+                    if (stopReplayBtn) stopReplayBtn.disabled = true;
+                }
+            } catch (err) {
+                stopReplayPolling();
+                replayRequested = false;
+
+                if (statusBox) {
                     statusBox.className = 'status-box error';
                     statusBox.innerHTML = `
                         <div class="status-label">Script Replay</div>
-                        <p>🛑 Replay Failed:</p>
-                        <p><code>${text}</code></p>
-                        <p class="small">The replay report (with failures) is still available.</p>
+                        <p>🛑 Replay failed to start:</p>
+                        <p><code>${err.message}</code></p>
                     `;
-                    if (replayStatus) {
-                        replayStatus.textContent = "Replay failed. See details above.";
-                        replayStatus.style.color = "#f97316";
-                    }
-                    if (openReportBtn) {
-                        openReportBtn.style.display = "inline-block";
-                    }
                 }
-            } catch (err) {
-                statusBox.className = 'status-box error';
-                statusBox.innerHTML = `
-                    <div class="status-label">Script Replay</div>
-                    <p>🛑 Replay failed:</p>
-                    <p><code>${err.message}</code></p>
-                `;
                 if (replayStatus) {
-                    replayStatus.textContent = "Replay failed due to an error.";
+                    replayStatus.textContent = "Replay failed to start due to an error.";
                     replayStatus.style.color = "#ef4444";
                 }
                 if (openReportBtn) {
-                    openReportBtn.style.display = "inline-block";
+                    openReportBtn.style.display = "none";
                 }
-            } finally {
                 replayBtn.disabled = false;
                 replayBtn.classList.remove('is-loading');
+                if (stopReplayBtn) stopReplayBtn.disabled = true;
             }
         });
     }
@@ -1616,11 +1696,9 @@
         stopReplayBtn.addEventListener('click', async () => {
             stopReplayBtn.disabled = true;
             stopReplayPolling();
+            replayRequested = false;
 
             try {
-                // You should implement /replay-stop on Java side to:
-                //  - interrupt current replay
-                //  - quit the driver safely (no stacktrace thrown back)
                 const resp = await fetch(`${BASE_URL}/replay-stop`, { method: 'POST' });
                 const text = await resp.text();
 
@@ -1637,23 +1715,37 @@
                 }
                 if (liveStateEl) liveStateEl.textContent = 'IDLE';
 
-                statusBox.className = 'status-box success';
-                statusBox.innerHTML = `
-                    <div class="status-label">Script Replay</div>
-                    <p>⏹ Replay stopped by user. Driver closed safely.</p>
-                `;
+                if (statusBox) {
+                    statusBox.className = 'status-box success';
+                    statusBox.innerHTML = `
+                        <div class="status-label">Script Replay</div>
+                        <p>⏹ Replay stopped by user. Driver closed safely.</p>
+                        <p class="small">The replay report (with executed + skipped steps) is still available.</p>
+                    `;
+                }
 
                 if (replayStatus) {
                     replayStatus.textContent = "Replay stopped by user.";
                     replayStatus.style.color = "#f97316";
                 }
+
+                if (openReportBtn) {
+                    openReportBtn.style.display = "inline-block";
+                }
+
+                if (replayBtn) {
+                    replayBtn.disabled = false;
+                    replayBtn.classList.remove('is-loading');
+                }
             } catch (err) {
-                statusBox.className = 'status-box error';
-                statusBox.innerHTML = `
-                    <div class="status-label">Script Replay</div>
-                    <p>🛑 Failed to stop replay:</p>
-                    <p><code>${err.message}</code></p>
-                `;
+                if (statusBox) {
+                    statusBox.className = 'status-box error';
+                    statusBox.innerHTML = `
+                        <div class="status-label">Script Replay</div>
+                        <p>🛑 Failed to stop replay:</p>
+                        <p><code>${err.message}</code></p>
+                    `;
+                }
                 if (replayStatus) {
                     replayStatus.textContent = "Failed to stop replay. Check server logs.";
                     replayStatus.style.color = "#ef4444";
@@ -1724,6 +1816,7 @@
         window.generateTest = generateTest;
     };
 </script>
+
 
 </body>
 </html>
