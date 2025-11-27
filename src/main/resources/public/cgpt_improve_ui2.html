@@ -364,6 +364,156 @@
             box-shadow: none;
         }
 
+        /* Side card */
+        .side-card {
+            position: relative;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.22), transparent 55%),
+            rgba(15, 23, 42, 0.96);
+            border-radius: var(--radius-lg);
+            padding: 14px 14px 12px;
+            border: 1px solid rgba(31, 41, 55, 0.9);
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+        }
+
+        .side-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .side-card::before {
+            content: "";
+            position: absolute;
+            inset: -40%;
+            background: radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.25), transparent 60%),
+            radial-gradient(circle at 110% 0%, rgba(249, 115, 22, 0.22), transparent 60%);
+            opacity: 0.8;
+            mix-blend-mode: soft-light;
+            pointer-events: none;
+        }
+
+        .side-card h2 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+        }
+
+        .side-card p {
+            margin: 4px 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .mini-list {
+            margin-top: 8px;
+            padding-left: 18px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        .mini-list li {
+            margin-bottom: 5px;
+        }
+
+        .pill-tip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(55, 65, 81, 0.9);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .pill-tip span.icon {
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 900px) {
+            .shell-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 16px;
+            }
+
+            header.app-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .card {
+                padding: 18px 16px;
+            }
+
+            .side-card {
+                padding: 16px 14px;
+            }
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .replay-status-text {
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            min-height: 1.2em; /* keeps layout stable even when empty */
+        }
+
+        .report-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 9px 14px;
+            border-radius: var(--radius-md);
+            border: 1px solid #0f766e;
+            background: linear-gradient(to right, #0f766e, #14b8a6);
+            color: #ecfeff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 10px 26px rgba(15, 118, 110, 0.85);
+            transition: opacity var(--transition-fast),
+            transform var(--transition-fast),
+            box-shadow var(--transition-fast),
+            background var(--transition-fast);
+        }
+
+        .report-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 40px rgba(15, 118, 110, 0.95);
+            background: linear-gradient(to right, #115e59, #0f766e);
+        }
+
+        .report-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+        }
+
+        .report-btn:focus-visible {
+            outline: 2px solid #a5f3fc;
+            outline-offset: 2px;
+        }
+
+        .report-btn:disabled {
+            opacity: 0.6;
+            cursor: default;
+            box-shadow: none;
+        }
+
         .replay-btn {
             width: 100%;
             margin-top: 10px;
@@ -402,6 +552,12 @@
             box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
         }
 
+        .replay-btn:focus-visible {
+            outline: 2px solid #bfdbfe;
+            outline-offset: 2px;
+        }
+
+        /* Disabled / loading state */
         .replay-btn:disabled,
         .replay-btn.is-loading {
             opacity: 0.65;
@@ -409,6 +565,7 @@
             box-shadow: none;
         }
 
+        /* Optional tiny spinner when loading */
         .replay-btn.is-loading .replay-icon {
             animation: spin 0.75s linear infinite;
         }
@@ -417,53 +574,6 @@
             to {
                 transform: rotate(360deg);
             }
-        }
-
-        .replay-status-text {
-            margin-top: 6px;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-align: center;
-            min-height: 1.2em;
-        }
-
-        .report-btn {
-            width: 100%;
-            margin-top: 8px;
-            padding: 9px 14px;
-            border-radius: var(--radius-md);
-            border: 1px solid #0f766e;
-            background: linear-gradient(to right, #0f766e, #14b8a6);
-            color: #ecfeff;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 10px 26px rgba(15, 118, 110, 0.85);
-            transition: opacity var(--transition-fast),
-            transform var(--transition-fast),
-            box-shadow var(--transition-fast),
-            background var(--transition-fast);
-        }
-
-        .report-btn:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 18px 40px rgba(15, 118, 110, 0.95);
-            background: linear-gradient(to right, #115e59, #0f766e);
-        }
-
-        .report-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
-        }
-
-        .report-btn:disabled {
-            opacity: 0.6;
-            cursor: default;
-            box-shadow: none;
         }
 
         /* Beautiful dark neon select */
@@ -475,7 +585,7 @@
         .pretty-select {
             width: 100%;
             padding: 10px 14px;
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.85); /* dark matte glass */
             color: #e5e7eb;
             border: 1px solid rgba(55, 65, 81, 0.9);
             border-radius: 10px;
@@ -483,8 +593,10 @@
             appearance: none;
             outline: none;
             cursor: pointer;
+
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
+
             transition: all 0.22s ease-out;
         }
 
@@ -510,34 +622,7 @@
             pointer-events: none;
         }
 
-        /* Gherkin card */
-        .side-card {
-            position: relative;
-            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.22), transparent 55%),
-            rgba(15, 23, 42, 0.96);
-            border-radius: var(--radius-lg);
-            padding: 14px 14px 12px;
-            border: 1px solid rgba(31, 41, 55, 0.9);
-            box-shadow: var(--shadow-soft);
-            overflow: hidden;
-        }
-
-        .side-card > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        .side-card::before {
-            content: "";
-            position: absolute;
-            inset: -40%;
-            background: radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.25), transparent 60%),
-            radial-gradient(circle at 110% 0%, rgba(249, 115, 22, 0.22), transparent 60%);
-            opacity: 0.8;
-            mix-blend-mode: soft-light;
-            pointer-events: none;
-        }
-
+        /* Gherkin card tweaks when in side panel */
         #test-generator-card {
             margin-bottom: 10px;
             padding: 10px 10px 8px;
@@ -631,204 +716,6 @@
             text-align: center;
         }
 
-        .side-card h2 {
-            margin: 0 0 6px;
-            font-size: 1rem;
-        }
-
-        .side-card p {
-            margin: 4px 0;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .mini-list {
-            margin-top: 8px;
-            padding-left: 18px;
-            font-size: 0.82rem;
-            color: var(--text-muted);
-        }
-
-        .mini-list li {
-            margin-bottom: 5px;
-        }
-
-        .pill-tip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            border: 1px solid rgba(55, 65, 81, 0.9);
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 8px;
-        }
-
-        .pill-tip span.icon {
-            font-size: 0.85rem;
-        }
-
-        @media (max-width: 900px) {
-            .shell-grid {
-                grid-template-columns: minmax(0, 1fr);
-            }
-        }
-
-        @media (max-width: 640px) {
-            body {
-                padding: 16px;
-            }
-
-            header.app-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .card {
-                padding: 18px 16px;
-            }
-
-            .side-card {
-                padding: 16px 14px;
-            }
-        }
-
-        /* LIVE REPLAY CONSOLE CARD (directly under replay button) */
-        .live-console-card {
-            margin-top: 12px;
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid rgba(55, 65, 81, 0.9);
-            border-radius: 14px;
-            overflow: hidden;
-            box-shadow: 0 10px 28px rgba(0,0,0,0.55);
-            font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 0.8rem;
-        }
-
-        .console-header {
-            background: #020617;
-            padding: 10px 14px;
-            border-bottom: 1px solid #1e293b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .console-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .console-title {
-            color: #e2e8f0;
-            font-size: 0.78rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        .status-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 999px;
-            background: #475569;
-            box-shadow: 0 0 0 2px rgba(71, 85, 105, 0.35);
-            transition: all 0.25s;
-        }
-
-        .status-dot.live {
-            background: #22c55e;
-            box-shadow: 0 0 6px #22c55e;
-        }
-
-        .status-pill {
-            padding: 3px 9px;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            border: 1px solid #475569;
-            color: #e5e7eb;
-            letter-spacing: 1px;
-        }
-
-        .status-pill.running {
-            border-color: #22c55e;
-            color: #bbf7d0;
-        }
-
-        .status-pill.idle {
-            border-color: #475569;
-            color: #94a3b8;
-        }
-
-        .console-body {
-            padding: 10px 14px 12px;
-            color: #e5e7eb;
-        }
-
-        .console-row {
-            display: flex;
-            margin-bottom: 6px;
-        }
-
-        .console-row .k {
-            width: 90px;
-            color: #9ca3af;
-            font-size: 0.75rem;
-        }
-
-        .console-row .v {
-            flex: 1;
-            text-align: right;
-        }
-
-        .console-section-title {
-            margin-top: 10px;
-            margin-bottom: 4px;
-            color: #60a5fa;
-            font-weight: 600;
-            font-size: 0.78rem;
-        }
-
-        .console-section-title.error-title {
-            color: #f97373;
-        }
-
-        .gherkin-block {
-            background: #020617;
-            border: 1px solid #1f2937;
-            padding: 8px 9px;
-            border-radius: 8px;
-            color: #facc15;
-            white-space: pre-wrap;
-            min-height: 42px;
-            max-height: 110px;
-            overflow-y: auto;
-            margin-bottom: 6px;
-        }
-
-        .result-text {
-            display: inline-block;
-            min-width: 40px;
-            text-align: right;
-        }
-
-        .result-text.pass {
-            color: #4ade80;
-        }
-
-        .result-text.fail {
-            color: #f87171;
-        }
-
-        .error-text {
-            color: #f87171;
-            min-height: 16px;
-            display: inline-block;
-            text-align: right;
-            width: 100%;
-        }
-
     </style>
 </head>
 <body>
@@ -851,7 +738,7 @@
     </header>
 
     <div class="shell-grid">
-        <!-- LEFT: Main control card + live console under replay -->
+        <!-- Main control card -->
         <div class="card">
             <div class="card-header">
                 <div class="card-title-block">
@@ -895,7 +782,7 @@
                     </div>
                 </div>
 
-                <!-- Recording name / timestamp / recent -->
+                <!-- 🔹 Recording name / timestamp / recent block -->
                 <div class="field-group" style="margin-top: 10px;">
                     <label for="recordingName" class="field-label">Recording Name</label>
                     <div class="field-hint">
@@ -913,6 +800,7 @@
                         <div class="select-container">
                             <select id="recordingRecentNames" class="pretty-select">
                                 <option value="">Recent…</option>
+                                <!-- items are appended dynamically -->
                             </select>
                         </div>
                     </div>
@@ -942,51 +830,9 @@
                     <span class="replay-label">Replay Recorded Script</span>
                 </button>
 
-                <!-- Live Replay Console directly under replay button -->
-                <div id="liveReplayConsole" class="live-console-card">
-                    <div class="console-header">
-                        <div class="console-left">
-                            <span class="status-dot" id="liveReplayDot"></span>
-                            <span class="console-title">Live Replay Console</span>
-                        </div>
-                        <span class="status-pill idle" id="headerStatusPill">IDLE</span>
-                    </div>
-                    <div class="console-body">
-                        <div class="console-row">
-                            <span class="k">STATUS</span>
-                            <span class="v" id="liveReplayState">IDLE</span>
-                        </div>
-                        <div class="console-row">
-                            <span class="k">PROGRESS</span>
-                            <span class="v" id="liveReplayProgress">0 / 0</span>
-                        </div>
-                        <div class="console-row">
-                            <span class="k">ACTION</span>
-                            <span class="v" id="liveReplayAction">Waiting…</span>
-                        </div>
-
-                        <div class="console-section-title">GHERKIN</div>
-                        <pre class="gherkin-block" id="liveReplayGherkin"># No events recorded yet…</pre>
-
-                        <div class="console-section-title">RESULT</div>
-                        <span class="result-text" id="liveReplayResult">-</span>
-
-                        <div class="console-section-title error-title">ERROR</div>
-                        <span class="error-text" id="liveReplayErrorDisplay">-</span>
-
-                        <!-- Hidden if you ever need them later -->
-                        <div style="display:none;">
-                            <span id="liveReplayTitle"></span>
-                            <span id="liveReplaySelenium"></span>
-                            <span id="liveReplayError"></span>
-                        </div>
-                    </div>
-                </div>
-
                 <p id="replayStatus" class="replay-status-text"></p>
 
-                <button
-                        id="openReportBtn"
+                <button id="openReportBtn"
                         type="button"
                         class="report-btn"
                         style="display: none;"
@@ -996,8 +842,9 @@
             </div>
         </div>
 
-        <!-- RIGHT: Gherkin generator + help -->
+        <!-- Right side: Gherkin generator + help -->
         <aside class="side-card">
+            <!-- 🔹 Gherkin generator moved here so it’s always visible -->
             <div id="test-generator-card">
                 <h3>Generate Gherkin Feature</h3>
                 <p class="description">
@@ -1069,25 +916,12 @@
     const openReportBtn = document.getElementById('openReportBtn');
     let statusInterval;
 
-    // Live replay console refs
-    const liveDot       = document.getElementById('liveReplayDot');
-    const livePill      = document.getElementById('headerStatusPill');
-    const liveStateEl   = document.getElementById('liveReplayState');
-    const liveProgEl    = document.getElementById('liveReplayProgress');
-    const liveActionEl  = document.getElementById('liveReplayAction');
-    const liveGherkinEl = document.getElementById('liveReplayGherkin');
-    const liveResultEl  = document.getElementById('liveReplayResult');
-    const liveErrorDisp = document.getElementById('liveReplayErrorDisplay');
-    const liveErrorEl   = document.getElementById('liveReplayError');
-    const liveTitleEl   = document.getElementById('liveReplayTitle');
-    const liveSelEl     = document.getElementById('liveReplaySelenium');
-
-    let replayPollTimer = null;
-
-    // LocalStorage keys (kept for future if needed)
+    // ---- LocalStorage keys ----
     const LS_KEY_LAST_NAME    = '__recorder_lastRecordingName';
     const LS_KEY_RECENT_NAMES = '__recorder_recentRecordingNames';
     const MAX_RECENT_NAMES    = 10;
+
+    // ---------- Helpers ----------
 
     function humanizeRecordingName(recName) {
         if (!recName) return '';
@@ -1166,6 +1000,7 @@
         }
     }
 
+    // Load recordings from server and fill <select id="recordingRecentNames">
     async function refreshRecordingDropdownFromServer(selectedName) {
         const select = document.getElementById('recordingRecentNames');
         if (!select) return;
@@ -1174,18 +1009,19 @@
             const resp = await fetch(`${BASE_URL}/recordings-list`);
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-            const list = await resp.json();
+            const list = await resp.json(); // [{name,fileName}, ...]
 
+            // Keep only "Recent…" option
             while (select.options.length > 1) {
                 select.remove(1);
             }
 
             list.forEach(item => {
                 const opt = document.createElement('option');
-                opt.value = item.name;
+                opt.value = item.name;          // logical name
                 opt.textContent = item.name;
                 if (item.fileName) {
-                    opt.dataset.filename = item.fileName;
+                    opt.dataset.filename = item.fileName; // REAL JSON filename
                 }
                 select.appendChild(opt);
             });
@@ -1198,6 +1034,8 @@
         }
     }
 
+    // ---------- Recording name + preview UI ----------
+
     function initRecordingNameUi() {
         const nameInput    = document.getElementById('recordingName');
         const tsCheckbox   = document.getElementById('addTimestamp');
@@ -1206,6 +1044,7 @@
 
         if (!nameInput) return;
 
+        // For a NEW recording: preview “if you save now, this will be the filename”
         function updatePreviewForNewRecording() {
             if (!preview) return;
             const withTs = tsCheckbox ? tsCheckbox.checked : true;
@@ -1221,11 +1060,16 @@
             }
         }
 
+        // When selecting an EXISTING recording:
+        // - set recordingName
+        // - auto-fill Feature & Scenario
+        // - preview shows REAL filename from server (no new timestamp)
         if (recentSelect) {
             recentSelect.addEventListener('change', () => {
                 const val = recentSelect.value;
 
                 if (!val) {
+                    // user picked the "Recent…" placeholder → treat as "new"
                     updatePreviewForNewRecording();
                     return;
                 }
@@ -1258,8 +1102,11 @@
             }
         });
 
+        // Initial state: treat as “new recording”
         onNameChanged();
     }
+
+    // ---------- Browser launch / status ----------
 
     function launchBrowser(event) {
         event.preventDefault();
@@ -1338,6 +1185,8 @@
             });
     }
 
+    // ---------- Save & Quit (create JSON) ----------
+
     function saveAndQuit() {
         if (saveQuitBtn.disabled) return;
 
@@ -1381,6 +1230,7 @@
                     <p>📁 Saved as: <code>${finalFileName}</code></p>
                 `;
 
+                // Refresh dropdown from server so this recording appears with real filename
                 refreshRecordingDropdownFromServer(customName);
 
                 return fetch(`${BASE_URL}/quit`);
@@ -1406,74 +1256,7 @@
             });
     }
 
-    // Live replay console
-    function updateReplayConsole(st) {
-        if (!st) return;
-
-        const running = !!st.running;
-
-        if (running) {
-            liveDot.classList.add('live');
-            livePill.classList.remove('idle');
-            livePill.classList.add('running');
-            livePill.textContent = 'RUNNING';
-        } else {
-            liveDot.classList.remove('live');
-            livePill.classList.remove('running');
-            livePill.classList.add('idle');
-            livePill.textContent = 'IDLE';
-        }
-
-        liveStateEl.textContent = running ? 'RUNNING' : 'IDLE';
-        liveProgEl.textContent = `${st.currentIndex || 0} / ${st.totalSteps || 0}`;
-        liveActionEl.textContent = st.currentAction || '-';
-
-        if (st.currentGherkin) {
-            liveGherkinEl.textContent = st.currentGherkin;
-        }
-
-        if (st.lastError) {
-            const err = st.lastError;
-            liveResultEl.textContent = 'FAIL';
-            liveResultEl.classList.remove('pass');
-            liveResultEl.classList.add('fail');
-            liveErrorDisp.textContent = err;
-            if (liveErrorEl) liveErrorEl.textContent = err;
-        } else if (st.lastStepSuccess) {
-            liveResultEl.textContent = 'PASS';
-            liveResultEl.classList.remove('fail');
-            liveResultEl.classList.add('pass');
-            liveErrorDisp.textContent = '-';
-            if (liveErrorEl) liveErrorEl.textContent = '';
-        } else {
-            liveResultEl.textContent = '-';
-            liveResultEl.classList.remove('pass', 'fail');
-            liveErrorDisp.textContent = '-';
-        }
-    }
-
-    function startReplayPolling() {
-        stopReplayPolling();
-        replayPollTimer = setInterval(async () => {
-            try {
-                const r = await fetch(`${BASE_URL}/replay-status`);
-                if (r.ok) {
-                    const d = await r.json();
-                    updateReplayConsole(d);
-                    if (!d.running) {
-                        stopReplayPolling();
-                    }
-                }
-            } catch (e) {
-                stopReplayPolling();
-            }
-        }, 400);
-    }
-
-    function stopReplayPolling() {
-        if (replayPollTimer) clearInterval(replayPollTimer);
-        replayPollTimer = null;
-    }
+    // ---------- Replay ----------
 
     if (replayBtn) {
         replayBtn.addEventListener('click', async () => {
@@ -1494,8 +1277,6 @@
                 <div class="status-label">Script Replay</div>
                 <p>⏳ Replaying recorded script...</p>
             `;
-
-            startReplayPolling();
 
             try {
                 const select = document.getElementById("recordingRecentNames");
@@ -1560,6 +1341,8 @@
         });
     }
 
+    // ---------- Generate Gherkin ----------
+
     function generateTest() {
         const featureName  = document.getElementById('featureInput').value.trim();
         const scenarioName = document.getElementById('scenarioInput').value.trim();
@@ -1608,7 +1391,10 @@
             });
     }
 
+    // ---------- Startup ----------
+
     window.onload = function () {
+        // Poll recorder status
         statusInterval = setInterval(updateStatus, 500);
         updateStatus();
 

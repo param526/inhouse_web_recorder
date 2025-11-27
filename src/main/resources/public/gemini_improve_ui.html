@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Selenium Studio - Compact</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- DESIGN TOKENS --- */
+        :root {
+            --primary: #4f46e5;
+            --primary-grad: linear-gradient(135deg, #4f46e5, #6366f1);
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --bg-body: #f8fafc;
+            --bg-panel: #ffffff;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;       /* Force full viewport height */
+            width: 100vw;
+            overflow: hidden;    /* STRICT NO SCROLL */
+            display: flex;
+        }
+
+        /* --- SIDEBAR (Slim) --- */
+        .sidebar {
+            width: 60px;
+            background-color: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+
+        .logo-box {
+            width: 36px; height: 36px;
+            background: var(--primary-grad);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: white;
+            margin-bottom: 30px;
+        }
+
+        .nav-icon {
+            color: #94a3b8; font-size: 20px; margin-bottom: 20px; cursor: pointer;
+        }
+        .nav-icon.active { color: white; }
+
+        /* --- WORKSPACE --- */
+        .workspace {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 380px 1fr; /* Fixed width left, auto right */
+            gap: 16px;
+            padding: 16px;
+            height: 100%;
+        }
+
+        /* --- LEFT PANEL: COMPACT CONTROLS --- */
+        .panel-left {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Tight gap */
+            height: 100%;
+            overflow: hidden; /* No scrolling allowed */
+        }
+
+        .card {
+            background: var(--bg-panel);
+            border-radius: var(--radius);
+            padding: 14px; /* Reduced padding */
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px; /* Tighter */
+        }
+
+        .card-title {
+            font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;
+        }
+
+        /* Form Elements - Compact */
+        .form-group { margin-bottom: 8px; }
+
+        .form-label {
+            display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;
+        }
+
+        .input-row { display: flex; gap: 8px; }
+
+        .control-input {
+            width: 100%;
+            padding: 8px 10px; /* Smaller inputs */
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: #f8fafc;
+            font-family: 'Inter', sans-serif;
+        }
+        .control-input:focus { border-color: var(--primary); background: #fff; }
+
+        /* Buttons - Compact */
+        .btn {
+            padding: 8px 14px; /* Smaller buttons */
+            border-radius: 6px;
+            font-weight: 600; font-size: 0.85rem;
+            cursor: pointer; border: none; color: white;
+            white-space: nowrap; transition: opacity 0.2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-primary { background: var(--primary-grad); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); width: 100%; }
+        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); font-size: 0.75rem; padding: 6px; }
+
+        /* Stats in Header Card */
+        .mini-stats {
+            display: flex; gap: 10px; margin-top: 8px;
+        }
+        .mini-stat-box {
+            flex: 1; background: #f1f5f9; padding: 6px; border-radius: 6px; text-align: center;
+        }
+        .ms-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; display: block; }
+        .ms-val { font-size: 0.9rem; font-weight: 700; color: var(--text-main); }
+        .ms-val.active { color: var(--success); }
+
+        /* --- RIGHT PANEL: CONSOLE --- */
+        .panel-right {
+            background: #1e1e2e;
+            border-radius: var(--radius);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .console-header {
+            background: #181825; padding: 10px 16px;
+            border-bottom: 1px solid #313244;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .console-title { color: #a6adc8; font-size: 0.8rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+        .status-dot { width: 8px; height: 8px; background: #45475a; border-radius: 50%; }
+        .status-dot.live { background: #a6e3a1; box-shadow: 0 0 8px #a6e3a1; }
+
+        .console-body {
+            flex: 1; padding: 16px; overflow-y: auto; /* Only this scrolls */
+            font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.5; color: #cdd6f4;
+        }
+
+        .log-row { display: flex; margin-bottom: 8px; border-bottom: 1px solid #313244; padding-bottom: 8px; }
+        .log-key { min-width: 80px; color: #6c7086; font-size: 0.75rem; padding-top: 2px; }
+        .log-val { flex: 1; color: #cdd6f4; word-break: break-all; }
+        .log-val.hl { color: #89b4fa; }
+        .log-val.ok { color: #a6e3a1; }
+        .log-val.err { color: #f38ba8; }
+
+        .code-box {
+            background: #11111b; padding: 10px; border-radius: 6px;
+            color: #f9e2af; font-size: 0.8rem; border-left: 2px solid #f9e2af;
+            margin-top: 4px; white-space: pre-wrap;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
+
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="logo-box">⚡</div>
+    <div class="nav-icon active">⊞</div>
+    <div class="nav-icon">⚙</div>
+</div>
+
+<div class="workspace">
+
+    <div class="panel-left">
+
+        <div class="card" style="flex: 0 0 auto;">
+            <div class="card-header">
+                <h2 class="card-title">Browser Session</h2>
+            </div>
+            <form onsubmit="launchBrowser(event)" style="margin:0;">
+                <div class="input-row">
+                    <input type="text" id="url-input" class="control-input" placeholder="https://example.com" required>
+                    <button type="submit" id="launch-btn" class="btn btn-primary">Go</button>
+                </div>
+            </form>
+            <div class="mini-stats">
+                <div class="mini-stat-box">
+                    <span class="ms-label">Events</span>
+                    <div class="ms-val" id="stat-events">0</div>
+                </div>
+                <div class="mini-stat-box">
+                    <span class="ms-label">Injector</span>
+                    <div class="ms-val" id="stat-script">Idle</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="flex: 1 0 auto; justify-content: flex-start;">
+            <div class="card-header">
+                <h2 class="card-title">Recording</h2>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" id="recordingName" class="control-input" placeholder="user_flow">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Recent / Load</label>
+                <select id="recordingRecentNames" class="control-input">
+                    <option value="">Select...</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:12px; font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" id="addTimestamp" checked> Append Timestamp
+            </div>
+
+            <div style="margin-top: auto;"> <button id="saveQuitBtn" class="btn btn-danger" onclick="saveAndQuit()" disabled>
+                ⏹ Stop & Save
+            </button>
+            </div>
+        </div>
+
+        <div class="card" style="flex: 0 0 auto;">
+            <div class="card-header">
+                <h2 class="card-title">Export & Verify</h2>
+            </div>
+
+            <div class="input-row" style="margin-bottom:8px;">
+                <input type="text" id="featureInput" class="control-input" placeholder="Feature">
+                <input type="text" id="scenarioInput" class="control-input" placeholder="Scenario">
+            </div>
+
+            <div class="input-row">
+                <button type="button" class="btn btn-success" style="flex:1" onclick="generateTest()">
+                    Generate .feature
+                </button>
+                <button id="replayBtn" type="button" class="btn btn-primary" style="flex:1">
+                    ▶ Replay
+                </button>
+            </div>
+
+            <p id="statusMsg" style="text-align:center; font-size:0.75rem; margin:6px 0 0; min-height:1em; color:var(--text-muted);"></p>
+            <button id="openReportBtn" class="btn btn-ghost" style="width:100%; margin-top:6px; display:none;" onclick="window.open('http://localhost:4567/view-replay-report', '_blank')">
+                View Report
+            </button>
+        </div>
+
+    </div>
+
+    <div class="panel-right">
+        <div class="console-header">
+            <div class="console-title">>_ LIVE CONSOLE</div>
+            <div id="liveReplayDot" class="status-dot"></div>
+        </div>
+        <div class="console-body" id="replayLiveCard">
+            <div class="log-row">
+                <span class="log-key">STATUS</span>
+                <span class="log-val hl" id="liveReplayState">Idle</span>
+            </div>
+            <div class="log-row">
+                <span class="log-key">STEP</span>
+                <span class="log-val" id="liveReplayProgress">0 / 0</span>
+            </div>
+            <div class="log-row">
+                <span class="log-key">ACTION</span>
+                <span class="log-val" id="liveReplayAction">-</span>
+            </div>
+            <div class="log-row" style="border:none;">
+                <span class="log-key">GHERKIN</span>
+            </div>
+            <div class="code-box" id="liveReplayGherkin">Waiting...</div>
+
+            <div class="log-row" style="margin-top:12px; border:none;">
+                <span class="log-key">RESULT</span>
+                <span class="log-val" id="liveReplayResult">-</span>
+            </div>
+            <div class="log-row" style="border:none;">
+                <span class="log-key" style="color:#f38ba8">ERROR</span>
+                <span class="log-val err" id="liveReplayErrorDisplay">-</span>
+            </div>
+
+            <div style="display:none">
+                <span id="liveReplayTitle"></span>
+                <span id="liveReplaySelenium"></span>
+                <span id="liveReplayError"></span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const BASE_URL = 'http://localhost:4567';
+
+    // Refs
+    const saveQuitBtn   = document.getElementById('saveQuitBtn');
+    const statEvents    = document.getElementById('stat-events');
+    const statScript    = document.getElementById('stat-script');
+
+    // Console Refs
+    const liveDot       = document.getElementById('liveReplayDot');
+    const liveStateEl   = document.getElementById('liveReplayState');
+    const liveProgEl    = document.getElementById('liveReplayProgress');
+    const liveActionEl  = document.getElementById('liveReplayAction');
+    const liveResultEl  = document.getElementById('liveReplayResult');
+    const liveGherkinEl = document.getElementById('liveReplayGherkin');
+    const liveErrorDisp = document.getElementById('liveReplayErrorDisplay');
+    // Hidden refs
+    const liveErrorEl   = document.getElementById('liveReplayError'); // logic hook
+    const liveTitleEl   = document.getElementById('liveReplayTitle');
+    const liveSelEl     = document.getElementById('liveReplaySelenium');
+
+    const statusMsg     = document.getElementById('statusMsg');
+    const replayBtn     = document.getElementById('replayBtn');
+    const openReportBtn = document.getElementById('openReportBtn');
+
+    let replayPollTimer = null;
+    let statusInterval  = null;
+
+    const LS_KEY_LAST = '__recorder_lastRecordingName';
+    const LS_KEY_RECENTS = '__recorder_recentRecordingNames';
+
+    function humanizeRecordingName(recName) {
+        if (!recName) return '';
+        const withSpaces = recName.replace(/[_\-]+/g, ' ').trim();
+        return withSpaces.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    function autoFillFeatureScenario(recName) {
+        const fi = document.getElementById('featureInput');
+        const si = document.getElementById('scenarioInput');
+        const pretty = humanizeRecordingName(recName);
+        if (fi) fi.value = pretty || recName || '';
+        if (si) si.value = `Happy path - ${pretty || recName || ''}`;
+    }
+
+    function sanitizeName(raw) { return raw ? raw.replace(/[^a-zA-Z0-9_\-]/g, '_') : ''; }
+
+    function makeTimestamp() {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    }
+
+    function buildFilename(base, withTs) {
+        const clean = sanitizeName(base || 'recording');
+        return withTs ? `${clean}_${makeTimestamp()}.json` : `${clean}.json`;
+    }
+
+    function loadRecentNames() {
+        try { return JSON.parse(localStorage.getItem(LS_KEY_RECENTS)) || []; } catch(e) { return []; }
+    }
+
+    function saveRecentName(name) {
+        const clean = sanitizeName(name);
+        if(!clean) return;
+        let arr = loadRecentNames().filter(n => n !== clean);
+        arr.unshift(clean);
+        if(arr.length > 10) arr = arr.slice(0, 10);
+        localStorage.setItem(LS_KEY_RECENTS, JSON.stringify(arr));
+        localStorage.setItem(LS_KEY_LAST, clean);
+    }
+
+    async function refreshDropdown(selectedName) {
+        const sel = document.getElementById('recordingRecentNames');
+        if(!sel) return;
+        try {
+            const resp = await fetch(`${BASE_URL}/recordings-list`);
+            const list = resp.ok ? await resp.json() : [];
+            while(sel.options.length > 1) sel.remove(1);
+            list.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.name;
+                opt.textContent = item.name;
+                sel.appendChild(opt);
+            });
+            if(selectedName) sel.value = selectedName;
+        } catch(e){}
+    }
+
+    function initNameUi() {
+        const inp = document.getElementById('recordingName');
+        const sel = document.getElementById('recordingRecentNames');
+        const ts  = document.getElementById('addTimestamp');
+
+        function onChange() {
+            const val = inp.value.trim();
+            if(val) autoFillFeatureScenario(val);
+        }
+
+        if(sel) {
+            sel.addEventListener('change', () => {
+                if(sel.value) {
+                    inp.value = sel.value;
+                    onChange();
+                }
+            });
+        }
+        inp.addEventListener('input', onChange);
+    }
+
+    // --- Launch ---
+    function launchBrowser(e) {
+        e.preventDefault();
+        const url = document.getElementById('url-input').value.trim();
+        if(!url) return;
+
+        const btn = document.getElementById('launch-btn');
+        btn.textContent = "...";
+        btn.disabled = true;
+        statScript.textContent = "Connecting...";
+
+        const params = new URLSearchParams();
+        params.append('url', url);
+
+        fetch(`${BASE_URL}/open`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params.toString()
+        }).finally(() => {
+            setTimeout(() => {
+                btn.textContent = "Go";
+                btn.disabled = false;
+            }, 1000);
+        });
+    }
+
+    // --- Status ---
+    function updateStatus() {
+        fetch(`${BASE_URL}/recorder-status`)
+            .then(r => r.ok ? r.json() : Promise.reject('No session'))
+            .then(data => {
+                statEvents.textContent = data.count || 0;
+                if(data.installed) {
+                    statScript.textContent = "Active";
+                    statScript.className = "ms-val active";
+                } else {
+                    statScript.textContent = "Pending";
+                    statScript.className = "ms-val";
+                }
+
+                if(data.last_raw_gherkin && data.last_raw_gherkin !== liveGherkinEl.textContent) {
+                    liveGherkinEl.textContent = data.last_raw_gherkin;
+                    liveActionEl.textContent = "Recording...";
+                }
+                saveQuitBtn.disabled = false;
+            })
+            .catch(() => {
+                statScript.textContent = "Off";
+                statScript.className = "ms-val";
+                saveQuitBtn.disabled = true;
+            });
+    }
+
+    // --- Save ---
+    function saveAndQuit() {
+        const nameInp = document.getElementById('recordingName');
+        const name = nameInp.value.trim();
+        if(!name) {
+            statusMsg.textContent = "Name required!";
+            statusMsg.style.color="var(--danger)";
+            return;
+        }
+
+        saveQuitBtn.disabled = true;
+        saveQuitBtn.textContent = "Saving...";
+
+        const ts = document.getElementById('addTimestamp').checked;
+        const fname = buildFilename(name, ts);
+
+        saveRecentName(name);
+        autoFillFeatureScenario(name);
+
+        const p = new URLSearchParams();
+        p.append('fileName', fname);
+
+        fetch(`${BASE_URL}/save-recorded-actions?` + p.toString())
+            .then(() => {
+                refreshDropdown(name);
+                return fetch(`${BASE_URL}/quit`);
+            })
+            .then(() => {
+                saveQuitBtn.textContent = "Saved.";
+                statusMsg.textContent = `Saved: ${fname}`;
+                statusMsg.style.color = "var(--success)";
+            })
+            .catch(e => {
+                statusMsg.textContent = "Error saving";
+                saveQuitBtn.textContent = "Error";
+            });
+    }
+
+    // --- Replay UI ---
+    function updateConsole(st) {
+        if(!st) return;
+        const running = !!st.running;
+
+        liveDot.className = running ? "status-dot live" : "status-dot";
+        liveStateEl.textContent = running ? "RUNNING" : "IDLE";
+        liveStateEl.className = running ? "log-val hl" : "log-val";
+
+        liveProgEl.textContent = `${st.currentIndex || 0} / ${st.totalSteps || 0}`;
+        liveActionEl.textContent = st.currentAction || "-";
+
+        if(st.currentGherkin) liveGherkinEl.textContent = st.currentGherkin;
+
+        if(st.lastError) {
+            liveErrorDisp.textContent = st.lastError;
+            liveResultEl.textContent = "FAIL";
+            liveResultEl.className = "log-val err";
+        } else if (st.lastStepSuccess) {
+            liveResultEl.textContent = "PASS";
+            liveResultEl.className = "log-val ok";
+            liveErrorDisp.textContent = "-";
+        } else {
+            liveResultEl.textContent = "-";
+            liveErrorDisp.textContent = "-";
+        }
+    }
+
+    function startPolling() {
+        stopPolling();
+        replayPollTimer = setInterval(async () => {
+            try {
+                const r = await fetch(`${BASE_URL}/replay-status`);
+                if(r.ok) {
+                    const d = await r.json();
+                    updateConsole(d);
+                    if(!d.running) stopPolling();
+                }
+            } catch(e) { stopPolling(); }
+        }, 500);
+    }
+    function stopPolling() { if(replayPollTimer) clearInterval(replayPollTimer); }
+
+    if(replayBtn) {
+        replayBtn.addEventListener('click', () => {
+            replayBtn.disabled = true;
+            if(openReportBtn) openReportBtn.style.display = "none";
+            statusMsg.textContent = "Starting replay...";
+            statusMsg.style.color = "var(--text-muted)";
+
+            startPolling();
+
+            const sel = document.getElementById("recordingRecentNames");
+            let url = `${BASE_URL}/replay`;
+            if(sel && sel.value) url += `?recording=${encodeURIComponent(sel.value)}`;
+
+            fetch(url, {method:"POST"})
+                .then(r => r.ok ? "Success" : "Failed")
+                .then(msg => {
+                    statusMsg.textContent = msg;
+                    statusMsg.style.color = msg==="Success"?"var(--success)":"var(--danger)";
+                    if(openReportBtn) openReportBtn.style.display = "block";
+                })
+                .finally(() => replayBtn.disabled = false);
+        });
+    }
+
+    // --- Generator ---
+    function generateTest() {
+        const f = document.getElementById('featureInput').value.trim();
+        const s = document.getElementById('scenarioInput').value.trim();
+        const r = document.getElementById('recordingRecentNames').value.trim();
+
+        if(!f || !s) { statusMsg.textContent="Name missing"; statusMsg.style.color="var(--danger)"; return; }
+
+        statusMsg.textContent = "Generating...";
+        fetch(`${BASE_URL}/generate-test`, {
+            method:'POST',
+            body: JSON.stringify({feature:f, scenario:s, recording:r})
+        })
+            .then(r=>r.json())
+            .then(d => {
+                statusMsg.textContent = d.message || "Done";
+                statusMsg.style.color = d.status==="Success" ? "var(--success)" : "var(--danger)";
+            })
+            .catch(() => { statusMsg.textContent="Error"; });
+    }
+
+    window.onload = function() {
+        statusInterval = setInterval(updateStatus, 1000);
+        updateStatus();
+        initNameUi();
+        refreshDropdown();
+        window.generateTest = generateTest;
+    };
+</script>
+</body>
+</html>
