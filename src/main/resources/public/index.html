@@ -561,7 +561,7 @@
             font-size: 0.8rem;
             color: var(--text-muted);
             text-align: center;
-            min-height: 1.2em; /* keeps layout stable even when empty */
+            min-height: 1.2em;
         }
 
         .report-btn {
@@ -679,7 +679,7 @@
         .pretty-select {
             width: 100%;
             padding: 10px 14px;
-            background: rgba(15, 23, 42, 0.85); /* dark matte glass */
+            background: rgba(15, 23, 42, 0.85);
             color: #e5e7eb;
             border: 1px solid rgba(55, 65, 81, 0.9);
             border-radius: 10px;
@@ -687,27 +687,22 @@
             appearance: none;
             outline: none;
             cursor: pointer;
-
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
-
             transition: all 0.22s ease-out;
         }
 
-        /* Neon glow on hover */
         .pretty-select:hover {
             border-color: #3b82f6;
             box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
             background: rgba(30, 41, 59, 0.88);
         }
 
-        /* Strong focus ring */
         .pretty-select:focus {
             border-color: #2563eb;
             box-shadow: 0 0 15px rgba(37, 99, 235, 0.65);
         }
 
-        /* Custom dropdown arrow */
         .select-container::after {
             content: "▾";
             position: absolute;
@@ -719,7 +714,22 @@
             pointer-events: none;
         }
 
+        /* Live replay status panel */
+        #replayLiveCard {
+            margin-top: 8px;
+        }
 
+        #replayLiveCard p {
+            font-size: 0.8rem;
+        }
+
+        #liveReplayGherkin,
+        #liveReplaySelenium,
+        #liveReplayError {
+            display: inline-block;
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
     </style>
 </head>
 <body>
@@ -804,7 +814,7 @@
                         <div class="select-container">
                             <select id="recordingRecentNames" class="pretty-select">
                                 <option value="">Recent…</option>
-                                <!-- your items will be appended here -->
+                                <!-- items from /recordings-list -->
                             </select>
                         </div>
 
@@ -837,11 +847,24 @@
 
                 <p id="replayStatus" class="replay-status-text"></p>
 
+                <!-- 🔴 Live replay status panel -->
+                <div id="replayLiveCard" class="status-box info">
+                    <div class="status-label">Live Replay Status</div>
+                    <p><strong>State:</strong> <span id="liveReplayState">Idle</span></p>
+                    <p><strong>Progress:</strong> <span id="liveReplayProgress">0 / 0</span></p>
+                    <p><strong>Action:</strong> <span id="liveReplayAction">–</span></p>
+                    <p><strong>Page:</strong> <span id="liveReplayTitle">–</span></p>
+                    <p><strong>Gherkin:</strong> <code id="liveReplayGherkin">–</code></p>
+                    <p><strong>Selenium:</strong> <code id="liveReplaySelenium">–</code></p>
+                    <p><strong>Last Result:</strong> <span id="liveReplayResult">–</span></p>
+                    <p><strong>Error:</strong> <code id="liveReplayError">–</code></p>
+                </div>
+
                 <button id="openReportBtn"
                         type="button"
                         class="report-btn"
                         style="display: none;"
-                        onclick="window.open('/view-replay-report', '_blank')">
+                        onclick="window.open('http://localhost:4567/view-replay-report', '_blank')">
                     <span>📄 Open Last Replay Report</span>
                 </button>
 
@@ -914,19 +937,35 @@
 </div>
 
 <script>
-    const saveQuitBtn = document.getElementById('saveQuitBtn');
-    const statusBox = document.getElementById('status-message');
-    const statEvents = document.getElementById('stat-events');
-    const statScript = document.getElementById('stat-script');
-    const replayStatus = document.getElementById('replayStatus');
-    const replayBtn = document.getElementById('replayBtn');
+    const BASE_URL      = 'http://localhost:4567';
+
+    const saveQuitBtn   = document.getElementById('saveQuitBtn');
+    const statusBox     = document.getElementById('status-message');
+    const statEvents    = document.getElementById('stat-events');
+    const statScript    = document.getElementById('stat-script');
+    const replayStatus  = document.getElementById('replayStatus');
+    const replayBtn     = document.getElementById('replayBtn');
     const openReportBtn = document.getElementById('openReportBtn');
     let statusInterval;
+    let replayPollTimer = null;   // 🔴 for /replay-status polling
 
-    // 🔹 Recording name persistence / filename helpers
-    const LS_KEY_LAST_NAME = '__recorder_lastRecordingName';
+    // ---- Live replay panel elements ----
+    const liveStateEl    = document.getElementById('liveReplayState');
+    const liveProgEl     = document.getElementById('liveReplayProgress');
+    const liveActionEl   = document.getElementById('liveReplayAction');
+    const liveTitleEl    = document.getElementById('liveReplayTitle');
+    const liveGherkinEl  = document.getElementById('liveReplayGherkin');
+    const liveSeleniumEl = document.getElementById('liveReplaySelenium');
+    const liveResultEl   = document.getElementById('liveReplayResult');
+    const liveErrorEl    = document.getElementById('liveReplayError');
+    const replayLiveCard = document.getElementById('replayLiveCard');
+
+    // ---- LocalStorage keys ----
+    const LS_KEY_LAST_NAME    = '__recorder_lastRecordingName';
     const LS_KEY_RECENT_NAMES = '__recorder_recentRecordingNames';
-    const MAX_RECENT_NAMES = 10;
+    const MAX_RECENT_NAMES    = 10;
+
+    // ---------- Helpers ----------
 
     function humanizeRecordingName(recName) {
         if (!recName) return '';
@@ -937,37 +976,32 @@
             .join(' ');
     }
 
-    // 🔥 Fill Feature / Scenario based on recording name
     function autoFillFeatureScenarioFromRecording(recName) {
-        const featureInput = document.getElementById('featureInput');
+        const featureInput  = document.getElementById('featureInput');
         const scenarioInput = document.getElementById('scenarioInput');
-        if (!featureInput || !scenarioInput) return;
+        const pretty        = humanizeRecordingName(recName);
 
-        const pretty = humanizeRecordingName(recName);
-
-        // Only overwrite if user hasn't manually edited them
-        if (!featureInput.dataset.userEdited) {
+        if (featureInput) {
             featureInput.value = pretty || recName || '';
         }
-        if (!scenarioInput.dataset.userEdited) {
+        if (scenarioInput) {
             scenarioInput.value = `Happy path - ${pretty || recName || ''}`;
         }
     }
 
     function sanitizeName(raw) {
         if (!raw) return '';
-        // Only allow letters, numbers, underscore, hyphen; others → "_"
         return raw.replace(/[^a-zA-Z0-9_\-]/g, '_');
     }
 
     function makeTimestampForFile() {
         const now = new Date();
         const yyyy = now.getFullYear().toString();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mi = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
+        const mm   = String(now.getMonth() + 1).padStart(2, '0');
+        const dd   = String(now.getDate()).padStart(2, '0');
+        const hh   = String(now.getHours()).padStart(2, '0');
+        const mi   = String(now.getMinutes()).padStart(2, '0');
+        const ss   = String(now.getSeconds()).padStart(2, '0');
         return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
     }
 
@@ -1010,26 +1044,29 @@
         }
     }
 
-    // 🔹 Fill <select id="recordingRecentNames"> from backend /recordings-list
+    // Load recordings from server and fill <select id="recordingRecentNames">
     async function refreshRecordingDropdownFromServer(selectedName) {
         const select = document.getElementById('recordingRecentNames');
         if (!select) return;
 
         try {
-            const resp = await fetch('/recordings-list');
+            const resp = await fetch(`${BASE_URL}/recordings-list`);
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-            const list = await resp.json(); // expected: [{name,fileName},...]
+            const list = await resp.json(); // [{name,fileName}, ...]
 
-            // Clear all options except the first "Recent…"
+            // Keep only "Recent…" option
             while (select.options.length > 1) {
                 select.remove(1);
             }
 
             list.forEach(item => {
                 const opt = document.createElement('option');
-                opt.value = item.name;     // logical recording name
+                opt.value = item.name;
                 opt.textContent = item.name;
+                if (item.fileName) {
+                    opt.dataset.filename = item.fileName;
+                }
                 select.appendChild(opt);
             });
 
@@ -1041,63 +1078,59 @@
         }
     }
 
-    // Track manual edits to Feature/Scenario so we don't override them
-    (function attachFeatureScenarioEditFlags() {
-        const featureInput = document.getElementById('featureInput');
-        const scenarioInput = document.getElementById('scenarioInput');
-        if (featureInput) {
-            ['input', 'change'].forEach(ev =>
-                featureInput.addEventListener(ev, () => {
-                    featureInput.dataset.userEdited = '1';
-                })
-            );
-        }
-        if (scenarioInput) {
-            ['input', 'change'].forEach(ev =>
-                scenarioInput.addEventListener(ev, () => {
-                    scenarioInput.dataset.userEdited = '1';
-                })
-            );
-        }
-    })();
+    // ---------- Recording name + preview UI ----------
 
     function initRecordingNameUi() {
-        const nameInput = document.getElementById('recordingName');
-        const tsCheckbox = document.getElementById('addTimestamp');
-        const preview = document.getElementById('recordingFilenamePreview');
+        const nameInput    = document.getElementById('recordingName');
+        const tsCheckbox   = document.getElementById('addTimestamp');
+        const preview      = document.getElementById('recordingFilenamePreview');
         const recentSelect = document.getElementById('recordingRecentNames');
 
         if (!nameInput) return;
 
-        function updatePreview() {
+        function updatePreviewForNewRecording() {
             if (!preview) return;
             const withTs = tsCheckbox ? tsCheckbox.checked : true;
             const fn = buildFilename(nameInput.value.trim(), withTs);
             preview.textContent = fn;
         }
 
-        // Dropdown change → fill recordingName + Feature/Scenario
+        function onNameChanged() {
+            updatePreviewForNewRecording();
+            const val = nameInput.value.trim();
+            if (val) {
+                autoFillFeatureScenarioFromRecording(val);
+            }
+        }
+
         if (recentSelect) {
             recentSelect.addEventListener('change', () => {
-                if (recentSelect.value) {
-                    nameInput.value = recentSelect.value;
-                    updatePreview();
-                    autoFillFeatureScenarioFromRecording(recentSelect.value);
+                const val = recentSelect.value;
+
+                if (!val) {
+                    updatePreviewForNewRecording();
+                    return;
+                }
+
+                nameInput.value = val;
+                autoFillFeatureScenarioFromRecording(val);
+
+                const selectedOpt      = recentSelect.options[recentSelect.selectedIndex];
+                const existingFileName = selectedOpt && selectedOpt.dataset.filename;
+
+                if (preview) {
+                    preview.textContent = existingFileName ||
+                        buildFilename(nameInput.value.trim(), tsCheckbox ? tsCheckbox.checked : true);
                 }
             });
         }
 
-        // Typing in recordingName updates preview (and can auto-fill)
-        nameInput.addEventListener('input', () => {
-            updatePreview();
-            autoFillFeatureScenarioFromRecording(nameInput.value.trim());
-        });
+        nameInput.addEventListener('input', onNameChanged);
 
         if (tsCheckbox) {
-            tsCheckbox.addEventListener('change', updatePreview);
+            tsCheckbox.addEventListener('change', onNameChanged);
         }
 
-        // Enter key in name input triggers Save & Quit
         nameInput.addEventListener('keydown', (ev) => {
             if (ev.key === 'Enter') {
                 ev.preventDefault();
@@ -1107,9 +1140,10 @@
             }
         });
 
-        // Initial preview
-        updatePreview();
+        onNameChanged();
     }
+
+    // ---------- Browser launch / status ----------
 
     function launchBrowser(event) {
         event.preventDefault();
@@ -1130,7 +1164,7 @@
         const params = new URLSearchParams();
         params.append('url', url);
 
-        fetch('/open', {
+        fetch(`${BASE_URL}/open`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
@@ -1142,13 +1176,13 @@
     }
 
     function updateStatus() {
-        fetch('/recorder-status')
+        fetch(`${BASE_URL}/recorder-status`)
             .then(response => {
                 if (response.status === 400) {
-                    throw new Error('No active browser session detected.');
+                    throw new Error("No active browser session detected.");
                 }
                 if (!response.ok) {
-                    throw new Error('HTTP Error: ' + response.statusText);
+                    throw new Error("HTTP Error: " + response.statusText);
                 }
                 return response.json();
             })
@@ -1188,10 +1222,12 @@
             });
     }
 
+    // ---------- Save & Quit (create JSON) ----------
+
     function saveAndQuit() {
         if (saveQuitBtn.disabled) return;
 
-        const nameInput = document.getElementById('recordingName');
+        const nameInput  = document.getElementById('recordingName');
         const tsCheckbox = document.getElementById('addTimestamp');
 
         let customName = nameInput ? nameInput.value.trim() : '';
@@ -1201,41 +1237,39 @@
             return;
         }
 
-        const withTs = tsCheckbox ? tsCheckbox.checked : true;
+        const withTs        = tsCheckbox ? tsCheckbox.checked : true;
         const finalFileName = buildFilename(customName, withTs);
 
-// auto-fill Feature & Scenario
         autoFillFeatureScenarioFromRecording(customName);
+        saveRecentName(customName);
 
         saveQuitBtn.disabled = true;
         saveQuitBtn.textContent = 'Saving actions...';
         statusBox.className = 'status-box info';
         statusBox.innerHTML = `
-    <div class="status-label">Recorder Status</div>
-    <p>Starting save and shutdown process...</p>
-    <p>Target file: <code>${finalFileName}</code></p>
-`;
+            <div class="status-label">Recorder Status</div>
+            <p>Starting save and shutdown process...</p>
+            <p>Target file: <code>${finalFileName}</code></p>
+        `;
 
         let savedFileLocation = "";
 
-// 🔹 Pass this exact name to the backend
         const params = new URLSearchParams();
         params.append('fileName', finalFileName);
 
-        fetch('/save-recorded-actions?' + params.toString())
+        fetch(`${BASE_URL}/save-recorded-actions?` + params.toString())
             .then(response => response.text())
             .then(message => {
                 savedFileLocation = message;
                 statusBox.innerHTML = `
-            <div class="status-label">Recorder Status</div>
-            <p>💾 Actions saved. Closing browser session...</p>
-            <p>📁 Saved as: <code>${finalFileName}</code></p>
-        `;
+                    <div class="status-label">Recorder Status</div>
+                    <p>💾 Actions saved. Closing browser session...</p>
+                    <p>📁 Saved as: <code>${finalFileName}</code></p>
+                `;
 
-                // refresh dropdown so this recording appears
                 refreshRecordingDropdownFromServer(customName);
 
-                return fetch('/quit');
+                return fetch(`${BASE_URL}/quit`);
             })
             .then(response => response.text())
             .then(message => {
@@ -1258,19 +1292,106 @@
             });
     }
 
-    // 🔥 Replay logic – Requirement 4
+    // ---------- Live replay polling ----------
+
+    function updateReplayStatusPanel(st) {
+        if (!st) return;
+
+        const running = !!st.running;
+        const total   = st.totalSteps || 0;
+        const idx     = st.currentIndex || 0;
+
+        if (liveStateEl) {
+            liveStateEl.textContent = running ? 'Running' : 'Idle';
+        }
+        if (liveProgEl) {
+            liveProgEl.textContent = `${idx} / ${total}`;
+        }
+        if (liveActionEl) {
+            liveActionEl.textContent = st.currentAction || '–';
+        }
+        if (liveTitleEl) {
+            liveTitleEl.textContent = st.currentTitle || '–';
+        }
+        if (liveGherkinEl) {
+            liveGherkinEl.textContent = st.currentGherkin || '–';
+        }
+        if (liveSeleniumEl) {
+            liveSeleniumEl.textContent = st.currentSelenium || '–';
+        }
+
+        if (liveResultEl) {
+            if (total === 0 && !running) {
+                liveResultEl.textContent = 'No replay yet';
+                liveResultEl.style.color = '#9ca3af';
+            } else if (running) {
+                liveResultEl.textContent = 'In progress…';
+                liveResultEl.style.color = '#eab308';
+            } else {
+                // completed – look at lastStepSuccess
+                if (st.lastStepSuccess) {
+                    liveResultEl.textContent = 'Last step: PASS';
+                    liveResultEl.style.color = '#22c55e';
+                } else {
+                    liveResultEl.textContent = 'Last step: FAIL';
+                    liveResultEl.style.color = '#ef4444';
+                }
+            }
+        }
+
+        if (liveErrorEl) {
+            liveErrorEl.textContent = st.lastError || '–';
+        }
+
+        if (replayLiveCard) {
+            replayLiveCard.className = 'status-box info';
+            if (!running && total > 0) {
+                replayLiveCard.classList.add(st.lastStepSuccess ? 'success' : 'error');
+            }
+        }
+    }
+
+    function startReplayPolling() {
+        stopReplayPolling(); // clear existing if any
+
+        replayPollTimer = setInterval(async () => {
+            try {
+                const resp = await fetch(`${BASE_URL}/replay-status`);
+                if (!resp.ok) return;
+                const st = await resp.json();
+                updateReplayStatusPanel(st);
+
+                if (!st.running) {
+                    stopReplayPolling();
+                }
+            } catch (e) {
+                console.warn('Replay status polling error:', e);
+                stopReplayPolling();
+            }
+        }, 700);
+    }
+
+    function stopReplayPolling() {
+        if (replayPollTimer) {
+            clearInterval(replayPollTimer);
+            replayPollTimer = null;
+        }
+    }
+
+    // ---------- Replay ----------
+
     if (replayBtn) {
-        replayBtn.addEventListener('click', async () => {
+        replayBtn.addEventListener('click', () => {
             replayBtn.disabled = true;
             replayBtn.classList.add('is-loading');
 
             if (openReportBtn) {
-                openReportBtn.style.display = 'none';
+                openReportBtn.style.display = "none";
             }
 
             if (replayStatus) {
-                replayStatus.textContent = 'Replaying recorded script...';
-                replayStatus.style.color = '#eab308';
+                replayStatus.textContent = "Replaying recorded script...";
+                replayStatus.style.color = "#eab308";
             }
 
             statusBox.className = 'status-box info';
@@ -1279,100 +1400,108 @@
                 <p>⏳ Replaying recorded script...</p>
             `;
 
-            try {
-                const select = document.getElementById('recordingRecentNames');
-                let replayUrl = '/replay';
+            // Start live polling immediately
+            startReplayPolling();
 
-                if (select && select.value && select.value.trim() !== '') {
-                    const recName = select.value.trim();
-                    // Backend: /replay?recording=<logical-name>
-                    replayUrl = `/replay?recording=${encodeURIComponent(recName)}`;
-                }
+            const select = document.getElementById("recordingRecentNames");
+            let replayUrl = `${BASE_URL}/replay`;
 
-                const resp = await fetch(replayUrl, {method: 'POST'});
-                const text = await resp.text();
+            if (select && select.value && select.value.trim() !== "") {
+                const recName = select.value.trim();
+                replayUrl = `${BASE_URL}/replay?recording=${encodeURIComponent(recName)}`;
+            }
 
-                if (resp.ok) {
-                    statusBox.className = 'status-box success';
-                    statusBox.innerHTML = `
-                        <div class="status-label">Script Replay</div>
-                        <p>✅ Replay completed successfully.</p>
-                        <p class="small">You can open the detailed HTML report using the button below.</p>
-                    `;
-                    if (replayStatus) {
-                        replayStatus.textContent = 'Replay completed successfully.';
-                        replayStatus.style.color = '#22c55e';
+            // Fire replay but don't block UI/polling
+            fetch(replayUrl, { method: "POST" })
+                .then(resp =>
+                    resp.text().then(text => ({ ok: resp.ok, text }))
+                )
+                .then(({ ok, text }) => {
+                    if (ok) {
+                        statusBox.className = 'status-box success';
+                        statusBox.innerHTML = `
+                            <div class="status-label">Script Replay</div>
+                            <p>✅ Replay completed successfully.</p>
+                            <p class="small">You can open the detailed HTML report using the button below.</p>
+                        `;
+                        if (replayStatus) {
+                            replayStatus.textContent = "Replay completed successfully.";
+                            replayStatus.style.color = "#22c55e";
+                        }
+                        if (openReportBtn) {
+                            openReportBtn.style.display = "inline-block";
+                        }
+                    } else {
+                        statusBox.className = 'status-box error';
+                        statusBox.innerHTML = `
+                            <div class="status-label">Script Replay</div>
+                            <p>🛑 Replay Failed:</p>
+                            <p><code>${text}</code></p>
+                            <p class="small">The replay report (with failures) is still available.</p>
+                        `;
+                        if (replayStatus) {
+                            replayStatus.textContent = "Replay failed. See details above.";
+                            replayStatus.style.color = "#f97316";
+                        }
+                        if (openReportBtn) {
+                            openReportBtn.style.display = "inline-block";
+                        }
                     }
-                    if (openReportBtn) {
-                        openReportBtn.style.display = 'inline-block';
-                    }
-                } else {
+                })
+                .catch(err => {
                     statusBox.className = 'status-box error';
                     statusBox.innerHTML = `
                         <div class="status-label">Script Replay</div>
-                        <p>🛑 Replay Failed:</p>
-                        <p><code>${text}</code></p>
-                        <p class="small">The replay report (with failures) is still available.</p>
+                        <p>🛑 Replay failed:</p>
+                        <p><code>${err.message}</code></p>
                     `;
                     if (replayStatus) {
-                        replayStatus.textContent = 'Replay failed. See details above.';
-                        replayStatus.style.color = '#f97316';
+                        replayStatus.textContent = "Replay failed due to an error.";
+                        replayStatus.style.color = "#ef4444";
                     }
                     if (openReportBtn) {
-                        openReportBtn.style.display = 'inline-block';
+                        openReportBtn.style.display = "inline-block";
                     }
-                }
-            } catch (err) {
-                statusBox.className = 'status-box error';
-                statusBox.innerHTML = `
-                    <div class="status-label">Script Replay</div>
-                    <p>🛑 Replay failed:</p>
-                    <p><code>${err.message}</code></p>
-                `;
-                if (replayStatus) {
-                    replayStatus.textContent = 'Replay failed due to an error.';
-                    replayStatus.style.color = '#ef4444';
-                }
-                if (openReportBtn) {
-                    openReportBtn.style.display = 'inline-block';
-                }
-            } finally {
-                replayBtn.disabled = false;
-                replayBtn.classList.remove('is-loading');
-            }
+                })
+                .finally(() => {
+                    replayBtn.disabled = false;
+                    replayBtn.classList.remove('is-loading');
+                });
         });
     }
 
+    // ---------- Generate Gherkin ----------
+
     function generateTest() {
-        const featureName = document.getElementById('featureInput').value.trim();
+        const featureName  = document.getElementById('featureInput').value.trim();
         const scenarioName = document.getElementById('scenarioInput').value.trim();
-        const statusDiv = document.getElementById('generatorStatus');
+        const statusDiv    = document.getElementById('generatorStatus');
 
         const recordingSelect = document.getElementById('recordingRecentNames');
-        const recordingName = recordingSelect ? recordingSelect.value.trim() : '';
+        const recordingName   = recordingSelect ? recordingSelect.value.trim() : "";
 
         if (!featureName) {
-            statusDiv.textContent = 'Please enter a Feature Name.';
+            statusDiv.textContent = "Please enter a Feature Name.";
             statusDiv.style.color = '#f97316';
             return;
         }
 
         if (!scenarioName) {
-            statusDiv.textContent = 'Please enter a Scenario Name.';
+            statusDiv.textContent = "Please enter a Scenario Name.";
             statusDiv.style.color = '#f97316';
             return;
         }
 
         const payload = JSON.stringify({
-            feature: featureName,
-            scenario: scenarioName,
+            feature:   featureName,
+            scenario:  scenarioName,
             recording: recordingName
         });
 
-        statusDiv.textContent = 'Generating feature file...';
+        statusDiv.textContent = "Generating feature file...";
         statusDiv.style.color = '#eab308';
 
-        fetch('http://localhost:4567/generate-test', {
+        fetch(`${BASE_URL}/generate-test`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain',
@@ -1382,34 +1511,38 @@
             .then(response => response.json())
             .then(data => {
                 statusDiv.textContent = data.message || 'Done.';
-                statusDiv.style.color = data.status === 'Success' ? '#22c55e' : '#f97316';
+                statusDiv.style.color = data.status === "Success" ? '#22c55e' : '#f97316';
             })
             .catch(error => {
-                statusDiv.textContent = 'Error communicating with Java server.';
+                statusDiv.textContent = "Error communicating with Java server.";
                 statusDiv.style.color = '#ef4444';
                 console.error('Fetch error:', error);
             });
     }
 
+    // ---------- Startup ----------
+
     window.onload = function () {
-        // Start polling recorder status
         statusInterval = setInterval(updateStatus, 500);
         updateStatus();
 
-        // Init recording name + preview + dropdown behavior
         initRecordingNameUi();
-
-        // Load list of recordings from backend
         refreshRecordingDropdownFromServer();
 
-        // DON'T add another submit listener here – HTML already has onsubmit="launchBrowser(event)"
-        // const urlForm = document.querySelector('.url-form');
-        // if (urlForm) urlForm.addEventListener('submit', launchBrowser);
+        if (saveQuitBtn) {
+            saveQuitBtn.addEventListener('click', saveAndQuit);
+        }
 
-        if (saveQuitBtn) saveQuitBtn.addEventListener('click', saveAndQuit);
-        // generateTest is already bound via onclick in your HTML button
+        // initialize live replay panel with the current backend state (likely idle)
+        fetch(`${BASE_URL}/replay-status`)
+            .then(r => r.ok ? r.json() : null)
+            .then(st => {
+                if (st) updateReplayStatusPanel(st);
+            })
+            .catch(() => {});
+
+        window.generateTest = generateTest;
     };
-
 </script>
 
 </body>

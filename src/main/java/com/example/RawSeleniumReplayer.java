@@ -34,6 +34,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// 🔴 NEW: import holder for live replay status
+import com.example.ReplayStatusHolder;
+
 public class RawSeleniumReplayer {
 
     // ========== REGEX PATTERNS (fallback mode) ==========
@@ -90,13 +93,22 @@ public class RawSeleniumReplayer {
                     new TypeReference<List<RecordedEvent>>() {}
             );
 
+            // 🔴 NEW: initialize live replay status for the whole run
+            ReplayStatusHolder.init(events != null ? events.size() : 0);
+
             // 🔥 Normalize navigation steps so that only the very first navigation
             // in the JSON keeps driver.get("URL"); all later navigations have raw_selenium = ""
             normalizeNavigationRawSelenium(events);
 
             WebDriverManager.chromedriver().setup();
             ChromeOptions options = new ChromeOptions();
-            options.addArguments("--start-maximized");
+            // 👇 Important flags for headless replay
+            options.addArguments(
+                    "--headless=new",          // or "--headless" if your Chrome is older
+                    "--disable-gpu",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage"
+            );
 
             driver = new ChromeDriver(options);
             driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
@@ -132,6 +144,17 @@ public class RawSeleniumReplayer {
                 step.rawGherkin = ev.getRaw_gherkin();
                 long start = System.currentTimeMillis();
 
+                // 🔴 NEW: update live status BEFORE executing this step
+                String pageTitle = "";
+                try {
+                    if (driver != null) {
+                        pageTitle = driver.getTitle();
+                    }
+                } catch (Exception ignore) {
+                    pageTitle = "";
+                }
+                ReplayStatusHolder.beforeStep(eventPos, ev, pageTitle);
+
                 try {
                     String action = ev.getAction() != null ? ev.getAction().toLowerCase() : "";
 
@@ -162,6 +185,9 @@ public class RawSeleniumReplayer {
                     step.errorMessage = null;
                     step.stackTrace = null;
 
+                    // 🔴 NEW: mark step success in live status
+                    ReplayStatusHolder.stepSuccess();
+
                 } catch (Exception e) {
                     step.success = false;
                     step.status = "FAILED";
@@ -172,6 +198,10 @@ public class RawSeleniumReplayer {
 
                     failureOccurred = true;
                     failStepIndex = step.index;
+
+                    // 🔴 NEW: mark step failure in live status
+                    ReplayStatusHolder.stepFailure(e);
+
                 } finally {
                     step.durationMs = System.currentTimeMillis() - start;
 
@@ -201,21 +231,21 @@ public class RawSeleniumReplayer {
                         continue;
                     }
 
-                    String rawSel = ev.getRaw_selenium();
-                    String displayScript;
-                    if (rawSel != null && !rawSel.trim().isEmpty()) {
-                        displayScript = rawSel.trim();
+                    String rawSel2 = ev.getRaw_selenium();
+                    String displayScript2;
+                    if (rawSel2 != null && !rawSel2.trim().isEmpty()) {
+                        displayScript2 = rawSel2.trim();
                     } else if (ev.getRaw_gherkin() != null && !ev.getRaw_gherkin().isEmpty()) {
-                        displayScript = ev.getRaw_gherkin();
+                        displayScript2 = ev.getRaw_gherkin();
                     } else if (ev.getAction() != null) {
-                        displayScript = ev.getAction();
+                        displayScript2 = ev.getAction();
                     } else {
-                        displayScript = "(no raw_selenium / raw_gherkin)";
+                        displayScript2 = "(no raw_selenium / raw_gherkin)";
                     }
 
                     StepResult skipped = new StepResult();
                     skipped.index = index++;
-                    skipped.rawScript = displayScript;
+                    skipped.rawScript = displayScript2;
                     skipped.rawGherkin = ev.getRaw_gherkin();
                     skipped.success = false;
                     skipped.status = "SKIPPED";
@@ -236,6 +266,9 @@ public class RawSeleniumReplayer {
             return allPassed;
 
         } finally {
+            // 🔴 NEW: mark replay as done for the live UI
+            ReplayStatusHolder.done();
+
             if (driver != null) {
                 try {
                     driver.quit();
@@ -465,13 +498,8 @@ public class RawSeleniumReplayer {
         RecordedTarget target = ev.getTarget();
         String raw = ev.getRaw_selenium();
 
-        // If no target/locators → we can optionally fall back, but usually
-        // our recorder will always send target.locators for hover.
         if (target == null || target.getLocators() == null || target.getLocators().isEmpty()) {
             System.out.println("No target.locators for hover step: " + ev.getRaw_gherkin());
-            // If you really want, you could try to interpret raw_selenium here,
-            // but the hover raw_selenium is Java code that doesn't match our regex,
-            // so we just log and return.
             return;
         }
 
@@ -509,7 +537,6 @@ public class RawSeleniumReplayer {
             }
         }
 
-        // If we reach here, all locators failed
         throw new RuntimeException("Failed to hover for step: " + ev.getRaw_gherkin(), lastError);
     }
 
@@ -613,7 +640,6 @@ public class RawSeleniumReplayer {
                                     + by + " | Raw: " + raw,
                             hoverEx
                     );
-
                 }
 
             } else {
@@ -677,7 +703,7 @@ public class RawSeleniumReplayer {
     }
 
     private static void waitForPageLoad(WebDriver driver) {
-        new org.openqa.selenium.support.ui.WebDriverWait(driver, Duration.ofSeconds(30))
+        new WebDriverWait(driver, Duration.ofSeconds(30))
                 .until(d -> ((JavascriptExecutor) d)
                         .executeScript("return document.readyState")
                         .equals("complete"));
@@ -709,7 +735,7 @@ public class RawSeleniumReplayer {
             File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
             String fileName = String.format("step_%03d.png", stepIndex);
             File dest = new File(screenshotsDir, fileName);
-            java.nio.file.Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return fileName;
 
         } catch (Exception e) {
@@ -717,7 +743,6 @@ public class RawSeleniumReplayer {
             return null;
         }
     }
-
 
     private static void highlightElement(WebDriver driver, WebElement element) {
         try {
@@ -771,7 +796,7 @@ public class RawSeleniumReplayer {
             if (cls != null && cls.contains("sr-only")) {
                 JavascriptExecutor js = (JavascriptExecutor) driver;
                 Object parentCandidate = js.executeScript(
-                        "return arguments[0].closest('button,[role=\"button\"],.fds_selector__control);",
+                        "return arguments[0].closest('button,[role=\"button\"],.fds_selector__control');",
                         element
                 );
                 if (parentCandidate instanceof WebElement) {
@@ -920,7 +945,6 @@ public class RawSeleniumReplayer {
 
             boolean isNav = "navigate".equals(action) || "navigation".equals(type);
             if (!isNav) {
-                // click / sendKeys etc. untouched
                 continue;
             }
 
@@ -931,12 +955,10 @@ public class RawSeleniumReplayer {
                     : (url != null ? url : "");
 
             if (!firstNavSeen && url != null && !url.isEmpty()) {
-                // ✅ FIRST navigation in the entire JSON: keep a proper driver.get("URL");
                 firstNavSeen = true;
                 String escaped = url.replace("\"", "\\\"");
                 ev.setRaw_selenium("driver.get(\"" + escaped + "\");");
 
-                // If recorder didn't set raw_gherkin, make it a proper "navigate" step
                 if (ev.getRaw_gherkin() == null || ev.getRaw_gherkin().trim().isEmpty()) {
                     if (pageName.isEmpty() && url != null) {
                         pageName = url;
@@ -944,7 +966,6 @@ public class RawSeleniumReplayer {
                     ev.setRaw_gherkin("I navigate to \"" + pageName + "\" page");
                 }
             } else {
-                // ✅ All later navigations: no driver.get — just metadata + a stable Gherkin
                 ev.setRaw_selenium("");
 
                 if (!pageName.isEmpty()) {
@@ -998,7 +1019,7 @@ public class RawSeleniumReplayer {
             out.println("    body {");
             out.println("      margin: 0;");
             out.println("      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;");
-            out.println("      background-color: #f1f59;");
+            out.println("      background-color: #f1f5f9;"); // fixed typo here
             out.println("      color: var(--text-main);");
             out.println("    }");
             out.println("    .page {");
