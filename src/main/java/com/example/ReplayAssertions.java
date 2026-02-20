@@ -6,6 +6,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public final class ReplayAssertions {
@@ -118,23 +119,40 @@ public final class ReplayAssertions {
     }
 
     public static <T> T retry(int times, Supplier<T> action) {
-        RuntimeException last = null;
+        if (times <= 0) {
+            throw new IllegalArgumentException("Retry attempts must be > 0");
+        }
+
+        Supplier<T> safeAction = Objects.requireNonNull(action, "action must not be null");
+
+        RuntimeException lastException = null;
         for (int i = 0; i < times; i++) {
             try {
-                return action.get();
+                return safeAction.get();
             } catch (RuntimeException e) {
-                last = e;
-                if (i == times - 1) throw e;
+                lastException = e;
+                if (i == times - 1) {
+                    throw e;
+                }
                 try {
                     Thread.sleep(500);
-                } catch (InterruptedException ignored) {
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    IllegalStateException interruption = new IllegalStateException(
+                            "Retry interrupted while waiting for attempt " + (i + 2),
+                            interrupted
+                    );
+                    if (lastException != null) {
+                        interruption.addSuppressed(lastException);
+                    }
+                    throw interruption;
                 }
             }
         }
-        if (last != null) {
-            throw last;
-        }
-        return null;
+
+        throw lastException == null
+                ? new IllegalStateException("Retry exhausted without capturing an exception")
+                : lastException;
     }
 
     /* =========================
