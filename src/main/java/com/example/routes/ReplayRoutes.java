@@ -66,7 +66,7 @@ public class ReplayRoutes {
                 currentReplayFuture = REPLAY_EXECUTOR.submit(() -> {
                     long startTime = System.currentTimeMillis();
                     try {
-                        boolean ok = RawSeleniumReplayer.replayFromJson(tempJsonPath, reportPath);
+                        boolean ok = RawSeleniumReplayer.replayFromJson(tempJsonPath, reportPath, runId);
                         long duration = System.currentTimeMillis() - startTime;
                         String status = ok ? "PASSED" : "FAILED";
 

@@ -527,6 +527,10 @@ async function renderRecordings(el) {
     const recordings = recRes.ok ? recRes.data : [];
     const projects = projRes.ok ? projRes.data : [];
 
+    window._allProjects = projects;
+    window._projectMap = {};
+    projects.forEach(p => { window._projectMap[p.id] = p.name; });
+
     el.innerHTML = `
         <div class="card">
             <div class="card-header"><h3>Recordings Library</h3></div>
@@ -551,10 +555,11 @@ async function renderRecordings(el) {
 
 function renderRecTable(recs) {
     if (recs.length === 0) return '<div class="empty-state"><p>No recordings found</p></div>';
+    const pm = window._projectMap || {};
     return `<table><thead><tr><th>Name</th><th>Project</th><th>Steps</th><th>Size</th><th>Created</th><th>Actions</th></tr></thead>
         <tbody>${recs.map(r => `<tr style="${r.deleted_at ? 'opacity:0.5' : ''}">
             <td style="font-weight:500">${esc(r.name)} ${r.deleted_at ? '<span class="badge badge-stopped">Deleted</span>' : ''}</td>
-            <td style="font-size:12px;color:var(--text2)">${r.project_id || 'Unassigned'}</td>
+            <td style="font-size:12px;color:var(--text2)">${r.project_id ? esc(pm[r.project_id] || 'Project #' + r.project_id) : '<span style="color:var(--text3)">Unassigned</span>'}</td>
             <td>${r.step_count}</td>
             <td style="font-size:12px">${formatBytes(r.file_size)}</td>
             <td style="font-size:12px;color:var(--text2)">${timeAgo(r.created_at)}</td>
@@ -591,42 +596,59 @@ async function viewRecording(id) {
     const steps = stepsRes.ok ? stepsRes.data : [];
     if (!rec) { det.innerHTML = ''; return; }
 
-    let activeTab = 'steps';
-    function drawDetail() {
-        det.innerHTML = `
-            <div class="detail-panel" style="margin-top:16px">
-                <div class="detail-header">
-                    <h3 style="font-size:15px">${esc(rec.name)}</h3>
-                    <div style="display:flex;gap:6px">
-                        <button class="btn btn-sm btn-secondary" onclick="showAssignModal(${id})">Assign</button>
-                        <button class="btn btn-sm btn-secondary" onclick="showRenameModal(${id},'${esc(rec.name)}')">Rename</button>
-                    </div>
+    // Store current view state on window for tab switching
+    window._recDetailState = { id, rec, steps, activeTab: 'steps' };
+    drawRecordingDetail();
+}
+
+function drawRecordingDetail() {
+    const det = document.getElementById('recording-detail');
+    if (!det) return;
+    const state = window._recDetailState;
+    if (!state) return;
+    const { id, rec, steps, activeTab } = state;
+
+    det.innerHTML = `
+        <div class="detail-panel" style="margin-top:16px">
+            <div class="detail-header">
+                <h3 style="font-size:15px">${esc(rec.name)}</h3>
+                <div style="display:flex;gap:6px">
+                    <button class="btn btn-sm btn-secondary" onclick="showAssignModal(${id})">Assign</button>
+                    <button class="btn btn-sm btn-secondary" onclick="showRenameModal(${id},'${esc(rec.name).replace(/'/g, "\\'")}')">Rename</button>
                 </div>
-                <div class="tabs">
-                    ${['steps','json','gherkin','runs'].map(t => `<div class="tab ${activeTab===t?'active':''}" onclick="activeTab='${t}';(${drawDetail.toString()})()">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}
-                </div>
-                <div class="detail-body" id="rec-tab-content"></div>
             </div>
-        `;
-        const tc = document.getElementById('rec-tab-content');
-        if (activeTab === 'steps') {
-            tc.innerHTML = steps.length === 0 ? '<div class="empty-state"><p>No steps</p></div>' :
-                steps.map((s, i) => `<div class="step-item"><div class="step-num" style="background:var(--primary-light);color:var(--primary)">${i+1}</div>
-                    <div><div style="font-weight:500">${esc(s.raw_gherkin || s.action || '-')}</div>
-                    <div style="font-size:11px;color:var(--text2)">${esc(s.selector || '')} ${s.value ? '= '+esc(s.value) : ''}</div></div></div>`).join('');
-        } else if (activeTab === 'json') {
-            tc.innerHTML = `<div class="code-block">${esc(JSON.stringify(steps, null, 2))}</div>`;
-        } else if (activeTab === 'gherkin') {
-            tc.innerHTML = `
-                <textarea class="form-control" id="gherkin-text" style="min-height:200px;font-family:monospace">${esc(rec.gherkin_text || '')}</textarea>
-                <div style="margin-top:8px;display:flex;gap:8px">
-                    <button class="btn btn-primary btn-sm" onclick="saveGherkin(${id})">Save Gherkin</button>
-                </div>`;
-        } else if (activeTab === 'runs') {
-            loadRecordingRuns(id, tc);
-        }
+            <div class="tabs" id="rec-detail-tabs"></div>
+            <div class="detail-body" id="rec-tab-content"></div>
+        </div>
+    `;
+
+    // Attach tab click handlers properly
+    const tabsEl = document.getElementById('rec-detail-tabs');
+    ['steps','json','gherkin','runs'].forEach(t => {
+        const tabEl = document.createElement('div');
+        tabEl.className = 'tab' + (activeTab === t ? ' active' : '');
+        tabEl.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+        tabEl.onclick = () => { window._recDetailState.activeTab = t; drawRecordingDetail(); };
+        tabsEl.appendChild(tabEl);
+    });
+
+    const tc = document.getElementById('rec-tab-content');
+    if (activeTab === 'steps') {
+        tc.innerHTML = steps.length === 0 ? '<div class="empty-state"><p>No steps</p></div>' :
+            steps.map((s, i) => `<div class="step-item"><div class="step-num" style="background:var(--primary-light);color:var(--primary)">${i+1}</div>
+                <div><div style="font-weight:500">${esc(s.raw_gherkin || s.action || '-')}</div>
+                <div style="font-size:11px;color:var(--text2)">${esc(s.selector || '')} ${s.value ? '= '+esc(s.value) : ''}</div></div></div>`).join('');
+    } else if (activeTab === 'json') {
+        tc.innerHTML = `<div class="code-block">${esc(JSON.stringify(steps, null, 2))}</div>`;
+    } else if (activeTab === 'gherkin') {
+        tc.innerHTML = `
+            <textarea class="form-control" id="gherkin-text" style="min-height:200px;font-family:monospace">${esc(rec.gherkin_text || '')}</textarea>
+            <div style="margin-top:8px;display:flex;gap:8px">
+                <button class="btn btn-primary btn-sm" onclick="saveGherkin(${id})">Save Gherkin</button>
+            </div>`;
+    } else if (activeTab === 'runs') {
+        loadRecordingRuns(id, tc);
     }
-    drawDetail();
 }
 
 async function loadRecordingRuns(recordingId, container) {

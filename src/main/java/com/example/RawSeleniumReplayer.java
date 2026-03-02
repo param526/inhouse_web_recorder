@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 
 // 🔴 NEW: import holder for live replay status
 import com.example.ReplayStatusHolder;
+import com.example.dao.RunDao;
 
 // ✅ NEW: assertion helper
 import com.example.ReplayAssertions;
@@ -165,10 +166,18 @@ public class RawSeleniumReplayer {
     // ========== PUBLIC ENTRYPOINTS ==========
 
     public static boolean replayFromJson(String jsonPath, String reportPath) throws Exception {
-        return replayFromJson(jsonPath, reportPath, null);
+        return replayFromJson(jsonPath, reportPath, null, -1);
+    }
+
+    public static boolean replayFromJson(String jsonPath, String reportPath, long runId) throws Exception {
+        return replayFromJson(jsonPath, reportPath, null, runId);
     }
 
     public static boolean replayFromJson(String jsonPath, String reportPath, Scenario scenario) throws Exception {
+        return replayFromJson(jsonPath, reportPath, scenario, -1);
+    }
+
+    public static boolean replayFromJson(String jsonPath, String reportPath, Scenario scenario, long runId) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -369,6 +378,24 @@ public class RawSeleniumReplayer {
                     }
 
                     results.add(step);
+
+                    // Save step result to database
+                    if (runId > 0) {
+                        try {
+                            String locatorStr = (ev.getTarget() != null && ev.getTarget().getLocators() != null
+                                    && !ev.getTarget().getLocators().isEmpty())
+                                    ? ev.getTarget().getLocators().get(0).getValue() : "";
+                            String valueStr = ev.getValue();
+                            RunDao.addStep(runId, step.index,
+                                    ev.getAction() != null ? ev.getAction() : "",
+                                    ev.getRaw_gherkin() != null ? ev.getRaw_gherkin() : displayScript,
+                                    locatorStr, valueStr,
+                                    step.status, step.durationMs,
+                                    step.errorMessage, step.screenshotFileName);
+                        } catch (Exception dbEx) {
+                            System.err.println("Failed to save step result to DB: " + dbEx.getMessage());
+                        }
+                    }
                 }
 
                 if (failureOccurred) {
@@ -424,6 +451,23 @@ public class RawSeleniumReplayer {
                     skipped.assertionSummary = "Not executed";
 
                     results.add(skipped);
+
+                    // Save skipped step to database
+                    if (runId > 0) {
+                        try {
+                            String locatorStr = (ev.getTarget() != null && ev.getTarget().getLocators() != null
+                                    && !ev.getTarget().getLocators().isEmpty())
+                                    ? ev.getTarget().getLocators().get(0).getValue() : "";
+                            RunDao.addStep(runId, skipped.index,
+                                    ev.getAction() != null ? ev.getAction() : "",
+                                    ev.getRaw_gherkin() != null ? ev.getRaw_gherkin() : displayScript2,
+                                    locatorStr, ev.getValue(),
+                                    skipped.status, 0L,
+                                    skipped.errorMessage, null);
+                        } catch (Exception dbEx) {
+                            System.err.println("Failed to save skipped step to DB: " + dbEx.getMessage());
+                        }
+                    }
                 }
             }
 
@@ -1746,7 +1790,7 @@ public class RawSeleniumReplayer {
 
                 out.println("              <td>");
                 if (r.screenshotFileName != null && !r.screenshotFileName.isEmpty()) {
-                    String imgSrc = "/screenshots/" + r.screenshotFileName;
+                    String imgSrc = "/api/screenshots/" + r.screenshotFileName;
                     out.println("                <a href=\"" + imgSrc + "\" target=\"_blank\" " +
                             "style=\"text-decoration:none; color:inherit;\">");
                     out.println("                  <img src=\"" + imgSrc + "\" " +

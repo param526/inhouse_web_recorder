@@ -48,6 +48,10 @@ public class AuthFilter implements Filter {
                 || path.equals("/api/auth/register")
                 || path.equals("/api/health")
                 || path.equals("/favicon.ico")
+                // Run reports, screenshots & videos (accessed via browser directly)
+                || path.matches("/api/runs/\\d+/report")
+                || path.matches("/api/runs/\\d+/video")
+                || path.startsWith("/api/screenshots/")
                 // Static file extensions
                 || path.endsWith(".html")
                 || path.endsWith(".css")
