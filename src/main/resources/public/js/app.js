@@ -707,38 +707,39 @@ async function renderRecorder(el) {
     const projects = projRes.ok ? projRes.data : [];
 
     el.innerHTML = `
-        <div class="grid-2">
-            <div class="card">
-                <div class="card-header"><h3>Start Recording</h3></div>
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><h3>Start Recording</h3></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                 <div class="form-group"><label>URL</label><input class="form-control" id="rec-url" placeholder="https://example.com"></div>
                 <div class="form-group"><label>Recording Name</label><input class="form-control" id="rec-name" placeholder="My Test Recording"></div>
-                <div class="form-row">
-                    <div class="form-group"><label>Project</label><select class="form-control" id="rec-project">
-                        <option value="">None</option>${projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
-                    </select></div>
-                    <div class="form-group"><label>Mode</label><select class="form-control" id="rec-mode">
-                        <option value="local">Local</option>
-                    </select></div>
-                </div>
-                <div style="display:flex;gap:8px;margin-top:12px">
-                    <button class="btn btn-primary" id="rec-start-btn" onclick="startRecording()">Start Recording</button>
-                    <button class="btn btn-danger hidden" id="rec-stop-btn" onclick="stopRecording()">Stop & Save</button>
-                    <button class="btn btn-secondary hidden" id="rec-abort-btn" onclick="abortRecording()">Abort</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:12px;align-items:end">
+                <div class="form-group" style="margin:0"><label>Project</label><select class="form-control" id="rec-project">
+                    <option value="">None</option>${projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+                </select></div>
+                <div class="form-group" style="margin:0"><label>Mode</label><select class="form-control" id="rec-mode">
+                    <option value="local">Local</option>
+                </select></div>
+                <button class="btn btn-primary" id="rec-start-btn" onclick="startRecording()">Start Recording</button>
+                <button class="btn btn-danger hidden" id="rec-stop-btn" onclick="stopRecording()">Stop & Save</button>
+                <button class="btn btn-secondary hidden" id="rec-abort-btn" onclick="abortRecording()">Abort</button>
+            </div>
+        </div>
+        <div class="live-console">
+            <div class="live-console-header">
+                <div class="title"><span class="status-dot idle" id="rec-status-dot"></span> Recorder Console</div>
+                <div class="meta">
+                    <div class="console-stats">
+                        <div class="console-stat">Steps: <span class="stat-val steps" id="rec-info-steps">0</span></div>
+                        <div class="console-stat" id="rec-url-stat" style="display:none">URL: <span class="stat-val" id="rec-info-url" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom">-</span></div>
+                    </div>
+                    <span id="rec-console-meta" style="color:var(--text2)">Idle</span>
                 </div>
             </div>
-            <div>
-                <div class="live-console">
-                    <div class="live-console-header">
-                        <div class="title"><span class="status-dot idle" id="rec-status-dot"></span> RECORDER CONSOLE</div>
-                        <div class="meta" id="rec-console-meta">Idle</div>
-                    </div>
-                    <div class="live-console-body" id="rec-console-body">
-                        <div class="console-empty">Start a recording to see live steps here</div>
-                    </div>
-                    <div class="console-info-bar">
-                        <div class="info-item">Steps: <span class="info-val" id="rec-info-steps">0</span></div>
-                        <div class="info-item">URL: <span class="info-val" id="rec-info-url">-</span></div>
-                    </div>
+            <div class="live-console-body" id="rec-console-body">
+                <div class="console-empty">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+                    <div>Start a recording to see live steps here</div>
                 </div>
             </div>
         </div>
@@ -763,10 +764,13 @@ function resumeRecorderConsole() {
     const body = document.getElementById('rec-console-body');
     const infoSteps = document.getElementById('rec-info-steps');
     const infoUrl = document.getElementById('rec-info-url');
+    const urlStat = document.getElementById('rec-url-stat');
 
     if (dot) dot.className = 'status-dot active';
     if (meta) meta.textContent = 'Recording...';
-    if (body) body.innerHTML = '';
+    if (body) body.innerHTML = `<table class="console-table"><thead><tr>
+        <th>#</th><th class="col-status">Status</th><th class="col-action">Action</th><th>Description</th><th class="col-element">Element</th>
+    </tr></thead><tbody id="rec-table-body"></tbody></table>`;
 
     recorderInterval = setInterval(async () => {
         const sr = await api('/recorder/steps');
@@ -778,7 +782,8 @@ function resumeRecorderConsole() {
         const statusRes = await api('/recorder/status');
         if (statusRes.ok) {
             const curUrl = statusRes.data.url || '';
-            if (infoUrl) infoUrl.textContent = curUrl.length > 50 ? curUrl.substring(0, 50) + '...' : (curUrl || '-');
+            if (infoUrl) infoUrl.textContent = curUrl || '-';
+            if (urlStat) urlStat.style.display = curUrl ? '' : 'none';
             if (!statusRes.data.active) {
                 if (dot) dot.className = 'status-dot idle';
                 if (meta) meta.textContent = 'Stopped';
@@ -787,26 +792,26 @@ function resumeRecorderConsole() {
             }
         }
 
-        if (count > _recPrevStepCount) {
+        const tbody = document.getElementById('rec-table-body');
+        if (count > _recPrevStepCount && tbody) {
             for (let i = _recPrevStepCount; i < count; i++) {
                 const step = steps[i];
                 const action = step.action || step.type || 'event';
                 const gherkin = step.raw_gherkin || '';
                 const selector = step.selector || '';
                 const title = step.title || '';
-                const text = gherkin || title || selector || action;
+                const desc = gherkin || title || action;
+                const element = selector ? selector.split(' ').pop() || selector : '';
 
-                const entry = document.createElement('div');
-                entry.className = 'console-entry';
-                entry.innerHTML = `
-                    <span class="entry-idx">${i + 1}</span>
-                    <span class="entry-badge rec">REC</span>
-                    <span class="entry-text">
-                        <span class="action-tag">${esc(action)}</span> ${esc(text)}
-                        ${selector && gherkin ? `<span class="selector-tag">${esc(selector)}</span>` : ''}
-                    </span>
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td><span class="tbl-badge rec">REC</span></td>
+                    <td><span class="tbl-action">${esc(action)}</span></td>
+                    <td><span class="tbl-desc">${esc(desc)}</span></td>
+                    <td><span class="tbl-element" title="${esc(selector)}">${esc(element)}</span></td>
                 `;
-                if (body) body.appendChild(entry);
+                tbody.appendChild(tr);
             }
             _recPrevStepCount = count;
             if (body) body.scrollTop = body.scrollHeight;
@@ -849,8 +854,8 @@ async function stopRecording() {
 
     const dot = document.getElementById('rec-status-dot');
     const meta = document.getElementById('rec-console-meta');
-    if (dot) dot.className = 'status-dot idle';
-    if (meta) meta.textContent = 'Saved - ' + _recPrevStepCount + ' steps';
+    if (dot) dot.className = 'status-dot success';
+    if (meta) meta.textContent = 'Saved \u2013 ' + _recPrevStepCount + ' steps captured';
 }
 
 async function abortRecording() {
@@ -880,45 +885,53 @@ async function renderReplayer(el) {
     const projects = projRes.ok ? projRes.data : [];
 
     el.innerHTML = `
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><h3>Run Test</h3></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 2fr auto auto;gap:12px;align-items:end">
+                <div class="form-group" style="margin:0"><label>Project Filter</label><select class="form-control" id="rpl-proj" onchange="filterReplayRecs()">
+                    <option value="">All Projects</option>${projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+                </select></div>
+                <div class="form-group" style="margin:0"><label>Mode</label><select class="form-control" id="rpl-mode">
+                    <option value="LOCAL">Local</option>
+                </select></div>
+                <div class="form-group" style="margin:0"><label>Recording</label><select class="form-control" id="rpl-recording">
+                    <option value="">Select recording...</option>${recordings.map(r => `<option value="${r.id}" data-project="${r.project_id}">${esc(r.name)} (${r.step_count} steps)</option>`).join('')}
+                </select></div>
+                <button class="btn btn-primary" id="rpl-run-btn" onclick="startReplay()">Run</button>
+                <button class="btn btn-danger hidden" id="rpl-stop-btn" onclick="stopReplay()">Stop</button>
+            </div>
+        </div>
         <div class="split-layout">
             <div>
-                <div class="card">
-                    <div class="card-header"><h3>Run Test</h3></div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Project Filter</label><select class="form-control" id="rpl-proj" onchange="filterReplayRecs()">
-                            <option value="">All Projects</option>${projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
-                        </select></div>
-                        <div class="form-group"><label>Mode</label><select class="form-control" id="rpl-mode">
-                            <option value="LOCAL">Local</option>
-                        </select></div>
-                    </div>
-                    <div class="form-group"><label>Recording</label><select class="form-control" id="rpl-recording">
-                        <option value="">Select recording...</option>${recordings.map(r => `<option value="${r.id}" data-project="${r.project_id}">${esc(r.name)} (${r.step_count} steps)</option>`).join('')}
-                    </select></div>
-                    <div style="display:flex;gap:8px">
-                        <button class="btn btn-primary" id="rpl-run-btn" onclick="startReplay()">Run</button>
-                        <button class="btn btn-danger hidden" id="rpl-stop-btn" onclick="stopReplay()">Stop</button>
-                    </div>
-                </div>
                 <div class="live-console">
                     <div class="live-console-header">
-                        <div class="title"><span class="status-dot idle" id="rpl-status-dot"></span> EXECUTION CONSOLE</div>
-                        <div class="meta" id="rpl-console-meta">Idle</div>
+                        <div class="title"><span class="status-dot idle" id="rpl-status-dot"></span> Execution Console</div>
+                        <div class="meta">
+                            <div class="console-stats">
+                                <div class="console-stat">Progress: <span class="stat-val steps" id="rpl-info-progress">0/0</span></div>
+                                <div class="console-stat">Passed: <span class="stat-val passed" id="rpl-info-passed">0</span></div>
+                                <div class="console-stat">Failed: <span class="stat-val failed" id="rpl-info-failed">0</span></div>
+                            </div>
+                            <span id="rpl-console-meta" style="color:var(--text2)">Idle</span>
+                        </div>
                     </div>
                     <div class="live-console-body" id="rpl-console-body">
-                        <div class="console-empty">Select a recording and click Run to see execution progress</div>
-                    </div>
-                    <div class="console-info-bar">
-                        <div class="info-item">Progress: <span class="info-val" id="rpl-info-progress">0/0</span></div>
-                        <div class="info-item">Passed: <span class="info-val" id="rpl-info-passed" style="color:#4ade80">0</span></div>
-                        <div class="info-item">Failed: <span class="info-val" id="rpl-info-failed" style="color:#f87171">0</span></div>
+                        <div class="console-empty">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5,3 19,12 5,21"/></svg>
+                            <div>Select a recording and click Run to see execution progress</div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div>
-                <div class="card">
-                    <div class="card-header"><h3>Run History</h3></div>
-                    <div id="rpl-history"></div>
+                <div class="live-console">
+                    <div class="live-console-header">
+                        <div class="title">Run History</div>
+                        <div class="meta"><span id="rpl-history-count" style="color:var(--text2)"></span></div>
+                    </div>
+                    <div class="live-console-body" id="rpl-history" style="max-height:460px">
+                        <div class="console-empty"><div>No runs yet</div></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -940,26 +953,29 @@ async function renderReplayer(el) {
 
 async function loadReplayHistory() {
     const histEl = document.getElementById('rpl-history');
+    const countEl = document.getElementById('rpl-history-count');
     if (!histEl) return;
     try {
         const res = await api('/runs?limit=10');
         if (!res.ok || !res.data.length) {
-            histEl.innerHTML = '<div class="empty-state"><p>No runs yet</p></div>';
+            histEl.innerHTML = '<div class="console-empty"><div>No runs yet</div></div>';
+            if (countEl) countEl.textContent = '';
             return;
         }
-        histEl.innerHTML = res.data.map(r => {
-            const statusCls = (r.status || '').toLowerCase();
+        if (countEl) countEl.textContent = res.data.length + ' recent';
+        histEl.innerHTML = `<table class="history-table"><thead><tr>
+            <th>Status</th><th>Recording</th><th>Duration</th><th>When</th>
+        </tr></thead><tbody>${res.data.map(r => {
+            const st = (r.status || '').toUpperCase();
+            const cls = st === 'PASSED' ? 'pass' : st === 'FAILED' ? 'fail' : 'skip';
             const dur = r.duration_ms ? (r.duration_ms / 1000).toFixed(1) + 's' : '-';
-            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
-                <div>
-                    <span class="badge badge-${statusCls}">${esc(r.status || '-')}</span>
-                    <span style="margin-left:6px;color:var(--text1)">${esc(r.recording_name || 'Run #' + r.id)}</span>
-                </div>
-                <div style="color:var(--text2)">${dur} &middot; ${r.created_at ? timeAgo(r.created_at) : '-'}</div>
-            </div>`;
-        }).join('');
+            return `<tr><td><span class="tbl-badge ${cls}">${esc(st || '-')}</span></td>
+                <td>${esc(r.recording_name || 'Run #' + r.id)}</td>
+                <td>${dur}</td>
+                <td style="color:var(--text2)">${r.created_at ? timeAgo(r.created_at) : '-'}</td></tr>`;
+        }).join('')}</tbody></table>`;
     } catch (e) {
-        histEl.innerHTML = '<div class="empty-state"><p>Failed to load history</p></div>';
+        histEl.innerHTML = '<div class="console-empty"><div>Failed to load history</div></div>';
     }
 }
 
@@ -992,7 +1008,9 @@ function resumeReplayConsole() {
 
     if (dot) dot.className = 'status-dot active';
     if (meta) meta.textContent = 'Running...';
-    if (body) body.innerHTML = '';
+    if (body) body.innerHTML = `<table class="console-table"><thead><tr>
+        <th>#</th><th class="col-status">Status</th><th class="col-action">Action</th><th>Description</th><th class="col-time">Time</th>
+    </tr></thead><tbody id="rpl-table-body"></tbody></table>`;
 
     replayInterval = setInterval(async () => {
         const sr = await api('/replay/status');
@@ -1002,26 +1020,26 @@ function resumeReplayConsole() {
         if (infoProgress) infoProgress.textContent = s.currentIndex + '/' + s.totalSteps;
 
         const idx = s.currentIndex;
-        if (idx > 0 && idx > _rplRenderedIndex) {
+        const tbody = document.getElementById('rpl-table-body');
+        if (idx > 0 && idx > _rplRenderedIndex && tbody) {
             // Finalize previous step
-            if (_rplRenderedIndex > 0 && body) {
-                const prevEntry = body.querySelector(`[data-step-idx="${_rplRenderedIndex}"]`);
-                if (prevEntry) {
-                    const badge = prevEntry.querySelector('.entry-badge');
+            if (_rplRenderedIndex > 0) {
+                const prevRow = tbody.querySelector(`[data-step-idx="${_rplRenderedIndex}"]`);
+                if (prevRow) {
+                    const badge = prevRow.querySelector('.tbl-badge');
                     if (badge && badge.classList.contains('run')) {
                         if (s.lastStepSuccess !== false || idx > _rplRenderedIndex + 1) {
-                            badge.className = 'entry-badge pass';
+                            badge.className = 'tbl-badge pass';
                             badge.textContent = 'PASS';
                             _rplPassCount++;
                         } else {
-                            badge.className = 'entry-badge fail';
+                            badge.className = 'tbl-badge fail';
                             badge.textContent = 'FAIL';
+                            prevRow.classList.add('row-fail');
                             _rplFailCount++;
                             if (s.lastError) {
-                                const errSpan = document.createElement('span');
-                                errSpan.className = 'error-msg';
-                                errSpan.textContent = s.lastError;
-                                prevEntry.querySelector('.entry-text').appendChild(errSpan);
+                                const descTd = prevRow.querySelector('.tbl-desc');
+                                if (descTd) descTd.innerHTML += `<div class="tbl-error">${esc(s.lastError)}</div>`;
                             }
                         }
                     }
@@ -1033,17 +1051,17 @@ function resumeReplayConsole() {
             const title = s.currentTitle || '';
             const text = gherkin || title || action || 'Step ' + idx;
 
-            const entry = document.createElement('div');
-            entry.className = 'console-entry';
-            entry.setAttribute('data-step-idx', idx);
-            entry.innerHTML = `
-                <span class="entry-idx">${idx}</span>
-                <span class="entry-badge run">RUN</span>
-                <span class="entry-text">
-                    <span class="action-tag">${esc(action)}</span> ${esc(text)}
-                </span>
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-step-idx', idx);
+            tr.innerHTML = `
+                <td>${idx}</td>
+                <td><span class="tbl-badge run">RUN</span></td>
+                <td><span class="tbl-action">${esc(action)}</span></td>
+                <td><span class="tbl-desc">${esc(text)}</span></td>
+                <td class="tbl-time"></td>
             `;
-            if (body) { body.appendChild(entry); body.scrollTop = body.scrollHeight; }
+            tbody.appendChild(tr);
+            if (body) body.scrollTop = body.scrollHeight;
             _rplRenderedIndex = idx;
 
             if (infoPassed) infoPassed.textContent = _rplPassCount;
@@ -1059,57 +1077,53 @@ function resumeReplayConsole() {
             if (stopBtn) stopBtn.classList.add('hidden');
 
             // Final step result
-            if (body) {
-                const lastEntry = body.querySelector(`[data-step-idx="${_rplRenderedIndex}"]`);
-                if (lastEntry) {
-                    const badge = lastEntry.querySelector('.entry-badge');
+            if (tbody) {
+                const lastRow = tbody.querySelector(`[data-step-idx="${_rplRenderedIndex}"]`);
+                if (lastRow) {
+                    const badge = lastRow.querySelector('.tbl-badge');
                     if (badge && badge.classList.contains('run')) {
                         if (s.lastStepSuccess) {
-                            badge.className = 'entry-badge pass';
+                            badge.className = 'tbl-badge pass';
                             badge.textContent = 'PASS';
                             _rplPassCount++;
                         } else {
-                            badge.className = 'entry-badge fail';
+                            badge.className = 'tbl-badge fail';
                             badge.textContent = 'FAIL';
+                            lastRow.classList.add('row-fail');
                             _rplFailCount++;
                             if (s.lastError) {
-                                const errSpan = document.createElement('span');
-                                errSpan.className = 'error-msg';
-                                errSpan.textContent = s.lastError;
-                                lastEntry.querySelector('.entry-text').appendChild(errSpan);
+                                const descTd = lastRow.querySelector('.tbl-desc');
+                                if (descTd) descTd.innerHTML += `<div class="tbl-error">${esc(s.lastError)}</div>`;
                             }
                         }
                     }
                 }
             }
 
-            // Fetch final run steps for complete results
-            if (s.run_id && s.run_id > 0) {
+            // Fetch final run steps for complete results with durations
+            if (s.run_id && s.run_id > 0 && body) {
                 const runRes = await api(`/runs/${s.run_id}`);
-                if (runRes.ok && body) {
+                if (runRes.ok) {
                     const steps = runRes.data.steps || [];
                     _rplPassCount = 0;
                     _rplFailCount = 0;
-                    body.innerHTML = '';
-                    steps.forEach((st, i) => {
+                    body.innerHTML = `<table class="console-table"><thead><tr>
+                        <th>#</th><th class="col-status">Status</th><th class="col-action">Action</th><th>Description</th><th class="col-time">Time</th>
+                    </tr></thead><tbody>${steps.map((st, i) => {
                         const status = (st.status || 'UNKNOWN').toUpperCase();
-                        const badgeCls = status === 'PASSED' ? 'pass' : status === 'FAILED' ? 'fail' : status === 'SKIPPED' ? 'skip' : 'run';
+                        const cls = status === 'PASSED' ? 'pass' : status === 'FAILED' ? 'fail' : status === 'SKIPPED' ? 'skip' : 'run';
                         if (status === 'PASSED') _rplPassCount++;
                         if (status === 'FAILED') _rplFailCount++;
-                        const durationStr = st.duration_ms ? (st.duration_ms / 1000).toFixed(1) + 's' : '';
-                        const entry = document.createElement('div');
-                        entry.className = 'console-entry';
-                        entry.innerHTML = `
-                            <span class="entry-idx">${i + 1}</span>
-                            <span class="entry-badge ${badgeCls}">${status}</span>
-                            <span class="entry-text">
-                                <span class="action-tag">${esc(st.action || '')}</span> ${esc(st.title || st.action || '-')}
-                                ${st.error_message ? `<span class="error-msg">${esc(st.error_message)}</span>` : ''}
-                            </span>
-                            ${durationStr ? `<span class="entry-time">${durationStr}</span>` : ''}
-                        `;
-                        body.appendChild(entry);
-                    });
+                        const dur = st.duration_ms ? (st.duration_ms / 1000).toFixed(1) + 's' : '';
+                        const rowCls = status === 'FAILED' ? ' class="row-fail"' : '';
+                        return `<tr${rowCls}>
+                            <td>${i + 1}</td>
+                            <td><span class="tbl-badge ${cls}">${status}</span></td>
+                            <td><span class="tbl-action">${esc(st.action || '')}</span></td>
+                            <td><span class="tbl-desc">${esc(st.title || st.action || '-')}</span>${st.error_message ? `<div class="tbl-error">${esc(st.error_message)}</div>` : ''}</td>
+                            <td class="tbl-time">${dur}</td>
+                        </tr>`;
+                    }).join('')}</tbody></table>`;
                     body.scrollTop = body.scrollHeight;
                 }
             }
@@ -1119,8 +1133,8 @@ function resumeReplayConsole() {
             if (infoProgress) infoProgress.textContent = s.totalSteps + '/' + s.totalSteps;
 
             const allPassed = _rplFailCount === 0;
-            if (dot) dot.className = allPassed ? 'status-dot idle' : 'status-dot error';
-            if (meta) meta.textContent = allPassed ? 'Completed - All Passed' : 'Completed - ' + _rplFailCount + ' Failed';
+            if (dot) dot.className = allPassed ? 'status-dot success' : 'status-dot error';
+            if (meta) meta.textContent = allPassed ? 'Completed \u2013 All Passed' : 'Completed \u2013 ' + _rplFailCount + ' Failed';
             toast(allPassed ? 'Replay completed!' : 'Replay finished with errors', allPassed ? 'success' : 'error');
 
             // Refresh run history
@@ -1160,6 +1174,13 @@ async function stopReplay() {
     const meta = document.getElementById('rpl-console-meta');
     if (dot) dot.className = 'status-dot error';
     if (meta) meta.textContent = 'Stopped by user';
+
+    // Mark current running step as skipped
+    const tbody = document.getElementById('rpl-table-body');
+    if (tbody) {
+        const runBadge = tbody.querySelector('.tbl-badge.run');
+        if (runBadge) { runBadge.className = 'tbl-badge skip'; runBadge.textContent = 'SKIP'; }
+    }
 }
 
 // ============================================================

@@ -7,7 +7,7 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --bg: #f0f4f8; --bg2: #ffffff; --bg3: #f7f9fc;
+            --bg: #f0f4f8; --bg2: #ffffff; --bg3: #f7f9fc; --bg-alt: #f7f9fb;
             --card: #ffffff; --border: #e2e8f0;
             --text: #1e293b; --text2: #64748b; --text3: #94a3b8;
             --primary: #126086; --primary-dark: #0e4f6d; --primary-light: #e0f2f8;
@@ -287,44 +287,88 @@
             border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Live Console */
-        .live-console { background: #0f172a; border-radius: var(--radius-lg); border: 1px solid #1e293b;
-            overflow: hidden; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, monospace; }
-        .live-console-header { display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 14px; background: #1e293b; border-bottom: 1px solid #334155; }
-        .live-console-header .title { font-size: 12px; font-weight: 600; color: #e2e8f0;
-            display: flex; align-items: center; gap: 8px; }
-        .live-console-header .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .live-console-header .status-dot.active { background: #22c55e; animation: pulse-dot 1.5s infinite; }
-        .live-console-header .status-dot.idle { background: #64748b; }
-        .live-console-header .status-dot.error { background: #ef4444; }
-        .live-console-header .meta { font-size: 11px; color: #64748b; }
+        /* Live Console - Table View */
         @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .live-console-body { max-height: 420px; overflow-y: auto; padding: 8px 0; scroll-behavior: smooth; }
-        .live-console-body::-webkit-scrollbar { width: 6px; }
-        .live-console-body::-webkit-scrollbar-track { background: #0f172a; }
-        .live-console-body::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        .console-entry { display: flex; align-items: flex-start; gap: 8px; padding: 5px 14px;
-            font-size: 12px; line-height: 1.5; transition: background 0.15s; }
-        .console-entry:hover { background: rgba(255,255,255,0.03); }
-        .console-entry .entry-idx { color: #475569; min-width: 28px; text-align: right; flex-shrink: 0; }
-        .console-entry .entry-badge { flex-shrink: 0; padding: 1px 6px; border-radius: 4px;
-            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
-        .console-entry .entry-badge.rec { background: rgba(239,68,68,0.2); color: #f87171; }
-        .console-entry .entry-badge.pass { background: rgba(34,197,94,0.2); color: #4ade80; }
-        .console-entry .entry-badge.fail { background: rgba(239,68,68,0.2); color: #f87171; }
-        .console-entry .entry-badge.skip { background: rgba(234,179,8,0.15); color: #facc15; }
-        .console-entry .entry-badge.run { background: rgba(59,130,246,0.2); color: #60a5fa; animation: pulse-dot 1.2s infinite; }
-        .console-entry .entry-text { color: #cbd5e1; word-break: break-word; }
-        .console-entry .entry-text .action-tag { color: #818cf8; font-weight: 600; }
-        .console-entry .entry-text .selector-tag { color: #64748b; }
-        .console-entry .entry-text .error-msg { color: #f87171; display: block; margin-top: 2px; }
-        .console-entry .entry-time { color: #475569; font-size: 11px; margin-left: auto; flex-shrink: 0; }
-        .console-empty { padding: 32px 14px; text-align: center; color: #475569; font-size: 12px; }
-        .console-info-bar { display: flex; gap: 12px; padding: 8px 14px; background: #1e293b;
-            border-top: 1px solid #334155; font-size: 11px; color: #64748b; }
-        .console-info-bar .info-item { display: flex; align-items: center; gap: 4px; }
-        .console-info-bar .info-val { color: #e2e8f0; font-weight: 600; }
+        @keyframes fadeInRow { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        .live-console { background: var(--bg); border-radius: var(--radius-lg); border: 1px solid var(--border);
+            overflow: hidden; margin-top: 16px; }
+
+        .live-console-header { display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--border); }
+        .live-console-header .title { font-size: 13px; font-weight: 600; color: var(--text);
+            display: flex; align-items: center; gap: 8px; }
+        .live-console-header .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .live-console-header .status-dot.active { background: #22c55e; animation: pulse-dot 1.5s infinite; }
+        .live-console-header .status-dot.idle { background: #94a3b8; }
+        .live-console-header .status-dot.success { background: #22c55e; }
+        .live-console-header .status-dot.error { background: #ef4444; }
+        .live-console-header .meta { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 10px; }
+
+        .console-stats { display: flex; align-items: center; gap: 12px; }
+        .console-stat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text2); }
+        .console-stat .stat-val { font-weight: 700; }
+        .console-stat .stat-val.passed { color: #22c55e; }
+        .console-stat .stat-val.failed { color: #ef4444; }
+        .console-stat .stat-val.steps { color: var(--primary); }
+
+        .live-console-body { max-height: 460px; overflow-y: auto; scroll-behavior: smooth; }
+        .live-console-body::-webkit-scrollbar { width: 5px; }
+        .live-console-body::-webkit-scrollbar-track { background: transparent; }
+        .live-console-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .console-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .console-table thead { position: sticky; top: 0; z-index: 1; }
+        .console-table th { background: var(--bg-alt); padding: 8px 12px; text-align: left; font-size: 11px;
+            font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .console-table th:first-child { width: 44px; text-align: center; }
+        .console-table th.col-status { width: 72px; }
+        .console-table th.col-action { width: 90px; }
+        .console-table th.col-time { width: 64px; text-align: right; }
+        .console-table th.col-element { width: 160px; }
+
+        .console-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); vertical-align: top;
+            color: var(--text); line-height: 1.45; }
+        .console-table td:first-child { text-align: center; color: var(--text2); font-size: 12px; font-weight: 500; }
+
+        .console-table tbody tr { transition: background 0.12s; animation: fadeInRow 0.2s ease; }
+        .console-table tbody tr:hover { background: var(--bg-alt); }
+        .console-table tbody tr:last-child td { border-bottom: none; }
+        .console-table tbody tr.row-fail { background: rgba(239,68,68,0.04); }
+        .console-table tbody tr.row-fail:hover { background: rgba(239,68,68,0.08); }
+
+        .tbl-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; line-height: 1.6; }
+        .tbl-badge.rec { background: rgba(239,68,68,0.12); color: #dc2626; }
+        .tbl-badge.pass { background: rgba(34,197,94,0.12); color: #16a34a; }
+        .tbl-badge.fail { background: rgba(239,68,68,0.12); color: #dc2626; }
+        .tbl-badge.skip { background: rgba(234,179,8,0.10); color: #ca8a04; }
+        .tbl-badge.run { background: rgba(59,130,246,0.12); color: #2563eb; animation: pulse-dot 1.2s infinite; }
+
+        .tbl-action { font-weight: 600; color: var(--primary); font-size: 12px; }
+        .tbl-desc { color: var(--text); }
+        .tbl-element { color: var(--text2); font-size: 12px; max-width: 160px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; }
+        .tbl-time { color: var(--text2); font-size: 12px; text-align: right; white-space: nowrap; }
+        .tbl-error { color: #dc2626; font-size: 11px; margin-top: 3px; line-height: 1.3; }
+
+        .console-empty { padding: 40px 16px; text-align: center; color: var(--text2); font-size: 13px; }
+        .console-empty svg { margin-bottom: 8px; opacity: 0.3; }
+
+        .console-footer { display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 16px; background: var(--bg-alt); border-top: 1px solid var(--border);
+            font-size: 12px; color: var(--text2); }
+
+        /* Run History Table */
+        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .history-table th { background: var(--bg-alt); padding: 8px 10px; text-align: left; font-size: 10px;
+            font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border); }
+        .history-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+        .history-table tbody tr { transition: background 0.12s; cursor: default; }
+        .history-table tbody tr:hover { background: var(--bg-alt); }
+        .history-table tbody tr:last-child td { border-bottom: none; }
 
         .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
