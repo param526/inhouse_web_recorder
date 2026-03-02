@@ -163,6 +163,9 @@ function toggleSidebar(show) {
 function renderPage() {
     const el = document.getElementById('page-content');
     if (!el) return;
+    // Clean up polling intervals when navigating away
+    if (currentPage !== 'recorder' && recorderInterval) { clearInterval(recorderInterval); recorderInterval = null; }
+    if (currentPage !== 'replayer' && replayInterval) { clearInterval(replayInterval); replayInterval = null; }
     switch (currentPage) {
         case 'dashboard': renderDashboard(el); break;
         case 'reports': renderReports(el); break;
@@ -697,6 +700,9 @@ function showRenameModal(id, name) {
 // ============================================================
 let recorderInterval = null;
 async function renderRecorder(el) {
+    // Clean up any previous polling interval
+    if (recorderInterval) { clearInterval(recorderInterval); recorderInterval = null; }
+
     const projRes = await api('/projects');
     const projects = projRes.ok ? projRes.data : [];
 
@@ -720,15 +726,95 @@ async function renderRecorder(el) {
                     <button class="btn btn-secondary hidden" id="rec-abort-btn" onclick="abortRecording()">Abort</button>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-header"><h3>Live Steps</h3><span id="rec-count" style="font-size:12px;color:var(--text2)">0 steps</span></div>
-                <div id="rec-console" style="font-size:12px;color:var(--text2);margin-bottom:8px"></div>
-                <div id="rec-live-steps" style="max-height:400px;overflow-y:auto"></div>
+            <div>
+                <div class="live-console">
+                    <div class="live-console-header">
+                        <div class="title"><span class="status-dot idle" id="rec-status-dot"></span> RECORDER CONSOLE</div>
+                        <div class="meta" id="rec-console-meta">Idle</div>
+                    </div>
+                    <div class="live-console-body" id="rec-console-body">
+                        <div class="console-empty">Start a recording to see live steps here</div>
+                    </div>
+                    <div class="console-info-bar">
+                        <div class="info-item">Steps: <span class="info-val" id="rec-info-steps">0</span></div>
+                        <div class="info-item">URL: <span class="info-val" id="rec-info-url">-</span></div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
+
+    // Auto-reconnect: check if recording is active and resume polling
+    try {
+        const statusRes = await api('/recorder/status');
+        if (statusRes.ok && statusRes.data.active) {
+            document.getElementById('rec-start-btn').classList.add('hidden');
+            document.getElementById('rec-stop-btn').classList.remove('hidden');
+            document.getElementById('rec-abort-btn').classList.remove('hidden');
+            resumeRecorderConsole();
+        }
+    } catch (e) { /* ignore */ }
 }
 
+function resumeRecorderConsole() {
+    _recPrevStepCount = 0;
+    const dot = document.getElementById('rec-status-dot');
+    const meta = document.getElementById('rec-console-meta');
+    const body = document.getElementById('rec-console-body');
+    const infoSteps = document.getElementById('rec-info-steps');
+    const infoUrl = document.getElementById('rec-info-url');
+
+    if (dot) dot.className = 'status-dot active';
+    if (meta) meta.textContent = 'Recording...';
+    if (body) body.innerHTML = '';
+
+    recorderInterval = setInterval(async () => {
+        const sr = await api('/recorder/steps');
+        if (!sr.ok) return;
+        const steps = sr.data || [];
+        const count = steps.length;
+        if (infoSteps) infoSteps.textContent = count;
+
+        const statusRes = await api('/recorder/status');
+        if (statusRes.ok) {
+            const curUrl = statusRes.data.url || '';
+            if (infoUrl) infoUrl.textContent = curUrl.length > 50 ? curUrl.substring(0, 50) + '...' : (curUrl || '-');
+            if (!statusRes.data.active) {
+                if (dot) dot.className = 'status-dot idle';
+                if (meta) meta.textContent = 'Stopped';
+                clearInterval(recorderInterval);
+                recorderInterval = null;
+            }
+        }
+
+        if (count > _recPrevStepCount) {
+            for (let i = _recPrevStepCount; i < count; i++) {
+                const step = steps[i];
+                const action = step.action || step.type || 'event';
+                const gherkin = step.raw_gherkin || '';
+                const selector = step.selector || '';
+                const title = step.title || '';
+                const text = gherkin || title || selector || action;
+
+                const entry = document.createElement('div');
+                entry.className = 'console-entry';
+                entry.innerHTML = `
+                    <span class="entry-idx">${i + 1}</span>
+                    <span class="entry-badge rec">REC</span>
+                    <span class="entry-text">
+                        <span class="action-tag">${esc(action)}</span> ${esc(text)}
+                        ${selector && gherkin ? `<span class="selector-tag">${esc(selector)}</span>` : ''}
+                    </span>
+                `;
+                if (body) body.appendChild(entry);
+            }
+            _recPrevStepCount = count;
+            if (body) body.scrollTop = body.scrollHeight;
+        }
+    }, 2000);
+}
+
+let _recPrevStepCount = 0;
 async function startRecording() {
     const url = document.getElementById('rec-url').value.trim();
     if (!url) { toast('URL required', 'error'); return; }
@@ -737,16 +823,15 @@ async function startRecording() {
     document.getElementById('rec-abort-btn').classList.remove('hidden');
 
     const r = await api('/recorder/start', { method: 'POST', body: JSON.stringify({ url }) });
-    if (!r.ok) { toast(r.data.error || 'Failed to start', 'error'); return; }
+    if (!r.ok) {
+        toast(r.data.error || 'Failed to start', 'error');
+        document.getElementById('rec-start-btn').classList.remove('hidden');
+        document.getElementById('rec-stop-btn').classList.add('hidden');
+        document.getElementById('rec-abort-btn').classList.add('hidden');
+        return;
+    }
     toast('Recording started!');
-
-    recorderInterval = setInterval(async () => {
-        const sr = await api('/recorder/status');
-        if (sr.ok) {
-            document.getElementById('rec-count').textContent = sr.data.count + ' steps';
-            document.getElementById('rec-console').textContent = sr.data.active ? 'Recording active - ' + (sr.data.url || '') : 'Stopped';
-        }
-    }, 2000);
+    resumeRecorderConsole();
 }
 
 async function stopRecording() {
@@ -761,6 +846,11 @@ async function stopRecording() {
     document.getElementById('rec-start-btn').classList.remove('hidden');
     document.getElementById('rec-stop-btn').classList.add('hidden');
     document.getElementById('rec-abort-btn').classList.add('hidden');
+
+    const dot = document.getElementById('rec-status-dot');
+    const meta = document.getElementById('rec-console-meta');
+    if (dot) dot.className = 'status-dot idle';
+    if (meta) meta.textContent = 'Saved - ' + _recPrevStepCount + ' steps';
 }
 
 async function abortRecording() {
@@ -770,6 +860,11 @@ async function abortRecording() {
     document.getElementById('rec-start-btn').classList.remove('hidden');
     document.getElementById('rec-stop-btn').classList.add('hidden');
     document.getElementById('rec-abort-btn').classList.add('hidden');
+
+    const dot = document.getElementById('rec-status-dot');
+    const meta = document.getElementById('rec-console-meta');
+    if (dot) dot.className = 'status-dot error';
+    if (meta) meta.textContent = 'Aborted';
 }
 
 // ============================================================
@@ -777,6 +872,9 @@ async function abortRecording() {
 // ============================================================
 let replayInterval = null;
 async function renderReplayer(el) {
+    // Clean up any previous polling interval
+    if (replayInterval) { clearInterval(replayInterval); replayInterval = null; }
+
     const [recRes, projRes] = await Promise.all([api('/recordings'), api('/projects')]);
     const recordings = recRes.ok ? recRes.data : [];
     const projects = projRes.ok ? projRes.data : [];
@@ -802,10 +900,19 @@ async function renderReplayer(el) {
                         <button class="btn btn-danger hidden" id="rpl-stop-btn" onclick="stopReplay()">Stop</button>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-header"><h3>Live Step Log</h3></div>
-                    <div id="rpl-progress" style="margin-bottom:12px"></div>
-                    <div id="rpl-steps" style="max-height:400px;overflow-y:auto"></div>
+                <div class="live-console">
+                    <div class="live-console-header">
+                        <div class="title"><span class="status-dot idle" id="rpl-status-dot"></span> EXECUTION CONSOLE</div>
+                        <div class="meta" id="rpl-console-meta">Idle</div>
+                    </div>
+                    <div class="live-console-body" id="rpl-console-body">
+                        <div class="console-empty">Select a recording and click Run to see execution progress</div>
+                    </div>
+                    <div class="console-info-bar">
+                        <div class="info-item">Progress: <span class="info-val" id="rpl-info-progress">0/0</span></div>
+                        <div class="info-item">Passed: <span class="info-val" id="rpl-info-passed" style="color:#4ade80">0</span></div>
+                        <div class="info-item">Failed: <span class="info-val" id="rpl-info-failed" style="color:#f87171">0</span></div>
+                    </div>
                 </div>
             </div>
             <div>
@@ -816,6 +923,44 @@ async function renderReplayer(el) {
             </div>
         </div>
     `;
+
+    // Load run history
+    loadReplayHistory();
+
+    // Auto-reconnect: check if replay is running and resume polling
+    try {
+        const statusRes = await api('/replay/status');
+        if (statusRes.ok && statusRes.data.running) {
+            document.getElementById('rpl-run-btn').classList.add('hidden');
+            document.getElementById('rpl-stop-btn').classList.remove('hidden');
+            resumeReplayConsole();
+        }
+    } catch (e) { /* ignore */ }
+}
+
+async function loadReplayHistory() {
+    const histEl = document.getElementById('rpl-history');
+    if (!histEl) return;
+    try {
+        const res = await api('/runs?limit=10');
+        if (!res.ok || !res.data.length) {
+            histEl.innerHTML = '<div class="empty-state"><p>No runs yet</p></div>';
+            return;
+        }
+        histEl.innerHTML = res.data.map(r => {
+            const statusCls = (r.status || '').toLowerCase();
+            const dur = r.duration_ms ? (r.duration_ms / 1000).toFixed(1) + 's' : '-';
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
+                <div>
+                    <span class="badge badge-${statusCls}">${esc(r.status || '-')}</span>
+                    <span style="margin-left:6px;color:var(--text1)">${esc(r.recording_name || 'Run #' + r.id)}</span>
+                </div>
+                <div style="color:var(--text2)">${dur} &middot; ${r.created_at ? timeAgo(r.created_at) : '-'}</div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        histEl.innerHTML = '<div class="empty-state"><p>Failed to load history</p></div>';
+    }
 }
 
 function filterReplayRecs() {
@@ -827,6 +972,163 @@ function filterReplayRecs() {
     });
 }
 
+let _rplRenderedIndex = -1;
+let _rplStepEntries = [];
+let _rplPassCount = 0;
+let _rplFailCount = 0;
+
+function resumeReplayConsole() {
+    _rplRenderedIndex = -1;
+    _rplStepEntries = [];
+    _rplPassCount = 0;
+    _rplFailCount = 0;
+
+    const dot = document.getElementById('rpl-status-dot');
+    const meta = document.getElementById('rpl-console-meta');
+    const body = document.getElementById('rpl-console-body');
+    const infoProgress = document.getElementById('rpl-info-progress');
+    const infoPassed = document.getElementById('rpl-info-passed');
+    const infoFailed = document.getElementById('rpl-info-failed');
+
+    if (dot) dot.className = 'status-dot active';
+    if (meta) meta.textContent = 'Running...';
+    if (body) body.innerHTML = '';
+
+    replayInterval = setInterval(async () => {
+        const sr = await api('/replay/status');
+        if (!sr.ok) return;
+        const s = sr.data;
+
+        if (infoProgress) infoProgress.textContent = s.currentIndex + '/' + s.totalSteps;
+
+        const idx = s.currentIndex;
+        if (idx > 0 && idx > _rplRenderedIndex) {
+            // Finalize previous step
+            if (_rplRenderedIndex > 0 && body) {
+                const prevEntry = body.querySelector(`[data-step-idx="${_rplRenderedIndex}"]`);
+                if (prevEntry) {
+                    const badge = prevEntry.querySelector('.entry-badge');
+                    if (badge && badge.classList.contains('run')) {
+                        if (s.lastStepSuccess !== false || idx > _rplRenderedIndex + 1) {
+                            badge.className = 'entry-badge pass';
+                            badge.textContent = 'PASS';
+                            _rplPassCount++;
+                        } else {
+                            badge.className = 'entry-badge fail';
+                            badge.textContent = 'FAIL';
+                            _rplFailCount++;
+                            if (s.lastError) {
+                                const errSpan = document.createElement('span');
+                                errSpan.className = 'error-msg';
+                                errSpan.textContent = s.lastError;
+                                prevEntry.querySelector('.entry-text').appendChild(errSpan);
+                            }
+                        }
+                    }
+                }
+            }
+
+            const gherkin = s.currentGherkin || '';
+            const action = s.currentAction || '';
+            const title = s.currentTitle || '';
+            const text = gherkin || title || action || 'Step ' + idx;
+
+            const entry = document.createElement('div');
+            entry.className = 'console-entry';
+            entry.setAttribute('data-step-idx', idx);
+            entry.innerHTML = `
+                <span class="entry-idx">${idx}</span>
+                <span class="entry-badge run">RUN</span>
+                <span class="entry-text">
+                    <span class="action-tag">${esc(action)}</span> ${esc(text)}
+                </span>
+            `;
+            if (body) { body.appendChild(entry); body.scrollTop = body.scrollHeight; }
+            _rplRenderedIndex = idx;
+
+            if (infoPassed) infoPassed.textContent = _rplPassCount;
+            if (infoFailed) infoFailed.textContent = _rplFailCount;
+        }
+
+        if (!s.running) {
+            clearInterval(replayInterval);
+            replayInterval = null;
+            const runBtn = document.getElementById('rpl-run-btn');
+            const stopBtn = document.getElementById('rpl-stop-btn');
+            if (runBtn) runBtn.classList.remove('hidden');
+            if (stopBtn) stopBtn.classList.add('hidden');
+
+            // Final step result
+            if (body) {
+                const lastEntry = body.querySelector(`[data-step-idx="${_rplRenderedIndex}"]`);
+                if (lastEntry) {
+                    const badge = lastEntry.querySelector('.entry-badge');
+                    if (badge && badge.classList.contains('run')) {
+                        if (s.lastStepSuccess) {
+                            badge.className = 'entry-badge pass';
+                            badge.textContent = 'PASS';
+                            _rplPassCount++;
+                        } else {
+                            badge.className = 'entry-badge fail';
+                            badge.textContent = 'FAIL';
+                            _rplFailCount++;
+                            if (s.lastError) {
+                                const errSpan = document.createElement('span');
+                                errSpan.className = 'error-msg';
+                                errSpan.textContent = s.lastError;
+                                lastEntry.querySelector('.entry-text').appendChild(errSpan);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fetch final run steps for complete results
+            if (s.run_id && s.run_id > 0) {
+                const runRes = await api(`/runs/${s.run_id}`);
+                if (runRes.ok && body) {
+                    const steps = runRes.data.steps || [];
+                    _rplPassCount = 0;
+                    _rplFailCount = 0;
+                    body.innerHTML = '';
+                    steps.forEach((st, i) => {
+                        const status = (st.status || 'UNKNOWN').toUpperCase();
+                        const badgeCls = status === 'PASSED' ? 'pass' : status === 'FAILED' ? 'fail' : status === 'SKIPPED' ? 'skip' : 'run';
+                        if (status === 'PASSED') _rplPassCount++;
+                        if (status === 'FAILED') _rplFailCount++;
+                        const durationStr = st.duration_ms ? (st.duration_ms / 1000).toFixed(1) + 's' : '';
+                        const entry = document.createElement('div');
+                        entry.className = 'console-entry';
+                        entry.innerHTML = `
+                            <span class="entry-idx">${i + 1}</span>
+                            <span class="entry-badge ${badgeCls}">${status}</span>
+                            <span class="entry-text">
+                                <span class="action-tag">${esc(st.action || '')}</span> ${esc(st.title || st.action || '-')}
+                                ${st.error_message ? `<span class="error-msg">${esc(st.error_message)}</span>` : ''}
+                            </span>
+                            ${durationStr ? `<span class="entry-time">${durationStr}</span>` : ''}
+                        `;
+                        body.appendChild(entry);
+                    });
+                    body.scrollTop = body.scrollHeight;
+                }
+            }
+
+            if (infoPassed) infoPassed.textContent = _rplPassCount;
+            if (infoFailed) infoFailed.textContent = _rplFailCount;
+            if (infoProgress) infoProgress.textContent = s.totalSteps + '/' + s.totalSteps;
+
+            const allPassed = _rplFailCount === 0;
+            if (dot) dot.className = allPassed ? 'status-dot idle' : 'status-dot error';
+            if (meta) meta.textContent = allPassed ? 'Completed - All Passed' : 'Completed - ' + _rplFailCount + ' Failed';
+            toast(allPassed ? 'Replay completed!' : 'Replay finished with errors', allPassed ? 'success' : 'error');
+
+            // Refresh run history
+            loadReplayHistory();
+        }
+    }, 1500);
+}
+
 async function startReplay() {
     const recordingId = document.getElementById('rpl-recording').value;
     if (!recordingId) { toast('Select a recording', 'error'); return; }
@@ -836,56 +1138,28 @@ async function startReplay() {
     document.getElementById('rpl-stop-btn').classList.remove('hidden');
 
     const r = await api('/replay', { method: 'POST', body: JSON.stringify({ recording_id: parseInt(recordingId), mode }) });
-    if (!r.ok) { toast(r.data.error || 'Failed to start', 'error'); return; }
+    if (!r.ok) {
+        toast(r.data.error || 'Failed to start', 'error');
+        document.getElementById('rpl-run-btn').classList.remove('hidden');
+        document.getElementById('rpl-stop-btn').classList.add('hidden');
+        return;
+    }
     toast('Replay started!');
-
-    const stepsEl = document.getElementById('rpl-steps');
-    const progEl = document.getElementById('rpl-progress');
-
-    replayInterval = setInterval(async () => {
-        const sr = await api('/replay/status');
-        if (!sr.ok) return;
-        const s = sr.data;
-        const pct = s.totalSteps > 0 ? Math.round((s.currentIndex / s.totalSteps) * 100) : 0;
-        progEl.innerHTML = `
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-                <span>Step ${s.currentIndex} of ${s.totalSteps}</span>
-                <span>${pct}%</span>
-            </div>
-            <div class="progress-bar"><div class="fill" style="width:${pct}%;background:${s.lastStepSuccess ? 'var(--green)' : 'var(--red)'}"></div></div>
-            ${s.currentGherkin ? `<div style="margin-top:6px;font-size:12px;color:var(--text2)">${esc(s.currentGherkin)}</div>` : ''}
-        `;
-        if (!s.running) {
-            clearInterval(replayInterval);
-            document.getElementById('rpl-run-btn').classList.remove('hidden');
-            document.getElementById('rpl-stop-btn').classList.add('hidden');
-            toast(s.lastStepSuccess ? 'Replay completed!' : 'Replay finished with errors', s.lastStepSuccess ? 'success' : 'error');
-            // Load run detail
-            if (s.run_id && s.run_id > 0) {
-                const runRes = await api(`/runs/${s.run_id}`);
-                if (runRes.ok) {
-                    const steps = runRes.data.steps || [];
-                    stepsEl.innerHTML = steps.map((st, i) => `
-                        <div class="step-item step-${st.status.toLowerCase()}">
-                            <div class="step-num">${i+1}</div>
-                            <div style="flex:1">
-                                <div style="font-weight:500">${esc(st.title || st.action || '-')}</div>
-                                ${st.error_message ? `<div style="font-size:11px;color:var(--red)">${esc(st.error_message)}</div>` : ''}
-                            </div>
-                            <span class="badge badge-${st.status.toLowerCase()}">${st.status}</span>
-                        </div>`).join('');
-                }
-            }
-        }
-    }, 1500);
+    resumeReplayConsole();
 }
 
 async function stopReplay() {
     clearInterval(replayInterval);
+    replayInterval = null;
     await api('/replay/stop', { method: 'POST' });
     toast('Replay stopped');
     document.getElementById('rpl-run-btn').classList.remove('hidden');
     document.getElementById('rpl-stop-btn').classList.add('hidden');
+
+    const dot = document.getElementById('rpl-status-dot');
+    const meta = document.getElementById('rpl-console-meta');
+    if (dot) dot.className = 'status-dot error';
+    if (meta) meta.textContent = 'Stopped by user';
 }
 
 // ============================================================
