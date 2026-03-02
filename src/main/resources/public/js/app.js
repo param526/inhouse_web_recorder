@@ -123,7 +123,10 @@ function render() {
                 </div>
             </div>
             <div class="topbar-right">
-                <div class="user-badge">${user.username} <span class="badge badge-${user.role.toLowerCase()}">${user.role}</span></div>
+                <div class="user-badge">
+                    <span style="font-weight:600">${user.username}</span>
+                    <span class="badge badge-${user.role.toLowerCase()}">${user.role}</span>
+                </div>
                 <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
         </header>
@@ -237,7 +240,7 @@ function renderLogin(app) {
 // DASHBOARD
 // ============================================================
 async function renderDashboard(el) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div> Loading dashboard...</div>';
+    el.innerHTML = '<div class="loading-center"><div class="loading-spinner"></div> Loading dashboard...</div>';
     try {
         const [dashRes, projRes] = await Promise.all([api('/dashboard'), api('/projects')]);
         const d = dashRes.data;
@@ -249,12 +252,12 @@ async function renderDashboard(el) {
 
         el.innerHTML = `
             <div class="grid-6" style="margin-bottom:20px">
-                <div class="stat-card"><div class="stat-value">${d.total_runs || 0}</div><div class="stat-label">Total Runs</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--green)">${d.passed || 0}</div><div class="stat-label">Passed</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--red)">${d.failed || 0}</div><div class="stat-label">Failed</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--yellow)">${d.stopped || 0}</div><div class="stat-label">Stopped</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--blue)">${d.running || 0}</div><div class="stat-label">Running</div></div>
-                <div class="stat-card"><div class="stat-value">${d.recordings || 0}</div><div class="stat-label">Recordings</div></div>
+                <div class="stat-card accent-blue"><div class="stat-value">${d.total_runs || 0}</div><div class="stat-label">Total Runs</div></div>
+                <div class="stat-card accent-green"><div class="stat-value" style="color:var(--green)">${d.passed || 0}</div><div class="stat-label">Passed</div></div>
+                <div class="stat-card accent-red"><div class="stat-value" style="color:var(--red)">${d.failed || 0}</div><div class="stat-label">Failed</div></div>
+                <div class="stat-card accent-yellow"><div class="stat-value" style="color:var(--yellow)">${d.stopped || 0}</div><div class="stat-label">Stopped</div></div>
+                <div class="stat-card accent-cyan"><div class="stat-value" style="color:var(--cyan)">${d.running || 0}</div><div class="stat-label">Running</div></div>
+                <div class="stat-card accent-purple"><div class="stat-value">${d.recordings || 0}</div><div class="stat-label">Recordings</div></div>
             </div>
 
             <div class="grid-3" style="margin-bottom:20px">
@@ -273,18 +276,20 @@ async function renderDashboard(el) {
                             <div class="ring-label">Pass Rate</div>
                         </div>
                     </div>
-                    <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text2)">
-                        ${d.passed || 0} passed / ${d.failed || 0} failed / ${d.stopped || 0} stopped
+                    <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;font-size:12px">
+                        <span style="color:var(--green);font-weight:600">${d.passed || 0} passed</span>
+                        <span style="color:var(--red);font-weight:600">${d.failed || 0} failed</span>
+                        <span style="color:var(--yellow);font-weight:600">${d.stopped || 0} stopped</span>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header"><h3>Metrics</h3></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                        <div class="stat-card"><div class="stat-value" style="font-size:18px">${d.avg_duration ? (d.avg_duration / 1000).toFixed(1) + 's' : '-'}</div><div class="stat-label">Avg Duration</div></div>
-                        <div class="stat-card"><div class="stat-value" style="font-size:18px">${d.recordings || 0}</div><div class="stat-label">Recordings</div></div>
-                        <div class="stat-card"><div class="stat-value" style="font-size:18px">${d.running || 0}</div><div class="stat-label">Active Now</div></div>
-                        <div class="stat-card"><div class="stat-value" style="font-size:18px">${d.failure_rate || 0}%</div><div class="stat-label">Failure Rate</div></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <div class="stat-card accent-blue"><div class="stat-value" style="font-size:18px">${d.avg_duration ? (d.avg_duration / 1000).toFixed(1) + 's' : '-'}</div><div class="stat-label">Avg Duration</div></div>
+                        <div class="stat-card accent-purple"><div class="stat-value" style="font-size:18px">${d.recordings || 0}</div><div class="stat-label">Recordings</div></div>
+                        <div class="stat-card accent-cyan"><div class="stat-value" style="font-size:18px">${d.running || 0}</div><div class="stat-label">Active Now</div></div>
+                        <div class="stat-card accent-red"><div class="stat-value" style="font-size:18px">${d.failure_rate || 0}%</div><div class="stat-label">Failure Rate</div></div>
                     </div>
                 </div>
 
@@ -302,27 +307,30 @@ async function renderDashboard(el) {
             <div class="grid-2">
                 <div class="card">
                     <div class="card-header"><h3>Projects Overview</h3></div>
-                    ${(d.projects_overview || []).length === 0 ? '<div class="empty-state"><p>No projects yet</p></div>' :
-                        (d.projects_overview || []).map(p => `
-                            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-                                <span style="font-size:13px;font-weight:500">${esc(p.name)}</span>
-                                <span style="font-size:12px;color:var(--text2)">${p.recording_count} recordings</span>
-                            </div>
-                        `).join('')}
+                    ${(d.projects_overview || []).length === 0 ? '<div class="empty-state"><p>No projects yet</p></div>' : `
+                        <div class="table-container"><table>
+                            <thead><tr><th>Project</th><th style="text-align:right">Recordings</th></tr></thead>
+                            <tbody>${(d.projects_overview || []).map(p => `<tr>
+                                <td class="td-primary">${esc(p.name)}</td>
+                                <td style="text-align:right"><span class="badge badge-resource">${p.recording_count}</span></td>
+                            </tr>`).join('')}</tbody>
+                        </table></div>
+                    `}
                 </div>
 
                 <div class="card">
                     <div class="card-header"><h3>Recent Activity</h3></div>
-                    ${(d.recent_activity || []).length === 0 ? '<div class="empty-state"><p>No recent activity</p></div>' :
-                        (d.recent_activity || []).map(r => `
-                            <div class="timeline-item">
-                                <div class="timeline-dot" style="background:${statusColor(r.status)}"></div>
-                                <div class="timeline-content">
-                                    <div class="name">${esc(r.recording_name || 'Unknown')} <span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></div>
-                                    <div class="meta">${timeAgo(r.started_at)} ${r.duration_ms ? '- ' + (r.duration_ms/1000).toFixed(1) + 's' : ''}</div>
-                                </div>
-                            </div>
-                        `).join('')}
+                    ${(d.recent_activity || []).length === 0 ? '<div class="empty-state"><p>No recent activity</p></div>' : `
+                        <div class="table-container"><table>
+                            <thead><tr><th>Recording</th><th>Status</th><th>Duration</th><th>When</th></tr></thead>
+                            <tbody>${(d.recent_activity || []).map(r => `<tr>
+                                <td class="td-primary">${esc(r.recording_name || 'Unknown')}</td>
+                                <td><span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></td>
+                                <td class="td-secondary">${r.duration_ms ? (r.duration_ms/1000).toFixed(1) + 's' : '-'}</td>
+                                <td class="td-secondary">${timeAgo(r.started_at)}</td>
+                            </tr>`).join('')}</tbody>
+                        </table></div>
+                    `}
                 </div>
             </div>
         `;
@@ -334,7 +342,7 @@ async function renderDashboard(el) {
 // ============================================================
 let reportsPage = 0;
 async function renderReports(el) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
+    el.innerHTML = '<div class="loading-center"><div class="loading-spinner"></div> Loading reports...</div>';
     try {
         const r = await api(`/runs?limit=8&offset=${reportsPage * 8}`);
         const runs = r.ok ? r.data : [];
@@ -342,36 +350,34 @@ async function renderReports(el) {
             <div class="card">
                 <div class="card-header">
                     <h3>Test Run History</h3>
-                    <div class="filter-bar" style="margin:0">
-                        <select id="rpt-status" class="form-control" style="width:auto" onchange="filterReports()">
-                            <option value="">All Status</option>
-                            <option value="PASSED">Passed</option><option value="FAILED">Failed</option>
-                            <option value="RUNNING">Running</option><option value="STOPPED">Stopped</option>
-                        </select>
-                    </div>
+                    <select id="rpt-status" class="form-control" style="width:auto;margin:0" onchange="filterReports()">
+                        <option value="">All Status</option>
+                        <option value="PASSED">Passed</option><option value="FAILED">Failed</option>
+                        <option value="RUNNING">Running</option><option value="STOPPED">Stopped</option>
+                    </select>
                 </div>
                 <div class="table-container">
                     <table>
                         <thead><tr><th>Recording</th><th>Status</th><th>Started</th><th>Duration</th><th>Error</th><th>Actions</th></tr></thead>
                         <tbody>
-                            ${runs.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text2)">No runs found</td></tr>' :
+                            ${runs.length === 0 ? '<tr><td colspan="6" class="td-secondary" style="text-align:center;padding:32px">No runs found</td></tr>' :
                                 runs.map(run => `<tr>
-                                    <td style="font-weight:500">${esc(run.recording_name || '-')}</td>
+                                    <td class="td-primary">${esc(run.recording_name || '-')}</td>
                                     <td><span class="badge badge-${run.status.toLowerCase()}">${run.status}</span></td>
-                                    <td style="font-size:12px;color:var(--text2)">${timeAgo(run.started_at)}</td>
-                                    <td style="font-size:12px">${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : '-'}</td>
-                                    <td style="font-size:12px;color:var(--red);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(run.error_message || '')}</td>
-                                    <td>
+                                    <td class="td-secondary">${timeAgo(run.started_at)}</td>
+                                    <td class="td-secondary">${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : '-'}</td>
+                                    <td style="font-size:12px;color:var(--red);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(run.error_message || '')}">${esc(run.error_message || '')}</td>
+                                    <td><div class="td-actions">
                                         <button class="btn btn-sm btn-secondary" onclick="viewRunDetail(${run.id})">Details</button>
                                         ${run.report_path ? `<button class="btn btn-sm btn-secondary" onclick="window.open('/api/runs/${run.id}/report','_blank')">Report</button>` : ''}
-                                    </td>
+                                    </div></td>
                                 </tr>`).join('')}
                         </tbody>
                     </table>
                 </div>
                 <div class="pagination">
                     <button class="page-btn" onclick="reportsPage=Math.max(0,reportsPage-1);renderReports(document.getElementById('page-content'))" ${reportsPage===0?'disabled':''}>Prev</button>
-                    <span style="padding:6px 12px;font-size:12px;color:var(--text2)">Page ${reportsPage+1}</span>
+                    <span style="padding:6px 12px;font-size:12px;color:var(--text2);font-weight:500">Page ${reportsPage+1}</span>
                     <button class="page-btn" onclick="reportsPage++;renderReports(document.getElementById('page-content'))" ${runs.length<8?'disabled':''}>Next</button>
                 </div>
             </div>
@@ -383,29 +389,38 @@ async function renderReports(el) {
 async function viewRunDetail(runId) {
     const det = document.getElementById('run-detail');
     if (!det) return;
-    det.innerHTML = '<div class="card"><div class="loading-spinner"></div> Loading run details...</div>';
+    det.innerHTML = '<div class="card"><div class="loading-center"><div class="loading-spinner"></div> Loading run details...</div></div>';
     const r = await api(`/runs/${runId}`);
     if (!r.ok) { det.innerHTML = '<div class="card">Run not found</div>'; return; }
     const run = r.data;
     const steps = run.steps || [];
+    const passed = steps.filter(s => s.status === 'PASSED').length;
+    const failed = steps.filter(s => s.status === 'FAILED').length;
     det.innerHTML = `
-        <div class="card">
-            <div class="card-header">
-                <h3>Run #${run.id} - ${esc(run.recording_name || '')} <span class="badge badge-${run.status.toLowerCase()}">${run.status}</span></h3>
-                <span style="font-size:12px;color:var(--text2)">${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : ''}</span>
-            </div>
-            ${steps.map((s, i) => `
-                <div class="step-item step-${s.status.toLowerCase()}">
-                    <div class="step-num">${i+1}</div>
-                    <div style="flex:1">
-                        <div style="font-weight:500">${esc(s.title || s.action || '-')}</div>
-                        <div style="font-size:11px;color:var(--text2)">${esc(s.locator || '')} ${s.value ? '= ' + esc(s.value) : ''}</div>
-                        ${s.error_message ? `<div style="font-size:11px;color:var(--red);margin-top:2px">${esc(s.error_message)}</div>` : ''}
-                    </div>
-                    <div style="font-size:11px;color:var(--text2)">${s.duration_ms ? s.duration_ms + 'ms' : ''}</div>
-                    ${s.screenshot_path ? `<img src="/api/screenshots/${s.screenshot_path.split('/').pop()}" style="width:60px;height:40px;object-fit:cover;border-radius:4px;cursor:pointer" onclick="openGallery(${JSON.stringify(steps.filter(x=>x.screenshot_path).map(x=>'/api/screenshots/'+x.screenshot_path.split('/').pop()))}, ${steps.filter(x=>x.screenshot_path).indexOf(s)})">` : ''}
+        <div class="detail-panel" style="margin-top:16px">
+            <div class="detail-header">
+                <h3>Run #${run.id} \u2013 ${esc(run.recording_name || '')} <span class="badge badge-${run.status.toLowerCase()}" style="margin-left:6px">${run.status}</span></h3>
+                <div style="display:flex;gap:12px;font-size:12px;color:var(--text2)">
+                    <span style="color:var(--green);font-weight:600">${passed} passed</span>
+                    <span style="color:var(--red);font-weight:600">${failed} failed</span>
+                    <span>${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's total' : ''}</span>
                 </div>
-            `).join('')}
+            </div>
+            <div class="detail-body">
+                <div class="table-container"><table>
+                    <thead><tr><th style="width:44px">#</th><th>Status</th><th>Step</th><th>Locator</th><th>Time</th><th style="width:60px"></th></tr></thead>
+                    <tbody>${steps.map((s, i) => `<tr${s.status === 'FAILED' ? ' style="background:var(--red-light)"' : ''}>
+                        <td style="text-align:center;color:var(--text2);font-weight:500">${i+1}</td>
+                        <td><span class="badge badge-${s.status.toLowerCase()}">${s.status}</span></td>
+                        <td><div class="td-primary">${esc(s.title || s.action || '-')}</div>
+                            ${s.error_message ? `<div style="font-size:11px;color:var(--red);margin-top:2px">${esc(s.error_message)}</div>` : ''}
+                        </td>
+                        <td class="td-secondary" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(s.locator || '')}">${esc(s.locator || '')} ${s.value ? '= ' + esc(s.value) : ''}</td>
+                        <td class="td-secondary">${s.duration_ms ? s.duration_ms + 'ms' : ''}</td>
+                        <td>${s.screenshot_path ? `<img class="screenshot-thumb" src="/api/screenshots/${s.screenshot_path.split('/').pop()}" onclick="openGallery(${JSON.stringify(steps.filter(x=>x.screenshot_path).map(x=>'/api/screenshots/'+x.screenshot_path.split('/').pop()))}, ${steps.filter(x=>x.screenshot_path).indexOf(s)})">` : ''}</td>
+                    </tr>`).join('')}</tbody>
+                </table></div>
+            </div>
         </div>
     `;
 }
@@ -414,7 +429,7 @@ async function viewRunDetail(runId) {
 // PROJECTS
 // ============================================================
 async function renderProjects(el) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
+    el.innerHTML = '<div class="loading-center"><div class="loading-spinner"></div> Loading projects...</div>';
     const r = await api('/projects');
     const projects = r.ok ? r.data : [];
     el.innerHTML = `
@@ -423,19 +438,19 @@ async function renderProjects(el) {
                 <h3>Projects</h3>
                 ${isAdmin() ? '<button class="btn btn-primary btn-sm" onclick="showNewProjectModal()">+ New Project</button>' : ''}
             </div>
-            ${projects.length === 0 ? '<div class="empty-state"><p>No projects yet</p></div>' : `
+            ${projects.length === 0 ? '<div class="empty-state"><p>No projects yet. Create one to get started.</p></div>' : `
                 <div class="table-container"><table>
                     <thead><tr><th>Name</th><th>Description</th><th>Recordings</th><th>Modules</th><th>Access</th><th>Actions</th></tr></thead>
                     <tbody>${projects.map(p => `<tr>
-                        <td style="font-weight:500">${esc(p.name)}</td>
-                        <td style="font-size:12px;color:var(--text2)">${esc(p.description || '-')}</td>
-                        <td>${p.recording_count || 0}</td>
-                        <td>${(p.modules || []).length}</td>
-                        <td>${(p.access_users || []).map(u => `<span class="badge badge-resource" style="margin:1px">${esc(u.username)}</span>`).join(' ') || '-'}</td>
-                        <td>
+                        <td class="td-primary">${esc(p.name)}</td>
+                        <td class="td-secondary">${esc(p.description || '-')}</td>
+                        <td><span class="badge badge-resource">${p.recording_count || 0}</span></td>
+                        <td><span class="badge badge-resource">${(p.modules || []).length}</span></td>
+                        <td>${(p.access_users || []).map(u => `<span class="badge badge-resource" style="margin:1px">${esc(u.username)}</span>`).join(' ') || '<span class="td-secondary">-</span>'}</td>
+                        <td><div class="td-actions">
                             <button class="btn btn-sm btn-secondary" onclick="expandProject(${p.id})">Manage</button>
                             ${isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="deleteProject(${p.id})">Delete</button>` : ''}
-                        </td>
+                        </div></td>
                     </tr>`).join('')}</tbody>
                 </table></div>
             `}
@@ -456,36 +471,51 @@ async function expandProject(id) {
     const allUsers = usersRes.data || [];
 
     det.innerHTML = `
-        <div class="card">
-            <div class="card-header"><h3>${esc(project.name)} - Modules & Access</h3></div>
+        <div class="detail-panel" style="margin-top:16px">
+            <div class="detail-header">
+                <h3>${esc(project.name)}</h3>
+                <span class="td-secondary">${esc(project.description || '')}</span>
+            </div>
+            <div class="detail-body">
+                <div class="section-heading">Modules</div>
+                ${modules.length === 0 ? '<div style="padding:12px 0;color:var(--text3);font-size:13px">No modules yet</div>' : `
+                    <div class="table-container" style="margin-bottom:12px"><table>
+                        <thead><tr><th>Module Name</th>${isAdmin() ? '<th style="width:80px">Actions</th>' : ''}</tr></thead>
+                        <tbody>${modules.map(m => `<tr>
+                            <td class="td-primary">${esc(m.name)}</td>
+                            ${isAdmin() ? `<td><button class="btn btn-sm btn-danger" onclick="deleteModule(${m.id})">Delete</button></td>` : ''}
+                        </tr>`).join('')}</tbody>
+                    </table></div>
+                `}
+                ${isAdmin() ? `
+                    <div style="display:flex;gap:8px;margin-bottom:24px">
+                        <input class="form-control" id="new-mod-name" placeholder="Module name" style="flex:1">
+                        <button class="btn btn-primary btn-sm" onclick="createModule(${id})">Add Module</button>
+                    </div>
+                ` : ''}
 
-            <h4 style="font-size:13px;margin-bottom:8px">Modules</h4>
-            ${modules.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
-                <span style="font-size:13px">${esc(m.name)}</span>
-                ${isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="deleteModule(${m.id})">Delete</button>` : ''}
-            </div>`).join('')}
-            ${isAdmin() ? `
-                <div style="display:flex;gap:8px;margin-top:12px">
-                    <input class="form-control" id="new-mod-name" placeholder="Module name" style="flex:1">
-                    <button class="btn btn-primary btn-sm" onclick="createModule(${id})">Add Module</button>
-                </div>
-            ` : ''}
-
-            ${isAdmin() ? `
-                <h4 style="font-size:13px;margin-top:20px;margin-bottom:8px">User Access</h4>
-                ${(project.access_users || []).map(u => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
-                    <span style="font-size:13px">${esc(u.username)} <span class="badge badge-${u.role.toLowerCase()}">${u.role}</span></span>
-                    <button class="btn btn-sm btn-danger" onclick="revokeAccess(${id},${u.id})">Revoke</button>
-                </div>`).join('')}
-                <div style="display:flex;gap:8px;margin-top:12px">
-                    <select class="form-control" id="grant-user" style="flex:1">
-                        <option value="">Select user...</option>
-                        ${allUsers.filter(u => u.role === 'RESOURCE' && !(project.access_users || []).find(a => a.id === u.id))
-                            .map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('')}
-                    </select>
-                    <button class="btn btn-primary btn-sm" onclick="grantAccess(${id})">Grant Access</button>
-                </div>
-            ` : ''}
+                ${isAdmin() ? `
+                    <div class="section-heading">User Access</div>
+                    ${(project.access_users || []).length === 0 ? '<div style="padding:12px 0;color:var(--text3);font-size:13px">No users assigned</div>' : `
+                        <div class="table-container" style="margin-bottom:12px"><table>
+                            <thead><tr><th>Username</th><th>Role</th><th style="width:80px">Actions</th></tr></thead>
+                            <tbody>${(project.access_users || []).map(u => `<tr>
+                                <td class="td-primary">${esc(u.username)}</td>
+                                <td><span class="badge badge-${u.role.toLowerCase()}">${u.role}</span></td>
+                                <td><button class="btn btn-sm btn-danger" onclick="revokeAccess(${id},${u.id})">Revoke</button></td>
+                            </tr>`).join('')}</tbody>
+                        </table></div>
+                    `}
+                    <div style="display:flex;gap:8px">
+                        <select class="form-control" id="grant-user" style="flex:1">
+                            <option value="">Select user...</option>
+                            ${allUsers.filter(u => u.role === 'RESOURCE' && !(project.access_users || []).find(a => a.id === u.id))
+                                .map(u => `<option value="${u.id}">${esc(u.username)}</option>`).join('')}
+                        </select>
+                        <button class="btn btn-primary btn-sm" onclick="grantAccess(${id})">Grant Access</button>
+                    </div>
+                ` : ''}
+            </div>
         </div>
     `;
 }
@@ -525,7 +555,7 @@ async function revokeAccess(projectId, userId) {
 // RECORDINGS
 // ============================================================
 async function renderRecordings(el) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
+    el.innerHTML = '<div class="loading-center"><div class="loading-spinner"></div> Loading recordings...</div>';
     const [recRes, projRes] = await Promise.all([api('/recordings'), api('/projects')]);
     const recordings = recRes.ok ? recRes.data : [];
     const projects = projRes.ok ? projRes.data : [];
@@ -561,16 +591,16 @@ function renderRecTable(recs) {
     const pm = window._projectMap || {};
     return `<table><thead><tr><th>Name</th><th>Project</th><th>Steps</th><th>Size</th><th>Created</th><th>Actions</th></tr></thead>
         <tbody>${recs.map(r => `<tr style="${r.deleted_at ? 'opacity:0.5' : ''}">
-            <td style="font-weight:500">${esc(r.name)} ${r.deleted_at ? '<span class="badge badge-stopped">Deleted</span>' : ''}</td>
-            <td style="font-size:12px;color:var(--text2)">${r.project_id ? esc(pm[r.project_id] || 'Project #' + r.project_id) : '<span style="color:var(--text3)">Unassigned</span>'}</td>
-            <td>${r.step_count}</td>
-            <td style="font-size:12px">${formatBytes(r.file_size)}</td>
-            <td style="font-size:12px;color:var(--text2)">${timeAgo(r.created_at)}</td>
-            <td>
+            <td class="td-primary">${esc(r.name)} ${r.deleted_at ? '<span class="badge badge-stopped" style="margin-left:4px">Deleted</span>' : ''}</td>
+            <td class="td-secondary">${r.project_id ? esc(pm[r.project_id] || 'Project #' + r.project_id) : '<span style="color:var(--text3)">Unassigned</span>'}</td>
+            <td><span class="badge badge-resource">${r.step_count}</span></td>
+            <td class="td-secondary">${formatBytes(r.file_size)}</td>
+            <td class="td-secondary">${timeAgo(r.created_at)}</td>
+            <td><div class="td-actions">
                 <button class="btn btn-sm btn-secondary" onclick="viewRecording(${r.id})">View</button>
                 ${r.deleted_at ? `<button class="btn btn-sm btn-success" onclick="restoreRecording(${r.id})">Restore</button>`
                     : `<button class="btn btn-sm btn-danger" onclick="deleteRecording(${r.id})">Delete</button>`}
-            </td>
+            </div></td>
         </tr>`).join('')}</tbody></table>`;
 }
 
@@ -593,7 +623,7 @@ async function reloadRecordings() {
 async function viewRecording(id) {
     const det = document.getElementById('recording-detail');
     if (!det) return;
-    det.innerHTML = '<div class="card"><div class="loading-spinner"></div></div>';
+    det.innerHTML = '<div class="card"><div class="loading-center"><div class="loading-spinner"></div></div></div>';
     const [recRes, stepsRes] = await Promise.all([api(`/recordings/${id}`), api(`/recordings/${id}/steps`)]);
     const rec = recRes.ok ? recRes.data : null;
     const steps = stepsRes.ok ? stepsRes.data : [];
@@ -637,10 +667,16 @@ function drawRecordingDetail() {
 
     const tc = document.getElementById('rec-tab-content');
     if (activeTab === 'steps') {
-        tc.innerHTML = steps.length === 0 ? '<div class="empty-state"><p>No steps</p></div>' :
-            steps.map((s, i) => `<div class="step-item"><div class="step-num" style="background:var(--primary-light);color:var(--primary)">${i+1}</div>
-                <div><div style="font-weight:500">${esc(s.raw_gherkin || s.action || '-')}</div>
-                <div style="font-size:11px;color:var(--text2)">${esc(s.selector || '')} ${s.value ? '= '+esc(s.value) : ''}</div></div></div>`).join('');
+        tc.innerHTML = steps.length === 0 ? '<div class="empty-state"><p>No steps</p></div>' : `
+            <div class="table-container"><table>
+                <thead><tr><th style="width:44px">#</th><th>Step</th><th>Selector</th><th>Value</th></tr></thead>
+                <tbody>${steps.map((s, i) => `<tr>
+                    <td style="text-align:center;color:var(--text2);font-weight:600">${i+1}</td>
+                    <td class="td-primary">${esc(s.raw_gherkin || s.action || '-')}</td>
+                    <td class="td-secondary" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(s.selector || '')}">${esc(s.selector || '-')}</td>
+                    <td class="td-secondary">${s.value ? esc(s.value) : '-'}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>`;
     } else if (activeTab === 'json') {
         tc.innerHTML = `<div class="code-block">${esc(JSON.stringify(steps, null, 2))}</div>`;
     } else if (activeTab === 'gherkin') {
@@ -657,15 +693,16 @@ function drawRecordingDetail() {
 async function loadRecordingRuns(recordingId, container) {
     const r = await api(`/recordings/${recordingId}/runs?limit=10`);
     const runs = r.ok ? r.data : [];
-    container.innerHTML = runs.length === 0 ? '<div class="empty-state"><p>No runs yet</p></div>' :
-        runs.map(run => `<div class="timeline-item">
-            <div class="timeline-dot" style="background:${statusColor(run.status)}"></div>
-            <div class="timeline-content">
-                <div class="name"><span class="badge badge-${run.status.toLowerCase()}">${run.status}</span> ${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : ''}</div>
-                <div class="meta">${timeAgo(run.started_at)}</div>
-            </div>
-            <button class="btn btn-sm btn-secondary" onclick="navigate('reports');setTimeout(()=>viewRunDetail(${run.id}),300)">Details</button>
-        </div>`).join('');
+    container.innerHTML = runs.length === 0 ? '<div class="empty-state"><p>No runs yet</p></div>' : `
+        <div class="table-container"><table>
+            <thead><tr><th>Status</th><th>Duration</th><th>When</th><th>Actions</th></tr></thead>
+            <tbody>${runs.map(run => `<tr>
+                <td><span class="badge badge-${run.status.toLowerCase()}">${run.status}</span></td>
+                <td class="td-secondary">${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : '-'}</td>
+                <td class="td-secondary">${timeAgo(run.started_at)}</td>
+                <td><button class="btn btn-sm btn-secondary" onclick="navigate('reports');setTimeout(()=>viewRunDetail(${run.id}),300)">Details</button></td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
 }
 
 async function deleteRecording(id) { if (!confirm('Delete?')) return; await api(`/recordings/${id}`, { method: 'DELETE' }); toast('Deleted'); reloadRecordings(); }
@@ -1199,17 +1236,19 @@ async function renderApiTesting(el) {
                         <h3>API Tests</h3>
                         <button class="btn btn-primary btn-sm" onclick="showNewApiTestModal()">+ New Test</button>
                     </div>
-                    ${tests.length === 0 ? '<div class="empty-state"><p>No API tests yet</p></div>' :
-                        tests.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="editApiTest(${t.id})">
-                            <div>
-                                <div style="font-weight:500;font-size:13px">${esc(t.name)}</div>
-                                <div style="font-size:11px;color:var(--text2)">${esc(t.description || '')}</div>
-                            </div>
-                            <div style="display:flex;gap:4px">
-                                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();runApiTest(${t.id})">Run</button>
-                                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteApiTest(${t.id})">Del</button>
-                            </div>
-                        </div>`).join('')}
+                    ${tests.length === 0 ? '<div class="empty-state"><p>No API tests yet. Create one to get started.</p></div>' : `
+                        <div class="table-container"><table>
+                            <thead><tr><th>Test Name</th><th>Description</th><th>Actions</th></tr></thead>
+                            <tbody>${tests.map(t => `<tr style="cursor:pointer" onclick="editApiTest(${t.id})">
+                                <td class="td-primary">${esc(t.name)}</td>
+                                <td class="td-secondary">${esc(t.description || '-')}</td>
+                                <td><div class="td-actions">
+                                    <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();runApiTest(${t.id})">Run</button>
+                                    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteApiTest(${t.id})">Del</button>
+                                </div></td>
+                            </tr>`).join('')}</tbody>
+                        </table></div>
+                    `}
                 </div>
             </div>
             <div>
@@ -1270,25 +1309,28 @@ async function saveApiTest(id) {
 
 async function runApiTest(id) {
     const resultEl = document.getElementById('api-test-result');
-    if (resultEl) { resultEl.style.display = 'block'; resultEl.innerHTML = '<div class="loading-spinner"></div> Running...'; }
+    if (resultEl) { resultEl.style.display = 'block'; resultEl.innerHTML = '<div class="loading-center"><div class="loading-spinner"></div> Running test...</div>'; }
     const r = await api(`/api-tests/${id}/run`, { method: 'POST' });
-    if (!r.ok) { toast('Run failed', 'error'); return; }
+    if (!r.ok) { toast('Run failed', 'error'); if (resultEl) resultEl.style.display = 'none'; return; }
     const result = r.data;
     if (resultEl) {
         resultEl.innerHTML = `
-            <div class="card-header"><h3>Result <span class="badge badge-${result.status.toLowerCase()}">${result.status}</span></h3>
-                <span style="font-size:12px;color:var(--text2)">${result.duration_ms}ms</span></div>
-            ${(result.requests || []).map((req, i) => `
-                <div style="padding:8px 0;border-bottom:1px solid var(--border)">
-                    <div style="font-weight:500;font-size:13px">Request ${i+1} <span class="badge badge-${req.status?.toLowerCase() || 'failed'}">${req.status || 'ERROR'}</span></div>
-                    <div style="font-size:12px;color:var(--text2)">Status: ${req.status_code || 'N/A'} - ${req.duration_ms || 0}ms</div>
-                    ${req.error ? `<div style="font-size:12px;color:var(--red)">${esc(req.error)}</div>` : ''}
-                    ${(req.assertions || []).map(a => `<div style="font-size:11px;margin-top:2px">
-                        <span class="badge badge-${a.status.toLowerCase()}" style="font-size:10px">${a.status}</span>
-                        ${esc(a.target)} ${esc(a.operator)} "${esc(a.expected)}" (got: "${esc(a.actual || '')}")
+            <div class="card-header"><h3>Result <span class="badge badge-${result.status.toLowerCase()}" style="margin-left:6px">${result.status}</span></h3>
+                <span class="td-secondary">${result.duration_ms}ms</span></div>
+            <div class="table-container"><table>
+                <thead><tr><th>#</th><th>Status</th><th>HTTP</th><th>Duration</th><th>Assertions</th></tr></thead>
+                <tbody>${(result.requests || []).map((req, i) => `<tr${req.status !== 'PASSED' ? ' style="background:var(--red-light)"' : ''}>
+                    <td style="text-align:center;color:var(--text2);font-weight:500">${i+1}</td>
+                    <td><span class="badge badge-${req.status?.toLowerCase() || 'failed'}">${req.status || 'ERROR'}</span></td>
+                    <td class="td-secondary">${req.status_code || 'N/A'}</td>
+                    <td class="td-secondary">${req.duration_ms || 0}ms</td>
+                    <td>${(req.assertions || []).map(a => `<div style="font-size:11px;margin-bottom:2px">
+                        <span class="badge badge-${a.status.toLowerCase()}" style="font-size:9px;padding:1px 6px">${a.status}</span>
+                        <span class="td-secondary">${esc(a.target)} ${esc(a.operator)} "${esc(a.expected)}"</span>
                     </div>`).join('')}
-                </div>
-            `).join('')}
+                    ${req.error ? `<div style="font-size:11px;color:var(--red);margin-top:2px">${esc(req.error)}</div>` : ''}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>
         `;
     }
 }
@@ -1299,6 +1341,7 @@ async function deleteApiTest(id) { if (!confirm('Delete?')) return; await api(`/
 // USERS
 // ============================================================
 async function renderUsers(el) {
+    el.innerHTML = '<div class="loading-center"><div class="loading-spinner"></div> Loading users...</div>';
     const r = await api('/users?includeDeleted=true');
     const users = r.ok ? r.data : [];
     el.innerHTML = `
@@ -1310,18 +1353,18 @@ async function renderUsers(el) {
             <div class="table-container"><table>
                 <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
                 <tbody>${users.map(u => `<tr style="${u.deleted_at ? 'opacity:0.5' : ''}">
-                    <td style="font-weight:500">${esc(u.username)}</td>
+                    <td class="td-primary">${esc(u.username)}</td>
                     <td><span class="badge badge-${u.role.toLowerCase()}">${u.role}</span></td>
                     <td><span class="badge badge-${u.status.toLowerCase()}">${u.status}</span></td>
-                    <td style="font-size:12px;color:var(--text2)">${timeAgo(u.created_at)}</td>
-                    <td style="display:flex;gap:4px;flex-wrap:wrap">
+                    <td class="td-secondary">${timeAgo(u.created_at)}</td>
+                    <td><div class="td-actions">
                         ${u.deleted_at ? `<button class="btn btn-sm btn-success" onclick="restoreUser(${u.id})">Restore</button>` : `
                             <button class="btn btn-sm btn-secondary" onclick="toggleUserRole(${u.id},'${u.role}')">${u.role==='ADMIN'?'Demote':'Promote'}</button>
                             <button class="btn btn-sm btn-secondary" onclick="toggleUserStatus(${u.id},'${u.status}')">${u.status==='ACTIVE'?'Deactivate':'Activate'}</button>
                             <button class="btn btn-sm btn-secondary" onclick="showChangePasswordModal(${u.id})">Password</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">Delete</button>
                         `}
-                    </td>
+                    </div></td>
                 </tr>`).join('')}</tbody>
             </table></div>
         </div>
@@ -1361,6 +1404,7 @@ async function restoreUser(id) { await api(`/users/${id}/restore`, { method: 'PU
 // SETTINGS
 // ============================================================
 async function renderSettings(el) {
+    el.innerHTML = '<div class="loading-center"><div class="loading-spinner"></div> Loading settings...</div>';
     const r = await api('/settings/sidebar');
     const users = r.ok ? r.data : [];
     const pages = ['dashboard', 'reports', 'projects', 'recordings', 'recorder', 'replayer', 'api-testing'];
@@ -1368,20 +1412,22 @@ async function renderSettings(el) {
     el.innerHTML = `
         <div class="card">
             <div class="card-header"><h3>Sidebar Visibility Settings</h3></div>
-            <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Control which pages are visible in the sidebar for each Resource user.</p>
-            ${users.length === 0 ? '<div class="empty-state"><p>No resource users</p></div>' :
-                users.map(u => `<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                    <div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(u.username)}</div>
-                    <div style="display:flex;gap:16px;flex-wrap:wrap">
-                        ${pages.map(p => `<label style="display:flex;align-items:center;gap:6px;font-size:13px">
+            <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Control which pages are visible in the sidebar for each Resource user.</p>
+            ${users.length === 0 ? '<div class="empty-state"><p>No resource users configured</p></div>' :
+                users.map(u => `<div style="margin-bottom:20px;padding:16px;background:var(--bg3);border-radius:var(--radius-lg);border:1px solid var(--border)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <div style="font-weight:600;font-size:14px">${esc(u.username)}</div>
+                        <button class="btn btn-primary btn-sm" onclick="saveSidebarSettings(${u.id})">Save Changes</button>
+                    </div>
+                    <div style="display:flex;gap:20px;flex-wrap:wrap">
+                        ${pages.map(p => `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer">
                             <label class="toggle-switch">
                                 <input type="checkbox" data-user="${u.id}" data-page="${p}" ${u.sidebar[p] !== false ? 'checked' : ''}>
                                 <span class="toggle-slider"></span>
                             </label>
-                            ${p}
+                            <span style="text-transform:capitalize">${p.replace('-', ' ')}</span>
                         </label>`).join('')}
                     </div>
-                    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="saveSidebarSettings(${u.id})">Save</button>
                 </div>`).join('')}
         </div>
     `;
