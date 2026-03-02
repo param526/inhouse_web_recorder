@@ -31,40 +31,42 @@
 
         /* Sidebar */
         .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
-            background: var(--bg2); border-right: 1px solid var(--border); z-index: 100;
-            display: flex; flex-direction: column; transition: transform 0.3s ease; box-shadow: var(--shadow); }
+            background: linear-gradient(180deg, #1e40af 0%, #1d4ed8 100%); border-right: none; z-index: 100;
+            display: flex; flex-direction: column; transition: transform 0.3s ease;
+            box-shadow: 2px 0 12px rgba(30,64,175,0.15); }
         .sidebar.collapsed { transform: translateX(-100%); }
-        .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border);
+        .sidebar-header { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.15);
             display: flex; align-items: center; gap: 10px; }
         .sidebar-header .logo { width: 34px; height: 34px; border-radius: 8px;
-            background: linear-gradient(135deg, var(--primary), var(--cyan));
+            background: rgba(255,255,255,0.2);
             display: flex; align-items: center; justify-content: center; font-weight: 700;
             font-size: 16px; color: white; }
-        .sidebar-header h2 { font-size: 14px; font-weight: 600; color: var(--text); }
-        .sidebar-header .version { font-size: 10px; color: var(--text3); }
+        .sidebar-header h2 { font-size: 14px; font-weight: 600; color: #ffffff; }
+        .sidebar-header .version { font-size: 10px; color: rgba(255,255,255,0.6); }
         .sidebar-nav { flex: 1; padding: 8px; overflow-y: auto; }
         .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-            border-radius: var(--radius); color: var(--text2); font-size: 13.5px; font-weight: 500;
+            border-radius: var(--radius); color: rgba(255,255,255,0.75); font-size: 13.5px; font-weight: 500;
             transition: all 0.15s; cursor: pointer; margin-bottom: 2px; }
-        .nav-item:hover { background: var(--primary-light); color: var(--primary); }
-        .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+        .nav-item:hover { background: rgba(255,255,255,0.12); color: #ffffff; }
+        .nav-item.active { background: rgba(255,255,255,0.18); color: #ffffff; font-weight: 600; }
         .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
 
         /* Topbar */
         .topbar { position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--topbar-h);
-            background: var(--bg2); border-bottom: 1px solid var(--border); z-index: 90;
-            display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+            background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%); border-bottom: none; z-index: 90;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+            box-shadow: 0 2px 8px rgba(30,64,175,0.12); }
         .topbar-left { display: flex; align-items: center; gap: 12px; }
-        .topbar-left .hamburger { display: none; background: none; border: none; color: var(--text);
+        .topbar-left .hamburger { display: none; background: none; border: none; color: #ffffff;
             font-size: 20px; padding: 4px 8px; }
-        .topbar-title { font-size: 16px; font-weight: 600; color: var(--text); }
-        .topbar-subtitle { font-size: 12px; color: var(--text2); }
+        .topbar-title { font-size: 16px; font-weight: 600; color: #ffffff; }
+        .topbar-subtitle { font-size: 12px; color: rgba(255,255,255,0.7); }
         .topbar-right { display: flex; align-items: center; gap: 12px; }
         .user-badge { display: flex; align-items: center; gap: 8px; padding: 6px 14px;
-            border-radius: 20px; background: var(--primary-light); font-size: 13px; color: var(--primary); font-weight: 500; }
-        .btn-logout { background: none; border: 1px solid var(--border); color: var(--text2);
+            border-radius: 20px; background: rgba(255,255,255,0.18); font-size: 13px; color: #ffffff; font-weight: 500; }
+        .btn-logout { background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.85);
             padding: 6px 14px; border-radius: 6px; font-size: 12px; transition: all 0.15s; }
-        .btn-logout:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+        .btn-logout:hover { border-color: #fca5a5; color: #fca5a5; background: rgba(220,38,38,0.15); }
 
         /* Main content */
         .main-content { margin-left: var(--sidebar-w); margin-top: var(--topbar-h);
