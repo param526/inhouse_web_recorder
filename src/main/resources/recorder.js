@@ -59,13 +59,28 @@
         }, LS_FLUSH_INTERVAL_MS);
     }
 
+    // ---- Flush all pending debounced text-change events immediately ----
+    function flushPendingTextChanges() {
+        Object.keys(pendingTextChangeTimers).forEach(function (key) {
+            var item = pendingTextChangeTimers[key];
+            if (item) {
+                clearTimeout(item.timeoutId);
+                if (item.rec) {
+                    (window.__recordedEvents || (window.__recordedEvents = [])).push(item.rec);
+                    lsDirty = true;
+                }
+                delete pendingTextChangeTimers[key];
+            }
+        });
+    }
+
     // ---- Central place to store and persist each event ----
     function persistEvent(rec) {
         // ✅ FIX 2: Strict Deduplication Logic
         const signature = `${rec.type}|${rec.action}|${rec.raw_selenium}|${rec.raw_gherkin}`;
         const now = Date.now();
 
-        if (signature === lastEventSignature && (now - lastEventTimestamp < 150)) {
+        if (signature === lastEventSignature && (now - lastEventTimestamp < 500)) {
             return;
         }
 
@@ -80,6 +95,9 @@
 
     // ===================== UPDATED logNavigation =====================
     function logNavigation(url) {
+        // Flush any pending sendKeys events BEFORE recording navigation
+        flushPendingTextChanges();
+
         if (!window.__recordedEvents) {
             window.__recordedEvents = [];
         }
@@ -189,12 +207,7 @@
 
     // ✅ FIX 3: Unload Flusher
     window.addEventListener('beforeunload', function () {
-        Object.keys(pendingTextChangeTimers).forEach(key => {
-            const item = pendingTextChangeTimers[key];
-            if (item && item.rec) {
-                (window.__recordedEvents || (window.__recordedEvents = [])).push(item.rec);
-            }
-        });
+        flushPendingTextChanges();
 
         try {
             if (window.__recordedEvents) {
@@ -720,7 +733,7 @@
                     (t.type === 'checkbox' || t.type === 'radio');
 
                 if (!isCheckLike) {
-                    let clickable = t.closest('a[href], button, [role="button"], [role="link"], [onclick]');
+                    let clickable = t.closest('a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="tab"], [onclick], oj-option, oj-menu-item');
                     if (clickable) t = clickable;
                 }
             }
@@ -729,9 +742,10 @@
 
             // Filter out non-interactive clicks
             const isInteractive =
-                ['a', 'button', 'input', 'select', 'textarea'].includes(tag) ||
+                ['a', 'button', 'input', 'select', 'textarea', 'oj-option', 'oj-menu-item', 'oj-button'].includes(tag) ||
                 t.getAttribute('role') ||
                 t.onclick ||
+                t.hasAttribute('tabindex') ||
                 (t.closest && t.closest('[onclick]'));
 
             if (e.type === 'click' && !isInteractive) {
@@ -885,6 +899,10 @@
 
             // === Click Handling ===
             if (e.type === 'click') {
+                // Flush any pending sendKeys events BEFORE recording the click
+                // so that text input maintains correct chronological order
+                flushPendingTextChanges();
+
                 rec.action = 'click';
                 rec.selector = tag;
 
@@ -986,9 +1004,10 @@
         const cls = el.className || '';
         const role = (el.getAttribute && el.getAttribute('role')) || '';
 
-        // You can tune this list based on your app
         if (tag === 'a' || tag === 'button') return true;
-        if (role === 'button' || role === 'menuitem') return true;
+        if (tag.startsWith('oj-')) return true;  // Oracle JET custom elements
+        if (role === 'button' || role === 'menuitem' || role === 'menuitemradio' ||
+            role === 'menuitemcheckbox' || role === 'option' || role === 'tab' || role === 'link') return true;
 
         // Typical "user menu" / navbar icons etc.
         if (cls.indexOf('sidenav_option-icon') !== -1) return true;
@@ -1004,7 +1023,7 @@
             if (!el.closest) return;
 
             // Walk up to a reasonable "hover root"
-            let root = el.closest('a, button, [role="button"], [role="menuitem"], .sidenav_option-icon, .menu, .dropdown-toggle, .oj-menu');
+            let root = el.closest('a, button, [role="button"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="tab"], .sidenav_option-icon, .menu, .dropdown-toggle, .oj-menu, oj-option, oj-menu-item, oj-button');
             if (!root || !isHoverRoot(root)) return;
 
             const accName = getAccessibleName(root);
@@ -1079,6 +1098,75 @@
     })();
 
     ['click', 'change'].forEach(type => window.addEventListener(type, recordEvent, true));
+
+    // ---- Pre-capture mousedown on navigation-triggering elements ----
+    // Some menu items (signout, logout) cause immediate page unload on click,
+    // so the click event may never finish persisting. We capture on mousedown
+    // for elements likely to navigate away, and synchronously flush to localStorage.
+    window.addEventListener('mousedown', function (e) {
+        try {
+            if (!e || !e.isTrusted || !e.target) return;
+            var t = e.target;
+            if (!t.closest) return;
+
+            // Find the closest navigating ancestor
+            var navEl = t.closest('a[href], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], oj-option, oj-menu-item');
+            if (!navEl) return;
+
+            // Check if this looks like a sign-out / logout / navigation-away action
+            var elText = (navEl.innerText || navEl.textContent || '').trim().toLowerCase();
+            var href = navEl.getAttribute('href') || '';
+            var isNavAway = /sign.?out|log.?out|exit|quit|leave/i.test(elText) ||
+                            /sign.?out|log.?out|exit|quit/i.test(href) ||
+                            (href && href !== '#' && href !== 'javascript:void(0)' && !href.startsWith('#'));
+
+            if (!isNavAway) return;
+
+            // Flush any pending text changes first
+            flushPendingTextChanges();
+
+            // Pre-record this click so it's not lost on unload
+            var accName = getAccessibleName(navEl);
+            var gherkinName = (navEl.innerText || navEl.textContent || '').trim() || accName || navEl.id || 'element';
+            var locator = generateSeleniumLocator(navEl, accName);
+            var locatorValue = locator.value.replace(/\"/g, '\\\"');
+            var tagName = navEl.tagName.toLowerCase();
+
+            var gherkinText;
+            if (tagName === 'a') {
+                gherkinText = 'I click on the "' + gherkinName + '" link';
+            } else if (tagName === 'button' || navEl.getAttribute('role') === 'button') {
+                gherkinText = 'I click on the "' + gherkinName + '" button';
+            } else if (navEl.getAttribute('role') === 'menuitem' || tagName.startsWith('oj-')) {
+                gherkinText = 'I click on the "' + gherkinName + '" menu item';
+            } else {
+                gherkinText = 'I click on "' + gherkinName + '"';
+            }
+
+            var rec = {
+                timestamp: Date.now(),
+                type: 'click',
+                action: 'click',
+                title: document.title,
+                selector: tagName,
+                options: { element_text: gherkinName, primary_name: gherkinName },
+                raw_gherkin: gherkinText,
+                raw_selenium: 'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();',
+                _preCapture: true  // marker so click handler can skip duplicate
+            };
+            var targetInfo = buildRecordedTarget(navEl);
+            if (targetInfo) rec.target = targetInfo;
+
+            persistEvent(rec);
+
+            // Synchronously flush to localStorage in case page unloads immediately
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents || []));
+            } catch (ex) {}
+        } catch (err) {
+            console.log('[recorder] mousedown pre-capture error', err);
+        }
+    }, true);
 
     // ============================================================
     //  Recording Save UI: custom name, timestamp, recent names, preview
