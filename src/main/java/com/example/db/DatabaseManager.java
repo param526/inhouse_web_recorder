@@ -1,5 +1,6 @@
 package com.example.db;
 
+import com.example.util.AppConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -12,11 +13,11 @@ public class DatabaseManager {
     private static HikariDataSource dataSource;
 
     public static void init() {
-        String host = env("DB_HOST", "localhost");
-        String port = env("DB_PORT", "3306");
-        String dbName = env("DB_NAME", "recorder_db");
-        String user = env("DB_USER", "root");
-        String pass = env("DB_PASSWORD", "");
+        String host = AppConfig.get("db.host", "localhost");
+        String port = AppConfig.get("db.port", "3306");
+        String dbName = AppConfig.get("db.name", "recorder_db");
+        String user = AppConfig.get("db.user", "root");
+        String pass = AppConfig.get("db.password", "");
 
         String url = "jdbc:mysql://" + host + ":" + port + "/" + dbName
                 + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
@@ -25,11 +26,11 @@ public class DatabaseManager {
         config.setJdbcUrl(url);
         config.setUsername(user);
         config.setPassword(pass);
-        config.setMaximumPoolSize(10);
-        config.setMinimumIdle(2);
-        config.setConnectionTimeout(30000);
-        config.setIdleTimeout(600000);
-        config.setMaxLifetime(1800000);
+        config.setMaximumPoolSize(AppConfig.getInt("db.maxPoolSize", 10));
+        config.setMinimumIdle(AppConfig.getInt("db.minIdle", 2));
+        config.setConnectionTimeout(AppConfig.getLong("db.connectionTimeout", 30000));
+        config.setIdleTimeout(AppConfig.getLong("db.idleTimeout", 600000));
+        config.setMaxLifetime(AppConfig.getLong("db.maxLifetime", 1800000));
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
@@ -238,8 +239,4 @@ public class DatabaseManager {
         }
     }
 
-    private static String env(String key, String defaultVal) {
-        String val = System.getenv(key);
-        return (val != null && !val.isEmpty()) ? val : defaultVal;
-    }
 }

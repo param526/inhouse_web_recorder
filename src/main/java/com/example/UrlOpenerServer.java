@@ -6,6 +6,7 @@ import com.example.auth.AuthFilter;
 import com.example.auth.JwtUtil;
 import com.example.db.DatabaseManager;
 import com.example.routes.*;
+import com.example.util.AppConfig;
 import com.example.util.EncryptionUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -21,13 +22,17 @@ public class UrlOpenerServer {
 
     public static void main(String[] args) {
 
+        // Load configuration
+        AppConfig.load();
+
         // Initialize infrastructure
         EncryptionUtil.init();
         JwtUtil.init();
         DatabaseManager.init();
 
         // Configure Spark
-        port(4567);
+        int serverPort = AppConfig.getInt("server.port", 4567);
+        port(serverPort);
         staticFiles.location("/public");
 
         // CORS for SPA
@@ -142,7 +147,7 @@ public class UrlOpenerServer {
         awaitInitialization();
         System.out.println("==============================================");
         System.out.println("  Selenium Recorder & Replayer v2.0.0");
-        System.out.println("  Running on http://localhost:4567");
+        System.out.println("  Running on http://localhost:" + serverPort);
         System.out.println("==============================================");
 
         // Shutdown hook

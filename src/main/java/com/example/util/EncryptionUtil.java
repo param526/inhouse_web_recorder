@@ -20,10 +20,9 @@ public class EncryptionUtil {
     private static SecretKey secretKey;
 
     public static void init() {
-        String envKey = System.getenv("DB_ENCRYPTION_KEY");
-        if (envKey == null || envKey.isEmpty()) {
-            envKey = "default-dev-key-change-in-production";
-            System.out.println("[ENCRYPTION] WARNING: Using default encryption key. Set DB_ENCRYPTION_KEY for production.");
+        String envKey = AppConfig.get("encryption.key", "default-dev-key-change-in-production");
+        if ("default-dev-key-change-in-production".equals(envKey)) {
+            System.out.println("[ENCRYPTION] WARNING: Using default encryption key. Set ENCRYPTION_KEY env var or encryption.key in application.properties for production.");
         }
         try {
             MessageDigest sha = MessageDigest.getInstance("SHA-256");

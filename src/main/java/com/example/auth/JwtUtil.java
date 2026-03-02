@@ -1,5 +1,6 @@
 package com.example.auth;
 
+import com.example.util.AppConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -13,13 +14,11 @@ import java.util.Date;
 public class JwtUtil {
 
     private static SecretKey signingKey;
-    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+    private static long expirationMs;
 
     public static void init() {
-        String secret = System.getenv("JWT_SECRET");
-        if (secret == null || secret.isEmpty()) {
-            secret = "default-jwt-secret-change-in-production-please";
-        }
+        String secret = AppConfig.get("jwt.secret", "default-jwt-secret-change-in-production-please");
+        expirationMs = AppConfig.getLong("jwt.expirationMs", 86400000);
         try {
             MessageDigest sha = MessageDigest.getInstance("SHA-256");
             byte[] keyBytes = sha.digest(secret.getBytes(StandardCharsets.UTF_8));
@@ -32,7 +31,7 @@ public class JwtUtil {
 
     public static String generateToken(long userId, String username, String role) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + EXPIRATION_MS);
+        Date expiry = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
