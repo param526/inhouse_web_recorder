@@ -851,6 +851,11 @@
                 primary_name: gherkinName
             };
 
+            // Flush pending sendKeys BEFORE hover and click, so text input order is correct
+            if (e.type === 'click') {
+                flushPendingTextChanges();
+            }
+
             // 🔹 Synthetic HOVER step before click, if needed
             if (e.type === 'click' && lastHoverInfo && lastHoverInfo.element && lastHoverInfo.locator) {
                 try {
@@ -899,10 +904,6 @@
 
             // === Click Handling ===
             if (e.type === 'click') {
-                // Flush any pending sendKeys events BEFORE recording the click
-                // so that text input maintains correct chronological order
-                flushPendingTextChanges();
-
                 rec.action = 'click';
                 rec.selector = tag;
 

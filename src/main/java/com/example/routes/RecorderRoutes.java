@@ -278,12 +278,63 @@ public class RecorderRoutes {
             List<Object> currentActions = (List<Object>) js.executeScript("return window.__recordedEvents || [];");
             if (currentActions != null && !currentActions.isEmpty()) {
                 ALL_RECORDED_ACTIONS.addAll(currentActions);
-                js.executeScript("window.__recordedEvents = [];");
+                // Clear browser events AND localStorage to prevent re-loading on next page
+                js.executeScript("window.__recordedEvents = []; try { localStorage.removeItem('__recordedEvents'); } catch(e) {}");
+                // Sort all actions by timestamp and deduplicate
+                sortAndDeduplicateActions();
             }
         } catch (WebDriverException ignored) {
         } catch (Exception e) {
             System.err.println("Error transferring actions: " + e.getMessage());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void sortAndDeduplicateActions() {
+        try {
+            // Sort by timestamp
+            ALL_RECORDED_ACTIONS.sort((a, b) -> {
+                long tsA = getTimestamp(a);
+                long tsB = getTimestamp(b);
+                return Long.compare(tsA, tsB);
+            });
+
+            // Deduplicate: remove consecutive events with same signature
+            java.util.Set<String> seen = new java.util.LinkedHashSet<>();
+            List<Object> deduped = new java.util.ArrayList<>();
+            for (Object action : ALL_RECORDED_ACTIONS) {
+                String sig = getActionSignature(action);
+                if (seen.add(sig)) {
+                    deduped.add(action);
+                }
+            }
+            ALL_RECORDED_ACTIONS.clear();
+            ALL_RECORDED_ACTIONS.addAll(deduped);
+        } catch (Exception e) {
+            System.err.println("Error sorting actions: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static long getTimestamp(Object action) {
+        if (action instanceof Map) {
+            Object ts = ((Map<String, Object>) action).get("timestamp");
+            if (ts instanceof Number) return ((Number) ts).longValue();
+        }
+        return 0L;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String getActionSignature(Object action) {
+        if (action instanceof Map) {
+            Map<String, Object> m = (Map<String, Object>) action;
+            String type = String.valueOf(m.getOrDefault("type", ""));
+            String act = String.valueOf(m.getOrDefault("action", ""));
+            String gherkin = String.valueOf(m.getOrDefault("raw_gherkin", ""));
+            long ts = getTimestamp(action);
+            return type + "|" + act + "|" + gherkin + "|" + ts;
+        }
+        return action.toString();
     }
 
     private static boolean closeCurrentDriver() {
