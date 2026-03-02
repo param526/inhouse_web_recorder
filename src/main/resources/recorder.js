@@ -259,7 +259,7 @@
     function le_addDataTestCandidates(el, attrs, candidates) {
         for (var key in attrs) {
             if (!attrs.hasOwnProperty(key)) continue;
-            if (/^data-(testid|test-id|qa|test|cy)$/i.test(key)) {
+            if (/^data-(testid|test-id|qa|test|cy|automation-id)$/i.test(key)) {
                 var v = attrs[key];
                 if (v) {
                     le_addCandidate(candidates, 'dataTest', '[' + key + '="' + v + '"]', 100);
@@ -314,6 +314,85 @@
         }
     }
 
+    function le_addPlaceholderCandidate(el, attrs, candidates) {
+        var ph = attrs['placeholder'];
+        if (!ph) return;
+        var norm = le_normalizeText(ph);
+        if (!norm) return;
+        var tag = el.tagName.toLowerCase();
+        le_addCandidate(candidates, 'css', tag + '[placeholder="' + norm + '"]', 78);
+    }
+
+    function le_addTitleCandidates(el, attrs, candidates) {
+        var titleAttr = attrs['title'];
+        if (!titleAttr) return;
+        var norm = le_normalizeText(titleAttr);
+        if (!norm) return;
+        le_addCandidate(candidates, 'titleCss', '[title="' + norm + '"]', 76);
+    }
+
+    function le_addAriaLabelledByCandidates(el, attrs, candidates) {
+        var labelledBy = attrs['aria-labelledby'];
+        if (!labelledBy) return;
+        var doc = el.ownerDocument;
+        if (!doc) return;
+        var ids = labelledBy.trim().split(/\s+/);
+        var textParts = [];
+        for (var i = 0; i < ids.length; i++) {
+            var refEl = doc.getElementById(ids[i]);
+            if (refEl) {
+                var t = le_normalizeText(refEl.innerText || refEl.textContent || '');
+                if (t) textParts.push(t);
+            }
+        }
+        if (textParts.length > 0) {
+            var joined = textParts.join(' ');
+            le_addCandidate(candidates, 'aria', '[aria-labelledby="' + labelledBy + '"]', 74);
+        }
+    }
+
+    function le_addHrefCandidate(el, attrs, candidates) {
+        if (el.tagName.toLowerCase() !== 'a') return;
+        var href = attrs['href'];
+        if (!href || href === '#' || href === 'javascript:void(0)') return;
+        // Only use short, stable hrefs (no query strings, no hashes)
+        if (href.length > 80 || /[?#]/.test(href)) return;
+        le_addCandidate(candidates, 'css', 'a[href="' + href + '"]', 55);
+    }
+
+    function le_addInputTypeCandidate(el, attrs, candidates) {
+        var tag = el.tagName.toLowerCase();
+        if (tag !== 'input') return;
+        var type = (attrs['type'] || 'text').toLowerCase();
+        // Only generate for distinctive types
+        if (['email', 'search', 'tel', 'url', 'file', 'date', 'time', 'datetime-local', 'month', 'week', 'color', 'number', 'range'].indexOf(type) === -1) return;
+        le_addCandidate(candidates, 'css', 'input[type="' + type + '"]', 35);
+    }
+
+    function le_addContentEditableCandidate(el, attrs, candidates) {
+        if (attrs['contenteditable'] !== 'true') return;
+        var tag = el.tagName.toLowerCase();
+        var roleAttr = attrs['role'] || '';
+        if (roleAttr) {
+            le_addCandidate(candidates, 'css', '[contenteditable="true"][role="' + roleAttr + '"]', 70);
+        } else {
+            le_addCandidate(candidates, 'css', tag + '[contenteditable="true"]', 65);
+        }
+    }
+
+    function le_addRoleOnlyCandidate(el, attrs, candidates) {
+        var roleAttr = (attrs['role'] || '').toLowerCase();
+        if (!roleAttr) return;
+        // Only for roles where role-only selection makes sense
+        if (['tab', 'menuitem', 'option', 'switch', 'slider', 'progressbar', 'treeitem', 'gridcell'].indexOf(roleAttr) === -1) return;
+        var tag = el.tagName.toLowerCase();
+        var text = le_normalizeText(le_getElementText(el));
+        if (text) {
+            // role + text is more specific
+            le_addCandidate(candidates, 'css', '[role="' + roleAttr + '"]', 30);
+        }
+    }
+
     function le_addTextBasedCandidates(el, text, attrs, candidates) {
         var tag = el.tagName.toLowerCase();
         var normText = le_normalizeText(text);
@@ -329,17 +408,19 @@
 
         var isLinkLike = tag === 'a' || roleAttr === 'link';
 
+        var safeText = normText.indexOf("'") === -1 ? "'" + normText + "'" : xpathLiteral(normText);
+
         if (isButtonLike || isLinkLike) {
             le_addCandidate(
                 candidates,
                 'xpathText',
-                '//' + tag + "[normalize-space(.)='" + normText + "']",
+                '//' + tag + '[normalize-space(.)=' + safeText + ']',
                 65
             );
             le_addCandidate(
                 candidates,
                 'xpathText',
-                "//span[normalize-space(.)='" + normText + "']/ancestor::" + tag + "[1]",
+                '//span[normalize-space(.)=' + safeText + ']/ancestor::' + tag + '[1]',
                 60
             );
         }
@@ -348,7 +429,7 @@
             le_addCandidate(
                 candidates,
                 'roleText',
-                "//*[@role='" + roleAttr + "'][normalize-space(.)='" + normText + "']",
+                "//*[@role='" + roleAttr + "'][normalize-space(.)=" + safeText + "]",
                 60
             );
         }
@@ -364,10 +445,11 @@
             if (label) {
                 var lbl = le_normalizeText(label.innerText || label.textContent || '');
                 if (lbl) {
+                    var safeLbl = lbl.indexOf("'") === -1 ? "'" + lbl + "'" : xpathLiteral(lbl);
                     le_addCandidate(
                         candidates,
                         'labelText',
-                        "//label[normalize-space(.)='" + lbl + "']/following::" + el.tagName.toLowerCase() + "[1]",
+                        "//label[normalize-space(.)=" + safeLbl + "]/following::" + el.tagName.toLowerCase() + "[1]",
                         60
                     );
                 }
@@ -378,10 +460,11 @@
         if (labelParent) {
             var lbl2 = le_normalizeText(labelParent.innerText || labelParent.textContent || '');
             if (lbl2) {
+                var safeLbl2 = lbl2.indexOf("'") === -1 ? "'" + lbl2 + "'" : xpathLiteral(lbl2);
                 le_addCandidate(
                     candidates,
                     'labelText',
-                    "//label[normalize-space(.)='" + lbl2 + "']//" + el.tagName.toLowerCase() + "[1]",
+                    "//label[normalize-space(.)=" + safeLbl2 + "]//" + el.tagName.toLowerCase() + "[1]",
                     55
                 );
             }
@@ -473,9 +556,16 @@
         le_addDataTestCandidates(element, attrs, candidates);
         le_addIdCandidates(element, attrs, candidates);
         le_addNameCandidates(element, attrs, candidates);
+        le_addPlaceholderCandidate(element, attrs, candidates);
         le_addAccessibleTextCandidates(element, attrs, candidates);
+        le_addTitleCandidates(element, attrs, candidates);
+        le_addAriaLabelledByCandidates(element, attrs, candidates);
+        le_addContentEditableCandidate(element, attrs, candidates);
         le_addTextBasedCandidates(element, text, attrs, candidates);
         le_addLabelTextCandidates(element, attrs, candidates);
+        le_addHrefCandidate(element, attrs, candidates);
+        le_addInputTypeCandidate(element, attrs, candidates);
+        le_addRoleOnlyCandidate(element, attrs, candidates);
         le_addCssFallbackCandidates(element, attrs, candidates);
 
         var locators = le_dedupeAndSort(candidates);
