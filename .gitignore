@@ -5,3 +5,5 @@
 /pom.xml
 /README.md
 /replay-recordings
+.env
+.env.*

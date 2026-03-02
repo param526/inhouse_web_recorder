@@ -59,13 +59,28 @@
         }, LS_FLUSH_INTERVAL_MS);
     }
 
+    // ---- Flush all pending debounced text-change events immediately ----
+    function flushPendingTextChanges() {
+        Object.keys(pendingTextChangeTimers).forEach(function (key) {
+            var item = pendingTextChangeTimers[key];
+            if (item) {
+                clearTimeout(item.timeoutId);
+                if (item.rec) {
+                    (window.__recordedEvents || (window.__recordedEvents = [])).push(item.rec);
+                    lsDirty = true;
+                }
+                delete pendingTextChangeTimers[key];
+            }
+        });
+    }
+
     // ---- Central place to store and persist each event ----
     function persistEvent(rec) {
         // ✅ FIX 2: Strict Deduplication Logic
         const signature = `${rec.type}|${rec.action}|${rec.raw_selenium}|${rec.raw_gherkin}`;
         const now = Date.now();
 
-        if (signature === lastEventSignature && (now - lastEventTimestamp < 150)) {
+        if (signature === lastEventSignature && (now - lastEventTimestamp < 500)) {
             return;
         }
 
@@ -80,6 +95,9 @@
 
     // ===================== UPDATED logNavigation =====================
     function logNavigation(url) {
+        // Flush any pending sendKeys events BEFORE recording navigation
+        flushPendingTextChanges();
+
         if (!window.__recordedEvents) {
             window.__recordedEvents = [];
         }
@@ -189,12 +207,7 @@
 
     // ✅ FIX 3: Unload Flusher
     window.addEventListener('beforeunload', function () {
-        Object.keys(pendingTextChangeTimers).forEach(key => {
-            const item = pendingTextChangeTimers[key];
-            if (item && item.rec) {
-                (window.__recordedEvents || (window.__recordedEvents = [])).push(item.rec);
-            }
-        });
+        flushPendingTextChanges();
 
         try {
             if (window.__recordedEvents) {
@@ -259,7 +272,7 @@
     function le_addDataTestCandidates(el, attrs, candidates) {
         for (var key in attrs) {
             if (!attrs.hasOwnProperty(key)) continue;
-            if (/^data-(testid|test-id|qa|test|cy)$/i.test(key)) {
+            if (/^data-(testid|test-id|qa|test|cy|automation-id)$/i.test(key)) {
                 var v = attrs[key];
                 if (v) {
                     le_addCandidate(candidates, 'dataTest', '[' + key + '="' + v + '"]', 100);
@@ -314,6 +327,85 @@
         }
     }
 
+    function le_addPlaceholderCandidate(el, attrs, candidates) {
+        var ph = attrs['placeholder'];
+        if (!ph) return;
+        var norm = le_normalizeText(ph);
+        if (!norm) return;
+        var tag = el.tagName.toLowerCase();
+        le_addCandidate(candidates, 'css', tag + '[placeholder="' + norm + '"]', 78);
+    }
+
+    function le_addTitleCandidates(el, attrs, candidates) {
+        var titleAttr = attrs['title'];
+        if (!titleAttr) return;
+        var norm = le_normalizeText(titleAttr);
+        if (!norm) return;
+        le_addCandidate(candidates, 'titleCss', '[title="' + norm + '"]', 76);
+    }
+
+    function le_addAriaLabelledByCandidates(el, attrs, candidates) {
+        var labelledBy = attrs['aria-labelledby'];
+        if (!labelledBy) return;
+        var doc = el.ownerDocument;
+        if (!doc) return;
+        var ids = labelledBy.trim().split(/\s+/);
+        var textParts = [];
+        for (var i = 0; i < ids.length; i++) {
+            var refEl = doc.getElementById(ids[i]);
+            if (refEl) {
+                var t = le_normalizeText(refEl.innerText || refEl.textContent || '');
+                if (t) textParts.push(t);
+            }
+        }
+        if (textParts.length > 0) {
+            var joined = textParts.join(' ');
+            le_addCandidate(candidates, 'aria', '[aria-labelledby="' + labelledBy + '"]', 74);
+        }
+    }
+
+    function le_addHrefCandidate(el, attrs, candidates) {
+        if (el.tagName.toLowerCase() !== 'a') return;
+        var href = attrs['href'];
+        if (!href || href === '#' || href === 'javascript:void(0)') return;
+        // Only use short, stable hrefs (no query strings, no hashes)
+        if (href.length > 80 || /[?#]/.test(href)) return;
+        le_addCandidate(candidates, 'css', 'a[href="' + href + '"]', 55);
+    }
+
+    function le_addInputTypeCandidate(el, attrs, candidates) {
+        var tag = el.tagName.toLowerCase();
+        if (tag !== 'input') return;
+        var type = (attrs['type'] || 'text').toLowerCase();
+        // Only generate for distinctive types
+        if (['email', 'search', 'tel', 'url', 'file', 'date', 'time', 'datetime-local', 'month', 'week', 'color', 'number', 'range'].indexOf(type) === -1) return;
+        le_addCandidate(candidates, 'css', 'input[type="' + type + '"]', 35);
+    }
+
+    function le_addContentEditableCandidate(el, attrs, candidates) {
+        if (attrs['contenteditable'] !== 'true') return;
+        var tag = el.tagName.toLowerCase();
+        var roleAttr = attrs['role'] || '';
+        if (roleAttr) {
+            le_addCandidate(candidates, 'css', '[contenteditable="true"][role="' + roleAttr + '"]', 70);
+        } else {
+            le_addCandidate(candidates, 'css', tag + '[contenteditable="true"]', 65);
+        }
+    }
+
+    function le_addRoleOnlyCandidate(el, attrs, candidates) {
+        var roleAttr = (attrs['role'] || '').toLowerCase();
+        if (!roleAttr) return;
+        // Only for roles where role-only selection makes sense
+        if (['tab', 'menuitem', 'option', 'switch', 'slider', 'progressbar', 'treeitem', 'gridcell'].indexOf(roleAttr) === -1) return;
+        var tag = el.tagName.toLowerCase();
+        var text = le_normalizeText(le_getElementText(el));
+        if (text) {
+            // role + text is more specific
+            le_addCandidate(candidates, 'css', '[role="' + roleAttr + '"]', 30);
+        }
+    }
+
     function le_addTextBasedCandidates(el, text, attrs, candidates) {
         var tag = el.tagName.toLowerCase();
         var normText = le_normalizeText(text);
@@ -329,17 +421,19 @@
 
         var isLinkLike = tag === 'a' || roleAttr === 'link';
 
+        var safeText = normText.indexOf("'") === -1 ? "'" + normText + "'" : xpathLiteral(normText);
+
         if (isButtonLike || isLinkLike) {
             le_addCandidate(
                 candidates,
                 'xpathText',
-                '//' + tag + "[normalize-space(.)='" + normText + "']",
+                '//' + tag + '[normalize-space(.)=' + safeText + ']',
                 65
             );
             le_addCandidate(
                 candidates,
                 'xpathText',
-                "//span[normalize-space(.)='" + normText + "']/ancestor::" + tag + "[1]",
+                '//span[normalize-space(.)=' + safeText + ']/ancestor::' + tag + '[1]',
                 60
             );
         }
@@ -348,7 +442,7 @@
             le_addCandidate(
                 candidates,
                 'roleText',
-                "//*[@role='" + roleAttr + "'][normalize-space(.)='" + normText + "']",
+                "//*[@role='" + roleAttr + "'][normalize-space(.)=" + safeText + "]",
                 60
             );
         }
@@ -364,10 +458,11 @@
             if (label) {
                 var lbl = le_normalizeText(label.innerText || label.textContent || '');
                 if (lbl) {
+                    var safeLbl = lbl.indexOf("'") === -1 ? "'" + lbl + "'" : xpathLiteral(lbl);
                     le_addCandidate(
                         candidates,
                         'labelText',
-                        "//label[normalize-space(.)='" + lbl + "']/following::" + el.tagName.toLowerCase() + "[1]",
+                        "//label[normalize-space(.)=" + safeLbl + "]/following::" + el.tagName.toLowerCase() + "[1]",
                         60
                     );
                 }
@@ -378,10 +473,11 @@
         if (labelParent) {
             var lbl2 = le_normalizeText(labelParent.innerText || labelParent.textContent || '');
             if (lbl2) {
+                var safeLbl2 = lbl2.indexOf("'") === -1 ? "'" + lbl2 + "'" : xpathLiteral(lbl2);
                 le_addCandidate(
                     candidates,
                     'labelText',
-                    "//label[normalize-space(.)='" + lbl2 + "']//" + el.tagName.toLowerCase() + "[1]",
+                    "//label[normalize-space(.)=" + safeLbl2 + "]//" + el.tagName.toLowerCase() + "[1]",
                     55
                 );
             }
@@ -473,9 +569,16 @@
         le_addDataTestCandidates(element, attrs, candidates);
         le_addIdCandidates(element, attrs, candidates);
         le_addNameCandidates(element, attrs, candidates);
+        le_addPlaceholderCandidate(element, attrs, candidates);
         le_addAccessibleTextCandidates(element, attrs, candidates);
+        le_addTitleCandidates(element, attrs, candidates);
+        le_addAriaLabelledByCandidates(element, attrs, candidates);
+        le_addContentEditableCandidate(element, attrs, candidates);
         le_addTextBasedCandidates(element, text, attrs, candidates);
         le_addLabelTextCandidates(element, attrs, candidates);
+        le_addHrefCandidate(element, attrs, candidates);
+        le_addInputTypeCandidate(element, attrs, candidates);
+        le_addRoleOnlyCandidate(element, attrs, candidates);
         le_addCssFallbackCandidates(element, attrs, candidates);
 
         var locators = le_dedupeAndSort(candidates);
@@ -630,7 +733,7 @@
                     (t.type === 'checkbox' || t.type === 'radio');
 
                 if (!isCheckLike) {
-                    let clickable = t.closest('a[href], button, [role="button"], [role="link"], [onclick]');
+                    let clickable = t.closest('a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="tab"], [onclick], oj-option, oj-menu-item');
                     if (clickable) t = clickable;
                 }
             }
@@ -639,9 +742,10 @@
 
             // Filter out non-interactive clicks
             const isInteractive =
-                ['a', 'button', 'input', 'select', 'textarea'].includes(tag) ||
+                ['a', 'button', 'input', 'select', 'textarea', 'oj-option', 'oj-menu-item', 'oj-button'].includes(tag) ||
                 t.getAttribute('role') ||
                 t.onclick ||
+                t.hasAttribute('tabindex') ||
                 (t.closest && t.closest('[onclick]'));
 
             if (e.type === 'click' && !isInteractive) {
@@ -746,6 +850,11 @@
                 element_text: elementText,
                 primary_name: gherkinName
             };
+
+            // Flush pending sendKeys BEFORE hover and click, so text input order is correct
+            if (e.type === 'click') {
+                flushPendingTextChanges();
+            }
 
             // 🔹 Synthetic HOVER step before click, if needed
             if (e.type === 'click' && lastHoverInfo && lastHoverInfo.element && lastHoverInfo.locator) {
@@ -896,9 +1005,10 @@
         const cls = el.className || '';
         const role = (el.getAttribute && el.getAttribute('role')) || '';
 
-        // You can tune this list based on your app
         if (tag === 'a' || tag === 'button') return true;
-        if (role === 'button' || role === 'menuitem') return true;
+        if (tag.startsWith('oj-')) return true;  // Oracle JET custom elements
+        if (role === 'button' || role === 'menuitem' || role === 'menuitemradio' ||
+            role === 'menuitemcheckbox' || role === 'option' || role === 'tab' || role === 'link') return true;
 
         // Typical "user menu" / navbar icons etc.
         if (cls.indexOf('sidenav_option-icon') !== -1) return true;
@@ -914,7 +1024,7 @@
             if (!el.closest) return;
 
             // Walk up to a reasonable "hover root"
-            let root = el.closest('a, button, [role="button"], [role="menuitem"], .sidenav_option-icon, .menu, .dropdown-toggle, .oj-menu');
+            let root = el.closest('a, button, [role="button"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="tab"], .sidenav_option-icon, .menu, .dropdown-toggle, .oj-menu, oj-option, oj-menu-item, oj-button');
             if (!root || !isHoverRoot(root)) return;
 
             const accName = getAccessibleName(root);
@@ -989,6 +1099,75 @@
     })();
 
     ['click', 'change'].forEach(type => window.addEventListener(type, recordEvent, true));
+
+    // ---- Pre-capture mousedown on navigation-triggering elements ----
+    // Some menu items (signout, logout) cause immediate page unload on click,
+    // so the click event may never finish persisting. We capture on mousedown
+    // for elements likely to navigate away, and synchronously flush to localStorage.
+    window.addEventListener('mousedown', function (e) {
+        try {
+            if (!e || !e.isTrusted || !e.target) return;
+            var t = e.target;
+            if (!t.closest) return;
+
+            // Find the closest navigating ancestor
+            var navEl = t.closest('a[href], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], oj-option, oj-menu-item');
+            if (!navEl) return;
+
+            // Check if this looks like a sign-out / logout / navigation-away action
+            var elText = (navEl.innerText || navEl.textContent || '').trim().toLowerCase();
+            var href = navEl.getAttribute('href') || '';
+            var isNavAway = /sign.?out|log.?out|exit|quit|leave/i.test(elText) ||
+                            /sign.?out|log.?out|exit|quit/i.test(href) ||
+                            (href && href !== '#' && href !== 'javascript:void(0)' && !href.startsWith('#'));
+
+            if (!isNavAway) return;
+
+            // Flush any pending text changes first
+            flushPendingTextChanges();
+
+            // Pre-record this click so it's not lost on unload
+            var accName = getAccessibleName(navEl);
+            var gherkinName = (navEl.innerText || navEl.textContent || '').trim() || accName || navEl.id || 'element';
+            var locator = generateSeleniumLocator(navEl, accName);
+            var locatorValue = locator.value.replace(/\"/g, '\\\"');
+            var tagName = navEl.tagName.toLowerCase();
+
+            var gherkinText;
+            if (tagName === 'a') {
+                gherkinText = 'I click on the "' + gherkinName + '" link';
+            } else if (tagName === 'button' || navEl.getAttribute('role') === 'button') {
+                gherkinText = 'I click on the "' + gherkinName + '" button';
+            } else if (navEl.getAttribute('role') === 'menuitem' || tagName.startsWith('oj-')) {
+                gherkinText = 'I click on the "' + gherkinName + '" menu item';
+            } else {
+                gherkinText = 'I click on "' + gherkinName + '"';
+            }
+
+            var rec = {
+                timestamp: Date.now(),
+                type: 'click',
+                action: 'click',
+                title: document.title,
+                selector: tagName,
+                options: { element_text: gherkinName, primary_name: gherkinName },
+                raw_gherkin: gherkinText,
+                raw_selenium: 'driver.findElement(' + locator.type + '("' + locatorValue + '")).click();',
+                _preCapture: true  // marker so click handler can skip duplicate
+            };
+            var targetInfo = buildRecordedTarget(navEl);
+            if (targetInfo) rec.target = targetInfo;
+
+            persistEvent(rec);
+
+            // Synchronously flush to localStorage in case page unloads immediately
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__recordedEvents || []));
+            } catch (ex) {}
+        } catch (err) {
+            console.log('[recorder] mousedown pre-capture error', err);
+        }
+    }, true);
 
     // ============================================================
     //  Recording Save UI: custom name, timestamp, recent names, preview

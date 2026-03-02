@@ -35,12 +35,15 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 // 🔴 NEW: import holder for live replay status
 import com.example.ReplayStatusHolder;
+import com.example.dao.RunDao;
 
 // ✅ NEW: assertion helper
 import com.example.ReplayAssertions;
@@ -60,6 +63,88 @@ public class RawSeleniumReplayer {
     private static final Pattern NAV_PATTERN = Pattern.compile(
             "driver\\.get\\(\"([^\"]*)\"\\);?"
     );
+
+    // ========== WINDOW HANDLE & IFRAME TRACKING ==========
+
+    /** Known window handles before the current step. Updated after each step. */
+    private static Set<String> knownWindowHandles = new LinkedHashSet<>();
+
+    /**
+     * Detect and switch to a new browser tab/popup that was opened during a step.
+     * Compares current handles against knownWindowHandles.
+     * Returns true if a switch occurred.
+     */
+    private static boolean switchToNewWindowIfAny(WebDriver driver) {
+        try {
+            Set<String> currentHandles = driver.getWindowHandles();
+            if (currentHandles.size() > knownWindowHandles.size()) {
+                for (String h : currentHandles) {
+                    if (!knownWindowHandles.contains(h)) {
+                        System.out.println("[window] New tab/popup detected — switching to handle: " + h);
+                        driver.switchTo().window(h);
+                        knownWindowHandles.add(h);
+                        return true;
+                    }
+                }
+            }
+            // Also detect closed windows — clean up stale handles
+            knownWindowHandles.retainAll(currentHandles);
+        } catch (Exception e) {
+            System.out.println("[window] Error checking window handles: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Try to find an element by searching all iframes on the page.
+     * Switches driver into the matching iframe if found.
+     * Returns the element if found, null otherwise. Driver is left in the target frame.
+     */
+    private static WebElement findInIframes(WebDriver driver, By by) {
+        try {
+            // First, switch back to main content
+            driver.switchTo().defaultContent();
+
+            List<WebElement> iframes = driver.findElements(By.tagName("iframe"));
+            if (iframes.isEmpty()) {
+                iframes = driver.findElements(By.tagName("frame"));
+            }
+
+            for (int i = 0; i < iframes.size(); i++) {
+                try {
+                    driver.switchTo().frame(iframes.get(i));
+                    List<WebElement> found = driver.findElements(by);
+                    if (!found.isEmpty()) {
+                        System.out.println("[iframe] Element found in iframe #" + i);
+                        return found.get(0);
+                    }
+                    // Not found in this iframe — switch back to default for next attempt
+                    driver.switchTo().defaultContent();
+                } catch (Exception e) {
+                    // Couldn't switch to this iframe (cross-origin, detached, etc.)
+                    try { driver.switchTo().defaultContent(); } catch (Exception ignore) {}
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[iframe] Error searching iframes: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Retry the same locator once on StaleElementReferenceException.
+     * Returns the element if successful on retry, or throws the original exception.
+     */
+    private static WebElement retryOnStale(By by, WebDriver driver, boolean needClickable) {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException ignore) {}
+        if (needClickable) {
+            return ReplayAssertions.assertClickable(by, driver);
+        } else {
+            return ReplayAssertions.assertVisible(by, driver);
+        }
+    }
 
     // ========== INNER CLASS FOR RESULTS ==========
 
@@ -81,10 +166,18 @@ public class RawSeleniumReplayer {
     // ========== PUBLIC ENTRYPOINTS ==========
 
     public static boolean replayFromJson(String jsonPath, String reportPath) throws Exception {
-        return replayFromJson(jsonPath, reportPath, null);
+        return replayFromJson(jsonPath, reportPath, null, -1);
+    }
+
+    public static boolean replayFromJson(String jsonPath, String reportPath, long runId) throws Exception {
+        return replayFromJson(jsonPath, reportPath, null, runId);
     }
 
     public static boolean replayFromJson(String jsonPath, String reportPath, Scenario scenario) throws Exception {
+        return replayFromJson(jsonPath, reportPath, scenario, -1);
+    }
+
+    public static boolean replayFromJson(String jsonPath, String reportPath, Scenario scenario, long runId) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -130,6 +223,10 @@ public class RawSeleniumReplayer {
             currentReplayDriver = driver;
 
             driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(90));
+
+            // Track window handles for new tab/popup detection
+            knownWindowHandles.clear();
+            knownWindowHandles.addAll(driver.getWindowHandles());
 
             int index = 1;
             boolean failureOccurred = false;
@@ -212,6 +309,11 @@ public class RawSeleniumReplayer {
                         System.out.println("Skipping unsupported event: " + displayScript);
                     }
 
+                    // ===== Check for new tabs/popups after each step =====
+                    if (driver != null) {
+                        switchToNewWindowIfAny(driver);
+                    }
+
                     // ===== ASSERTION ROUTING (per action type) =====
                     if (driver != null) {
                         String evType = ev.getType() != null ? ev.getType().toLowerCase() : "";
@@ -276,6 +378,24 @@ public class RawSeleniumReplayer {
                     }
 
                     results.add(step);
+
+                    // Save step result to database
+                    if (runId > 0) {
+                        try {
+                            String locatorStr = (ev.getTarget() != null && ev.getTarget().getLocators() != null
+                                    && !ev.getTarget().getLocators().isEmpty())
+                                    ? ev.getTarget().getLocators().get(0).getValue() : "";
+                            String valueStr = ev.getValue();
+                            RunDao.addStep(runId, step.index,
+                                    ev.getAction() != null ? ev.getAction() : "",
+                                    ev.getRaw_gherkin() != null ? ev.getRaw_gherkin() : displayScript,
+                                    locatorStr, valueStr,
+                                    step.status, step.durationMs,
+                                    step.errorMessage, step.screenshotFileName);
+                        } catch (Exception dbEx) {
+                            System.err.println("Failed to save step result to DB: " + dbEx.getMessage());
+                        }
+                    }
                 }
 
                 if (failureOccurred) {
@@ -331,6 +451,23 @@ public class RawSeleniumReplayer {
                     skipped.assertionSummary = "Not executed";
 
                     results.add(skipped);
+
+                    // Save skipped step to database
+                    if (runId > 0) {
+                        try {
+                            String locatorStr = (ev.getTarget() != null && ev.getTarget().getLocators() != null
+                                    && !ev.getTarget().getLocators().isEmpty())
+                                    ? ev.getTarget().getLocators().get(0).getValue() : "";
+                            RunDao.addStep(runId, skipped.index,
+                                    ev.getAction() != null ? ev.getAction() : "",
+                                    ev.getRaw_gherkin() != null ? ev.getRaw_gherkin() : displayScript2,
+                                    locatorStr, ev.getValue(),
+                                    skipped.status, 0L,
+                                    skipped.errorMessage, null);
+                        } catch (Exception dbEx) {
+                            System.err.println("Failed to save skipped step to DB: " + dbEx.getMessage());
+                        }
+                    }
                 }
             }
 
@@ -487,18 +624,42 @@ public class RawSeleniumReplayer {
 
             try {
                 // ✅ use assertion helper for clickable
-                WebElement el = ReplayAssertions.assertClickable(by, driver);
+                WebElement el;
+                try {
+                    el = ReplayAssertions.assertClickable(by, driver);
+                } catch (StaleElementReferenceException stale) {
+                    // Retry same locator once on stale element
+                    System.out.println("Stale element — retrying same locator [" + loc.getType() + "]");
+                    el = retryOnStale(by, driver, true);
+                }
                 highlightElement(driver, el);
                 safeClick(driver, el, by, raw != null ? raw : ev.getRaw_gherkin());
                 System.out.println("Clicked using locator [" + loc.getType() + "] " + loc.getValue());
                 return;
             } catch (TimeoutException | NoSuchElementException | StaleElementReferenceException | AssertionError e) {
-                // 🔧 no cast – store as Throwable
                 lastError = e;
                 System.out.println("Failed locator [" + loc.getType() + "] " + loc.getValue()
                         + " -> " + e.getClass().getSimpleName());
             }
         }
+
+        // Fallback: try finding element inside iframes
+        for (LocatorCandidate loc : locators) {
+            try {
+                By by = toBy(loc);
+                WebElement el = findInIframes(driver, by);
+                if (el != null) {
+                    highlightElement(driver, el);
+                    safeClick(driver, el, by, raw != null ? raw : ev.getRaw_gherkin());
+                    System.out.println("Clicked using iframe fallback [" + loc.getType() + "] " + loc.getValue());
+                    return;
+                }
+            } catch (Exception e) {
+                lastError = e;
+            }
+        }
+        // Switch back to main content after iframe search
+        try { driver.switchTo().defaultContent(); } catch (Exception ignore) {}
 
         // Fallback: text-based locator using target.text
         if (target.getText() != null && !target.getText().trim().isEmpty()) {
@@ -564,7 +725,13 @@ public class RawSeleniumReplayer {
 
             try {
                 // ✅ assert visible input
-                WebElement el = ReplayAssertions.assertVisible(by, driver);
+                WebElement el;
+                try {
+                    el = ReplayAssertions.assertVisible(by, driver);
+                } catch (StaleElementReferenceException stale) {
+                    System.out.println("Stale element — retrying same locator [" + loc.getType() + "]");
+                    el = retryOnStale(by, driver, false);
+                }
                 highlightElement(driver, el);
                 try {
                     el.clear();
@@ -584,12 +751,29 @@ public class RawSeleniumReplayer {
                 return;
             } catch (TimeoutException | NoSuchElementException |
                      StaleElementReferenceException | AssertionError e) {
-                // 🔧 no cast – store as Throwable
                 lastError = e;
                 System.out.println("Failed sendKeys locator [" + loc.getType() + "] " +
                         loc.getValue() + " -> " + e.getClass().getSimpleName());
             }
         }
+
+        // Fallback: try finding input inside iframes
+        for (LocatorCandidate loc : locators) {
+            try {
+                By by = toBy(loc);
+                WebElement el = findInIframes(driver, by);
+                if (el != null) {
+                    highlightElement(driver, el);
+                    try { el.clear(); } catch (Exception ignore) {}
+                    el.sendKeys(value);
+                    System.out.println("sendKeys using iframe fallback [" + loc.getType() + "] " + loc.getValue());
+                    return;
+                }
+            } catch (Exception e) {
+                lastError = e;
+            }
+        }
+        try { driver.switchTo().defaultContent(); } catch (Exception ignore) {}
 
         // Final fallback: raw_selenium
         if (raw != null && !raw.trim().isEmpty()) {
@@ -1606,7 +1790,7 @@ public class RawSeleniumReplayer {
 
                 out.println("              <td>");
                 if (r.screenshotFileName != null && !r.screenshotFileName.isEmpty()) {
-                    String imgSrc = "/screenshots/" + r.screenshotFileName;
+                    String imgSrc = "/api/screenshots/" + r.screenshotFileName;
                     out.println("                <a href=\"" + imgSrc + "\" target=\"_blank\" " +
                             "style=\"text-decoration:none; color:inherit;\">");
                     out.println("                  <img src=\"" + imgSrc + "\" " +
