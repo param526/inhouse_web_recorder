@@ -26,9 +26,13 @@ function toast(msg, type = 'success') {
     const c = document.getElementById('toast-container');
     const el = document.createElement('div');
     el.className = 'toast toast-' + type;
-    el.textContent = msg;
+    const icon = type === 'success'
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    el.innerHTML = icon + '<span>' + esc(msg) + '</span>';
     c.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; el.style.transition = '0.3s ease'; }, 3500);
+    setTimeout(() => el.remove(), 3800);
 }
 
 // --- Auth ---
@@ -99,6 +103,9 @@ function render() {
     const page = pageConfig[currentPage] || pageConfig.dashboard;
     const navItems = getNavItems();
 
+    const mainNavItems = navItems.filter(n => !['users','settings'].includes(n.id));
+    const adminNavItems = navItems.filter(n => ['users','settings'].includes(n.id));
+
     app.innerHTML = `
         <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
         <aside class="sidebar" id="sidebar">
@@ -107,12 +114,22 @@ function render() {
                 <div><h2>Selenium R&R</h2><div class="version">v2.0.0</div></div>
             </div>
             <nav class="sidebar-nav">
-                ${navItems.map(n => `
+                <div class="nav-section-label">Main</div>
+                ${mainNavItems.map(n => `
                     <div class="nav-item ${currentPage === n.id ? 'active' : ''}" onclick="navigate('${n.id}')">
                         ${icons[n.icon] || ''}<span>${n.label}</span>
                     </div>
                 `).join('')}
+                ${adminNavItems.length ? `
+                    <div class="nav-section-label">Administration</div>
+                    ${adminNavItems.map(n => `
+                        <div class="nav-item ${currentPage === n.id ? 'active' : ''}" onclick="navigate('${n.id}')">
+                            ${icons[n.icon] || ''}<span>${n.label}</span>
+                        </div>
+                    `).join('')}
+                ` : ''}
             </nav>
+            <div class="sidebar-footer">Selenium Recorder & Replayer</div>
         </aside>
         <header class="topbar">
             <div class="topbar-left">
@@ -123,8 +140,14 @@ function render() {
                 </div>
             </div>
             <div class="topbar-right">
-                <div class="user-badge">${user.username} <span class="badge badge-${user.role.toLowerCase()}">${user.role}</span></div>
-                <button class="btn-logout" onclick="logout()">Logout</button>
+                <div class="user-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    ${user.username} <span class="badge badge-${user.role.toLowerCase()}">${user.role}</span>
+                </div>
+                <button class="btn-logout" onclick="logout()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </button>
             </div>
         </header>
         <main class="main-content" id="page-content"></main>
@@ -191,19 +214,22 @@ function renderLogin(app) {
                 <div class="login-card">
                     <div class="logo-big">SR</div>
                     <h1>${isRegister ? 'Create Account' : 'Welcome Back'}</h1>
-                    <p class="subtitle">${isRegister ? 'Register to get started' : 'Sign in to your account'}</p>
+                    <p class="subtitle">${isRegister ? 'Register to get started with test automation' : 'Sign in to continue to your dashboard'}</p>
                     <div class="form-group">
                         <label>Username</label>
-                        <input class="form-control" id="auth-user" placeholder="Enter username" autocomplete="username">
+                        <input class="form-control" id="auth-user" placeholder="Enter your username" autocomplete="username">
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input class="form-control" id="auth-pass" type="password" placeholder="Enter password" autocomplete="current-password">
+                        <input class="form-control" id="auth-pass" type="password" placeholder="Enter your password" autocomplete="current-password">
                     </div>
-                    <button class="btn btn-primary" id="auth-btn">${isRegister ? 'Register' : 'Login'}</button>
+                    <button class="btn btn-primary" id="auth-btn">
+                        ${isRegister ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Create Account'
+                            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Sign In'}
+                    </button>
                     <div class="login-toggle">
                         ${isRegister ? 'Already have an account?' : "Don't have an account?"}
-                        <a id="auth-toggle">${isRegister ? 'Login' : 'Register'}</a>
+                        <a id="auth-toggle">${isRegister ? 'Sign in' : 'Create one'}</a>
                     </div>
                 </div>
             </div>
@@ -237,7 +263,10 @@ function renderLogin(app) {
 // DASHBOARD
 // ============================================================
 async function renderDashboard(el) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div> Loading dashboard...</div>';
+    el.innerHTML = `<div style="text-align:center;padding:60px">
+        <div class="loading-spinner" style="width:24px;height:24px;margin:0 auto 12px"></div>
+        <div style="color:var(--text3);font-size:13px;font-weight:500">Loading dashboard...</div>
+    </div>`;
     try {
         const [dashRes, projRes] = await Promise.all([api('/dashboard'), api('/projects')]);
         const d = dashRes.data;
@@ -248,16 +277,30 @@ async function renderDashboard(el) {
         const offset = circumference - (passRate / 100) * circumference;
 
         el.innerHTML = `
-            <div class="grid-6" style="margin-bottom:20px">
-                <div class="stat-card"><div class="stat-value">${d.total_runs || 0}</div><div class="stat-label">Total Runs</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--green)">${d.passed || 0}</div><div class="stat-label">Passed</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--red)">${d.failed || 0}</div><div class="stat-label">Failed</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--yellow)">${d.stopped || 0}</div><div class="stat-label">Stopped</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--blue)">${d.running || 0}</div><div class="stat-label">Running</div></div>
-                <div class="stat-card"><div class="stat-value">${d.recordings || 0}</div><div class="stat-label">Recordings</div></div>
+            <div class="section-header"><h2>Overview</h2></div>
+            <div class="grid-6" style="margin-bottom:24px">
+                <div class="stat-card" style="border-top:3px solid var(--primary)">
+                    <div class="stat-value">${d.total_runs || 0}</div><div class="stat-label">Total Runs</div>
+                </div>
+                <div class="stat-card" style="border-top:3px solid var(--green)">
+                    <div class="stat-value" style="color:var(--green)">${d.passed || 0}</div><div class="stat-label">Passed</div>
+                </div>
+                <div class="stat-card" style="border-top:3px solid var(--red)">
+                    <div class="stat-value" style="color:var(--red)">${d.failed || 0}</div><div class="stat-label">Failed</div>
+                </div>
+                <div class="stat-card" style="border-top:3px solid var(--yellow)">
+                    <div class="stat-value" style="color:var(--yellow)">${d.stopped || 0}</div><div class="stat-label">Stopped</div>
+                </div>
+                <div class="stat-card" style="border-top:3px solid var(--blue)">
+                    <div class="stat-value" style="color:var(--blue)">${d.running || 0}</div><div class="stat-label">Running</div>
+                </div>
+                <div class="stat-card" style="border-top:3px solid var(--cyan)">
+                    <div class="stat-value">${d.recordings || 0}</div><div class="stat-label">Recordings</div>
+                </div>
             </div>
 
-            <div class="grid-3" style="margin-bottom:20px">
+            <div class="section-header"><h2>Analytics</h2></div>
+            <div class="grid-3" style="margin-bottom:24px">
                 <div class="card">
                     <div class="card-header"><h3>Pass Rate</h3></div>
                     <div class="pass-ring">
@@ -273,60 +316,104 @@ async function renderDashboard(el) {
                             <div class="ring-label">Pass Rate</div>
                         </div>
                     </div>
-                    <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text2)">
-                        ${d.passed || 0} passed / ${d.failed || 0} failed / ${d.stopped || 0} stopped
+                    <div style="margin-top:16px;text-align:center;display:flex;justify-content:center;gap:16px;font-size:12px">
+                        <span style="color:var(--green);font-weight:600">${d.passed || 0} passed</span>
+                        <span style="color:var(--text3)">/</span>
+                        <span style="color:var(--red);font-weight:600">${d.failed || 0} failed</span>
+                        <span style="color:var(--text3)">/</span>
+                        <span style="color:var(--yellow);font-weight:600">${d.stopped || 0} stopped</span>
                     </div>
                 </div>
 
                 <div class="card">
-                    <div class="card-header"><h3>Metrics</h3></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                        <div class="stat-card"><div class="stat-value" style="font-size:18px">${d.avg_duration ? (d.avg_duration / 1000).toFixed(1) + 's' : '-'}</div><div class="stat-label">Avg Duration</div></div>
-                        <div class="stat-card"><div class="stat-value" style="font-size:18px">${d.recordings || 0}</div><div class="stat-label">Recordings</div></div>
-                        <div class="stat-card"><div class="stat-value" style="font-size:18px">${d.running || 0}</div><div class="stat-label">Active Now</div></div>
-                        <div class="stat-card"><div class="stat-value" style="font-size:18px">${d.failure_rate || 0}%</div><div class="stat-label">Failure Rate</div></div>
+                    <div class="card-header"><h3>Key Metrics</h3></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                        <div class="stat-card" style="padding:16px 12px">
+                            <div class="stat-value" style="font-size:20px;color:var(--primary)">${d.avg_duration ? (d.avg_duration / 1000).toFixed(1) + 's' : '-'}</div>
+                            <div class="stat-label">Avg Duration</div>
+                        </div>
+                        <div class="stat-card" style="padding:16px 12px">
+                            <div class="stat-value" style="font-size:20px;color:var(--cyan)">${d.recordings || 0}</div>
+                            <div class="stat-label">Recordings</div>
+                        </div>
+                        <div class="stat-card" style="padding:16px 12px">
+                            <div class="stat-value" style="font-size:20px;color:var(--blue)">${d.running || 0}</div>
+                            <div class="stat-label">Active Now</div>
+                        </div>
+                        <div class="stat-card" style="padding:16px 12px">
+                            <div class="stat-value" style="font-size:20px;color:${(d.failure_rate || 0) > 30 ? 'var(--red)' : 'var(--text)'}">${d.failure_rate || 0}%</div>
+                            <div class="stat-label">Failure Rate</div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header"><h3>Quick Actions</h3></div>
                     <div class="quick-actions">
-                        <div class="quick-action" onclick="navigate('replayer')">Run a Test</div>
-                        <div class="quick-action" onclick="navigate('recorder')">New Recording</div>
-                        <div class="quick-action" onclick="navigate('reports')">View Reports</div>
-                        <div class="quick-action" onclick="navigate('projects')">Manage Projects</div>
+                        <div class="quick-action" onclick="navigate('replayer')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="margin-bottom:6px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <div>Run a Test</div>
+                        </div>
+                        <div class="quick-action" onclick="navigate('recorder')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" style="margin-bottom:6px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+                            <div>New Recording</div>
+                        </div>
+                        <div class="quick-action" onclick="navigate('reports')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="margin-bottom:6px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                            <div>View Reports</div>
+                        </div>
+                        <div class="quick-action" onclick="navigate('projects')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" style="margin-bottom:6px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                            <div>Projects</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <div class="section-header"><h2>Details</h2></div>
             <div class="grid-2">
                 <div class="card">
-                    <div class="card-header"><h3>Projects Overview</h3></div>
-                    ${(d.projects_overview || []).length === 0 ? '<div class="empty-state"><p>No projects yet</p></div>' :
+                    <div class="card-header">
+                        <h3>Projects Overview</h3>
+                        <span class="badge badge-resource">${(d.projects_overview || []).length} projects</span>
+                    </div>
+                    ${(d.projects_overview || []).length === 0 ? `<div class="empty-state">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                        <p>No projects yet</p>
+                    </div>` :
                         (d.projects_overview || []).map(p => `
-                            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-                                <span style="font-size:13px;font-weight:500">${esc(p.name)}</span>
-                                <span style="font-size:12px;color:var(--text2)">${p.recording_count} recordings</span>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light)">
+                                <span style="font-size:13px;font-weight:600;color:var(--text)">${esc(p.name)}</span>
+                                <span class="badge badge-resource">${p.recording_count} recordings</span>
                             </div>
                         `).join('')}
                 </div>
 
                 <div class="card">
-                    <div class="card-header"><h3>Recent Activity</h3></div>
-                    ${(d.recent_activity || []).length === 0 ? '<div class="empty-state"><p>No recent activity</p></div>' :
+                    <div class="card-header">
+                        <h3>Recent Activity</h3>
+                        <span class="badge badge-resource">${(d.recent_activity || []).length} runs</span>
+                    </div>
+                    ${(d.recent_activity || []).length === 0 ? `<div class="empty-state">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <p>No recent activity</p>
+                    </div>` :
                         (d.recent_activity || []).map(r => `
                             <div class="timeline-item">
                                 <div class="timeline-dot" style="background:${statusColor(r.status)}"></div>
                                 <div class="timeline-content">
                                     <div class="name">${esc(r.recording_name || 'Unknown')} <span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></div>
-                                    <div class="meta">${timeAgo(r.started_at)} ${r.duration_ms ? '- ' + (r.duration_ms/1000).toFixed(1) + 's' : ''}</div>
+                                    <div class="meta">${timeAgo(r.started_at)} ${r.duration_ms ? '&middot; ' + (r.duration_ms/1000).toFixed(1) + 's' : ''}</div>
                                 </div>
                             </div>
                         `).join('')}
                 </div>
             </div>
         `;
-    } catch (e) { el.innerHTML = '<div class="card">Error loading dashboard: ' + e.message + '</div>'; }
+    } catch (e) { el.innerHTML = `<div class="card" style="border-left:4px solid var(--red)">
+        <div style="font-weight:600;margin-bottom:4px">Error loading dashboard</div>
+        <div style="font-size:13px;color:var(--text2)">${esc(e.message)}</div>
+    </div>`; }
 }
 
 // ============================================================
@@ -334,7 +421,10 @@ async function renderDashboard(el) {
 // ============================================================
 let reportsPage = 0;
 async function renderReports(el) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
+    el.innerHTML = `<div style="text-align:center;padding:60px">
+        <div class="loading-spinner" style="width:24px;height:24px;margin:0 auto 12px"></div>
+        <div style="color:var(--text3);font-size:13px;font-weight:500">Loading reports...</div>
+    </div>`;
     try {
         const r = await api(`/runs?limit=8&offset=${reportsPage * 8}`);
         const runs = r.ok ? r.data : [];
@@ -342,68 +432,90 @@ async function renderReports(el) {
             <div class="card">
                 <div class="card-header">
                     <h3>Test Run History</h3>
-                    <div class="filter-bar" style="margin:0">
-                        <select id="rpt-status" class="form-control" style="width:auto" onchange="filterReports()">
+                    <div style="display:flex;gap:10px;align-items:center">
+                        <select id="rpt-status" class="form-control" style="width:auto;font-size:12px;padding:6px 10px" onchange="filterReports()">
                             <option value="">All Status</option>
                             <option value="PASSED">Passed</option><option value="FAILED">Failed</option>
                             <option value="RUNNING">Running</option><option value="STOPPED">Stopped</option>
                         </select>
+                        <span class="badge badge-resource">${runs.length} results</span>
                     </div>
                 </div>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Recording</th><th>Status</th><th>Started</th><th>Duration</th><th>Error</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Recording</th><th>Status</th><th>Started</th><th>Duration</th><th>Error</th><th style="text-align:right">Actions</th></tr></thead>
                         <tbody>
-                            ${runs.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text2)">No runs found</td></tr>' :
+                            ${runs.length === 0 ? `<tr><td colspan="6"><div class="empty-state" style="padding:32px">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                                <p>No test runs found</p>
+                            </div></td></tr>` :
                                 runs.map(run => `<tr>
-                                    <td style="font-weight:500">${esc(run.recording_name || '-')}</td>
+                                    <td style="font-weight:600">${esc(run.recording_name || '-')}</td>
                                     <td><span class="badge badge-${run.status.toLowerCase()}">${run.status}</span></td>
                                     <td style="font-size:12px;color:var(--text2)">${timeAgo(run.started_at)}</td>
-                                    <td style="font-size:12px">${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : '-'}</td>
-                                    <td style="font-size:12px;color:var(--red);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(run.error_message || '')}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-secondary" onclick="viewRunDetail(${run.id})">Details</button>
-                                        ${run.report_path ? `<button class="btn btn-sm btn-secondary" onclick="window.open('/api/runs/${run.id}/report','_blank')">Report</button>` : ''}
+                                    <td><span style="font-family:monospace;font-size:12px;color:var(--text2)">${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : '-'}</span></td>
+                                    <td style="font-size:12px;color:var(--red);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(run.error_message || '')}">${esc(run.error_message || '')}</td>
+                                    <td style="text-align:right">
+                                        <div style="display:flex;gap:6px;justify-content:flex-end">
+                                            <button class="btn btn-sm btn-secondary" onclick="viewRunDetail(${run.id})">Details</button>
+                                            ${run.report_path ? `<button class="btn btn-sm btn-primary" onclick="window.open('/api/runs/${run.id}/report','_blank')">Report</button>` : ''}
+                                        </div>
                                     </td>
                                 </tr>`).join('')}
                         </tbody>
                     </table>
                 </div>
                 <div class="pagination">
-                    <button class="page-btn" onclick="reportsPage=Math.max(0,reportsPage-1);renderReports(document.getElementById('page-content'))" ${reportsPage===0?'disabled':''}>Prev</button>
-                    <span style="padding:6px 12px;font-size:12px;color:var(--text2)">Page ${reportsPage+1}</span>
-                    <button class="page-btn" onclick="reportsPage++;renderReports(document.getElementById('page-content'))" ${runs.length<8?'disabled':''}>Next</button>
+                    <button class="page-btn" onclick="reportsPage=Math.max(0,reportsPage-1);renderReports(document.getElementById('page-content'))" ${reportsPage===0?'disabled':''}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><polyline points="15 18 9 12 15 6"/></svg> Prev
+                    </button>
+                    <span style="padding:6px 16px;font-size:12px;font-weight:600;color:var(--text2)">Page ${reportsPage+1}</span>
+                    <button class="page-btn" onclick="reportsPage++;renderReports(document.getElementById('page-content'))" ${runs.length<8?'disabled':''}>
+                        Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
                 </div>
             </div>
             <div id="run-detail"></div>
         `;
-    } catch (e) { el.innerHTML = '<div class="card">Error: ' + e.message + '</div>'; }
+    } catch (e) { el.innerHTML = `<div class="card" style="border-left:4px solid var(--red)">
+        <div style="font-weight:600;margin-bottom:4px">Error loading reports</div>
+        <div style="font-size:13px;color:var(--text2)">${esc(e.message)}</div>
+    </div>`; }
 }
 
 async function viewRunDetail(runId) {
     const det = document.getElementById('run-detail');
     if (!det) return;
-    det.innerHTML = '<div class="card"><div class="loading-spinner"></div> Loading run details...</div>';
+    det.innerHTML = `<div class="card" style="margin-top:16px"><div style="display:flex;align-items:center;gap:10px;padding:20px">
+        <div class="loading-spinner"></div><span style="color:var(--text2);font-size:13px">Loading run details...</span>
+    </div></div>`;
     const r = await api(`/runs/${runId}`);
-    if (!r.ok) { det.innerHTML = '<div class="card">Run not found</div>'; return; }
+    if (!r.ok) { det.innerHTML = '<div class="card" style="margin-top:16px;border-left:4px solid var(--red)"><div style="padding:8px;color:var(--text2)">Run not found</div></div>'; return; }
     const run = r.data;
     const steps = run.steps || [];
+    const passedSteps = steps.filter(s => s.status === 'PASSED').length;
+    const failedSteps = steps.filter(s => s.status === 'FAILED').length;
     det.innerHTML = `
-        <div class="card">
+        <div class="card" style="margin-top:16px">
             <div class="card-header">
-                <h3>Run #${run.id} - ${esc(run.recording_name || '')} <span class="badge badge-${run.status.toLowerCase()}">${run.status}</span></h3>
-                <span style="font-size:12px;color:var(--text2)">${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : ''}</span>
+                <div>
+                    <h3>Run #${run.id} - ${esc(run.recording_name || '')} <span class="badge badge-${run.status.toLowerCase()}">${run.status}</span></h3>
+                    <div style="margin-top:6px;font-size:12px;color:var(--text2);display:flex;gap:14px">
+                        <span>Duration: <strong style="color:var(--text)">${run.duration_ms ? (run.duration_ms/1000).toFixed(1) + 's' : '-'}</strong></span>
+                        <span>Steps: <strong style="color:var(--green)">${passedSteps} passed</strong> / <strong style="color:var(--red)">${failedSteps} failed</strong></span>
+                    </div>
+                </div>
             </div>
             ${steps.map((s, i) => `
                 <div class="step-item step-${s.status.toLowerCase()}">
                     <div class="step-num">${i+1}</div>
                     <div style="flex:1">
-                        <div style="font-weight:500">${esc(s.title || s.action || '-')}</div>
-                        <div style="font-size:11px;color:var(--text2)">${esc(s.locator || '')} ${s.value ? '= ' + esc(s.value) : ''}</div>
-                        ${s.error_message ? `<div style="font-size:11px;color:var(--red);margin-top:2px">${esc(s.error_message)}</div>` : ''}
+                        <div style="font-weight:600">${esc(s.title || s.action || '-')}</div>
+                        <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(s.locator || '')} ${s.value ? '= ' + esc(s.value) : ''}</div>
+                        ${s.error_message ? `<div class="tbl-error" style="margin-top:4px">${esc(s.error_message)}</div>` : ''}
                     </div>
-                    <div style="font-size:11px;color:var(--text2)">${s.duration_ms ? s.duration_ms + 'ms' : ''}</div>
-                    ${s.screenshot_path ? `<img src="/api/screenshots/${s.screenshot_path.split('/').pop()}" style="width:60px;height:40px;object-fit:cover;border-radius:4px;cursor:pointer" onclick="openGallery(${JSON.stringify(steps.filter(x=>x.screenshot_path).map(x=>'/api/screenshots/'+x.screenshot_path.split('/').pop()))}, ${steps.filter(x=>x.screenshot_path).indexOf(s)})">` : ''}
+                    <div style="font-family:monospace;font-size:11px;color:var(--text3)">${s.duration_ms ? s.duration_ms + 'ms' : ''}</div>
+                    ${s.screenshot_path ? `<img src="/api/screenshots/${s.screenshot_path.split('/').pop()}" style="width:64px;height:42px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border);transition:transform 0.15s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform=''" onclick="openGallery(${JSON.stringify(steps.filter(x=>x.screenshot_path).map(x=>'/api/screenshots/'+x.screenshot_path.split('/').pop()))}, ${steps.filter(x=>x.screenshot_path).indexOf(s)})">` : ''}
                 </div>
             `).join('')}
         </div>
@@ -414,27 +526,38 @@ async function viewRunDetail(runId) {
 // PROJECTS
 // ============================================================
 async function renderProjects(el) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
+    el.innerHTML = `<div style="text-align:center;padding:60px">
+        <div class="loading-spinner" style="width:24px;height:24px;margin:0 auto 12px"></div>
+        <div style="color:var(--text3);font-size:13px;font-weight:500">Loading projects...</div>
+    </div>`;
     const r = await api('/projects');
     const projects = r.ok ? r.data : [];
     el.innerHTML = `
         <div class="card">
             <div class="card-header">
-                <h3>Projects</h3>
-                ${isAdmin() ? '<button class="btn btn-primary btn-sm" onclick="showNewProjectModal()">+ New Project</button>' : ''}
+                <h3>Projects <span class="badge badge-resource" style="margin-left:8px">${projects.length}</span></h3>
+                ${isAdmin() ? `<button class="btn btn-primary btn-sm" onclick="showNewProjectModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New Project
+                </button>` : ''}
             </div>
-            ${projects.length === 0 ? '<div class="empty-state"><p>No projects yet</p></div>' : `
+            ${projects.length === 0 ? `<div class="empty-state">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                <p>No projects yet. Create your first project to get started.</p>
+            </div>` : `
                 <div class="table-container"><table>
-                    <thead><tr><th>Name</th><th>Description</th><th>Recordings</th><th>Modules</th><th>Access</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Description</th><th>Recordings</th><th>Modules</th><th>Access</th><th style="text-align:right">Actions</th></tr></thead>
                     <tbody>${projects.map(p => `<tr>
-                        <td style="font-weight:500">${esc(p.name)}</td>
+                        <td style="font-weight:600">${esc(p.name)}</td>
                         <td style="font-size:12px;color:var(--text2)">${esc(p.description || '-')}</td>
-                        <td>${p.recording_count || 0}</td>
-                        <td>${(p.modules || []).length}</td>
-                        <td>${(p.access_users || []).map(u => `<span class="badge badge-resource" style="margin:1px">${esc(u.username)}</span>`).join(' ') || '-'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary" onclick="expandProject(${p.id})">Manage</button>
-                            ${isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="deleteProject(${p.id})">Delete</button>` : ''}
+                        <td><span class="badge badge-resource">${p.recording_count || 0}</span></td>
+                        <td><span class="badge badge-resource">${(p.modules || []).length}</span></td>
+                        <td>${(p.access_users || []).map(u => `<span class="badge badge-resource" style="margin:2px">${esc(u.username)}</span>`).join(' ') || '<span style="color:var(--text3)">-</span>'}</td>
+                        <td style="text-align:right">
+                            <div style="display:flex;gap:6px;justify-content:flex-end">
+                                <button class="btn btn-sm btn-secondary" onclick="expandProject(${p.id})">Manage</button>
+                                ${isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="deleteProject(${p.id})">Delete</button>` : ''}
+                            </div>
                         </td>
                     </tr>`).join('')}</tbody>
                 </table></div>
@@ -525,7 +648,10 @@ async function revokeAccess(projectId, userId) {
 // RECORDINGS
 // ============================================================
 async function renderRecordings(el) {
-    el.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
+    el.innerHTML = `<div style="text-align:center;padding:60px">
+        <div class="loading-spinner" style="width:24px;height:24px;margin:0 auto 12px"></div>
+        <div style="color:var(--text3);font-size:13px;font-weight:500">Loading recordings...</div>
+    </div>`;
     const [recRes, projRes] = await Promise.all([api('/recordings'), api('/projects')]);
     const recordings = recRes.ok ? recRes.data : [];
     const projects = projRes.ok ? projRes.data : [];
@@ -536,15 +662,20 @@ async function renderRecordings(el) {
 
     el.innerHTML = `
         <div class="card">
-            <div class="card-header"><h3>Recordings Library</h3></div>
+            <div class="card-header">
+                <h3>Recordings Library <span class="badge badge-resource" style="margin-left:8px">${recordings.length}</span></h3>
+            </div>
             <div class="filter-bar">
-                <input class="form-control" placeholder="Search..." id="rec-search" oninput="filterRecList()" style="width:200px">
+                <div style="position:relative;flex:0 0 220px">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input class="form-control" placeholder="Search recordings..." id="rec-search" oninput="filterRecList()" style="width:100%;padding-left:32px">
+                </div>
                 <select class="form-control" id="rec-proj-filter" onchange="filterRecList()" style="width:auto">
                     <option value="">All Projects</option>
                     ${projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
                 </select>
-                <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px">
-                    <input type="checkbox" id="rec-show-deleted" onchange="reloadRecordings()"> Show Deleted
+                <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 0">
+                    <input type="checkbox" id="rec-show-deleted" onchange="reloadRecordings()" style="accent-color:var(--primary)"> Show Deleted
                 </label>
             </div>
             <div class="table-container" id="rec-table-container">
@@ -557,19 +688,24 @@ async function renderRecordings(el) {
 }
 
 function renderRecTable(recs) {
-    if (recs.length === 0) return '<div class="empty-state"><p>No recordings found</p></div>';
+    if (recs.length === 0) return `<div class="empty-state">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+        <p>No recordings found</p>
+    </div>`;
     const pm = window._projectMap || {};
-    return `<table><thead><tr><th>Name</th><th>Project</th><th>Steps</th><th>Size</th><th>Created</th><th>Actions</th></tr></thead>
+    return `<table><thead><tr><th>Name</th><th>Project</th><th>Steps</th><th>Size</th><th>Created</th><th style="text-align:right">Actions</th></tr></thead>
         <tbody>${recs.map(r => `<tr style="${r.deleted_at ? 'opacity:0.5' : ''}">
-            <td style="font-weight:500">${esc(r.name)} ${r.deleted_at ? '<span class="badge badge-stopped">Deleted</span>' : ''}</td>
-            <td style="font-size:12px;color:var(--text2)">${r.project_id ? esc(pm[r.project_id] || 'Project #' + r.project_id) : '<span style="color:var(--text3)">Unassigned</span>'}</td>
-            <td>${r.step_count}</td>
-            <td style="font-size:12px">${formatBytes(r.file_size)}</td>
+            <td style="font-weight:600">${esc(r.name)} ${r.deleted_at ? '<span class="badge badge-stopped" style="margin-left:6px">Deleted</span>' : ''}</td>
+            <td style="font-size:12px;color:var(--text2)">${r.project_id ? esc(pm[r.project_id] || 'Project #' + r.project_id) : '<span style="color:var(--text3);font-style:italic">Unassigned</span>'}</td>
+            <td><span class="badge badge-resource">${r.step_count}</span></td>
+            <td><span style="font-family:monospace;font-size:12px;color:var(--text2)">${formatBytes(r.file_size)}</span></td>
             <td style="font-size:12px;color:var(--text2)">${timeAgo(r.created_at)}</td>
-            <td>
-                <button class="btn btn-sm btn-secondary" onclick="viewRecording(${r.id})">View</button>
-                ${r.deleted_at ? `<button class="btn btn-sm btn-success" onclick="restoreRecording(${r.id})">Restore</button>`
-                    : `<button class="btn btn-sm btn-danger" onclick="deleteRecording(${r.id})">Delete</button>`}
+            <td style="text-align:right">
+                <div style="display:flex;gap:6px;justify-content:flex-end">
+                    <button class="btn btn-sm btn-secondary" onclick="viewRecording(${r.id})">View</button>
+                    ${r.deleted_at ? `<button class="btn btn-sm btn-success" onclick="restoreRecording(${r.id})">Restore</button>`
+                        : `<button class="btn btn-sm btn-danger" onclick="deleteRecording(${r.id})">Delete</button>`}
+                </div>
             </td>
         </tr>`).join('')}</tbody></table>`;
 }
@@ -707,21 +843,27 @@ async function renderRecorder(el) {
     const projects = projRes.ok ? projRes.data : [];
 
     el.innerHTML = `
-        <div class="card" style="margin-bottom:16px">
-            <div class="card-header"><h3>Start Recording</h3></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                <div class="form-group"><label>URL</label><input class="form-control" id="rec-url" placeholder="https://example.com"></div>
+        <div class="card" style="margin-bottom:18px">
+            <div class="card-header"><h3>Start Recording</h3><span class="badge badge-resource">Configure your test recording</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div class="form-group"><label>Target URL</label><input class="form-control" id="rec-url" placeholder="https://example.com"></div>
                 <div class="form-group"><label>Recording Name</label><input class="form-control" id="rec-name" placeholder="My Test Recording"></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:12px;align-items:end">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:14px;align-items:end">
                 <div class="form-group" style="margin:0"><label>Project</label><select class="form-control" id="rec-project">
                     <option value="">None</option>${projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
                 </select></div>
                 <div class="form-group" style="margin:0"><label>Mode</label><select class="form-control" id="rec-mode">
                     <option value="local">Local</option>
                 </select></div>
-                <button class="btn btn-primary" id="rec-start-btn" onclick="startRecording()">Start Recording</button>
-                <button class="btn btn-danger hidden" id="rec-stop-btn" onclick="stopRecording()">Stop & Save</button>
+                <button class="btn btn-primary" id="rec-start-btn" onclick="startRecording()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+                    Start Recording
+                </button>
+                <button class="btn btn-danger hidden" id="rec-stop-btn" onclick="stopRecording()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                    Stop & Save
+                </button>
                 <button class="btn btn-secondary hidden" id="rec-abort-btn" onclick="abortRecording()">Abort</button>
             </div>
         </div>
@@ -885,9 +1027,9 @@ async function renderReplayer(el) {
     const projects = projRes.ok ? projRes.data : [];
 
     el.innerHTML = `
-        <div class="card" style="margin-bottom:16px">
-            <div class="card-header"><h3>Run Test</h3></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 2fr auto auto;gap:12px;align-items:end">
+        <div class="card" style="margin-bottom:18px">
+            <div class="card-header"><h3>Run Test</h3><span class="badge badge-resource">Select and execute a recording</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 2fr auto auto;gap:14px;align-items:end">
                 <div class="form-group" style="margin:0"><label>Project Filter</label><select class="form-control" id="rpl-proj" onchange="filterReplayRecs()">
                     <option value="">All Projects</option>${projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
                 </select></div>
@@ -897,8 +1039,14 @@ async function renderReplayer(el) {
                 <div class="form-group" style="margin:0"><label>Recording</label><select class="form-control" id="rpl-recording">
                     <option value="">Select recording...</option>${recordings.map(r => `<option value="${r.id}" data-project="${r.project_id}">${esc(r.name)} (${r.step_count} steps)</option>`).join('')}
                 </select></div>
-                <button class="btn btn-primary" id="rpl-run-btn" onclick="startReplay()">Run</button>
-                <button class="btn btn-danger hidden" id="rpl-stop-btn" onclick="stopReplay()">Stop</button>
+                <button class="btn btn-primary" id="rpl-run-btn" onclick="startReplay()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Run
+                </button>
+                <button class="btn btn-danger hidden" id="rpl-stop-btn" onclick="stopReplay()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                    Stop
+                </button>
             </div>
         </div>
         <div class="split-layout">
@@ -1187,6 +1335,10 @@ async function stopReplay() {
 // API TESTING
 // ============================================================
 async function renderApiTesting(el) {
+    el.innerHTML = `<div style="text-align:center;padding:60px">
+        <div class="loading-spinner" style="width:24px;height:24px;margin:0 auto 12px"></div>
+        <div style="color:var(--text3);font-size:13px;font-weight:500">Loading API tests...</div>
+    </div>`;
     const [testsRes, projRes] = await Promise.all([api('/api-tests'), api('/projects')]);
     const tests = testsRes.ok ? testsRes.data : [];
     const projects = projRes.ok ? projRes.data : [];
@@ -1196,17 +1348,25 @@ async function renderApiTesting(el) {
             <div>
                 <div class="card">
                     <div class="card-header">
-                        <h3>API Tests</h3>
-                        <button class="btn btn-primary btn-sm" onclick="showNewApiTestModal()">+ New Test</button>
+                        <h3>API Tests <span class="badge badge-resource" style="margin-left:8px">${tests.length}</span></h3>
+                        <button class="btn btn-primary btn-sm" onclick="showNewApiTestModal()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New Test
+                        </button>
                     </div>
-                    ${tests.length === 0 ? '<div class="empty-state"><p>No API tests yet</p></div>' :
-                        tests.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="editApiTest(${t.id})">
+                    ${tests.length === 0 ? `<div class="empty-state">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                        <p>No API tests yet. Create your first test.</p>
+                    </div>` :
+                        tests.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 8px;border-bottom:1px solid var(--border-light);cursor:pointer;border-radius:var(--radius);transition:background 0.15s" onmouseover="this.style.background='var(--primary-50)'" onmouseout="this.style.background=''" onclick="editApiTest(${t.id})">
                             <div>
-                                <div style="font-weight:500;font-size:13px">${esc(t.name)}</div>
-                                <div style="font-size:11px;color:var(--text2)">${esc(t.description || '')}</div>
+                                <div style="font-weight:600;font-size:13px;color:var(--text)">${esc(t.name)}</div>
+                                <div style="font-size:11.5px;color:var(--text3);margin-top:2px">${esc(t.description || 'No description')}</div>
                             </div>
-                            <div style="display:flex;gap:4px">
-                                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();runApiTest(${t.id})">Run</button>
+                            <div style="display:flex;gap:6px">
+                                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();runApiTest(${t.id})">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run
+                                </button>
                                 <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteApiTest(${t.id})">Del</button>
                             </div>
                         </div>`).join('')}
@@ -1214,7 +1374,10 @@ async function renderApiTesting(el) {
             </div>
             <div>
                 <div class="card" id="api-test-detail">
-                    <div class="empty-state"><p>Select a test to view details</p></div>
+                    <div class="empty-state">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                        <p>Select a test to view details</p>
+                    </div>
                 </div>
                 <div class="card" id="api-test-result" style="display:none"></div>
             </div>
@@ -1299,28 +1462,42 @@ async function deleteApiTest(id) { if (!confirm('Delete?')) return; await api(`/
 // USERS
 // ============================================================
 async function renderUsers(el) {
+    el.innerHTML = `<div style="text-align:center;padding:60px">
+        <div class="loading-spinner" style="width:24px;height:24px;margin:0 auto 12px"></div>
+        <div style="color:var(--text3);font-size:13px;font-weight:500">Loading users...</div>
+    </div>`;
     const r = await api('/users?includeDeleted=true');
     const users = r.ok ? r.data : [];
     el.innerHTML = `
         <div class="card">
             <div class="card-header">
-                <h3>User Management</h3>
-                <button class="btn btn-primary btn-sm" onclick="showNewUserModal()">+ New User</button>
+                <h3>User Management <span class="badge badge-resource" style="margin-left:8px">${users.length} users</span></h3>
+                <button class="btn btn-primary btn-sm" onclick="showNewUserModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    New User
+                </button>
             </div>
             <div class="table-container"><table>
-                <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
-                <tbody>${users.map(u => `<tr style="${u.deleted_at ? 'opacity:0.5' : ''}">
-                    <td style="font-weight:500">${esc(u.username)}</td>
+                <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Created</th><th style="text-align:right">Actions</th></tr></thead>
+                <tbody>${users.map(u => `<tr style="${u.deleted_at ? 'opacity:0.45' : ''}">
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div style="width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${esc(u.username.charAt(0).toUpperCase())}</div>
+                            <span style="font-weight:600">${esc(u.username)}</span>
+                        </div>
+                    </td>
                     <td><span class="badge badge-${u.role.toLowerCase()}">${u.role}</span></td>
                     <td><span class="badge badge-${u.status.toLowerCase()}">${u.status}</span></td>
                     <td style="font-size:12px;color:var(--text2)">${timeAgo(u.created_at)}</td>
-                    <td style="display:flex;gap:4px;flex-wrap:wrap">
+                    <td style="text-align:right">
+                        <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
                         ${u.deleted_at ? `<button class="btn btn-sm btn-success" onclick="restoreUser(${u.id})">Restore</button>` : `
                             <button class="btn btn-sm btn-secondary" onclick="toggleUserRole(${u.id},'${u.role}')">${u.role==='ADMIN'?'Demote':'Promote'}</button>
                             <button class="btn btn-sm btn-secondary" onclick="toggleUserStatus(${u.id},'${u.status}')">${u.status==='ACTIVE'?'Deactivate':'Activate'}</button>
                             <button class="btn btn-sm btn-secondary" onclick="showChangePasswordModal(${u.id})">Password</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">Delete</button>
                         `}
+                        </div>
                     </td>
                 </tr>`).join('')}</tbody>
             </table></div>
@@ -1361,27 +1538,43 @@ async function restoreUser(id) { await api(`/users/${id}/restore`, { method: 'PU
 // SETTINGS
 // ============================================================
 async function renderSettings(el) {
+    el.innerHTML = `<div style="text-align:center;padding:60px">
+        <div class="loading-spinner" style="width:24px;height:24px;margin:0 auto 12px"></div>
+        <div style="color:var(--text3);font-size:13px;font-weight:500">Loading settings...</div>
+    </div>`;
     const r = await api('/settings/sidebar');
     const users = r.ok ? r.data : [];
     const pages = ['dashboard', 'reports', 'projects', 'recordings', 'recorder', 'replayer', 'api-testing'];
+    const pageLabels = { dashboard: 'Dashboard', reports: 'Reports', projects: 'Projects', recordings: 'Recordings', recorder: 'Recorder', replayer: 'Replayer', 'api-testing': 'API Testing' };
 
     el.innerHTML = `
         <div class="card">
             <div class="card-header"><h3>Sidebar Visibility Settings</h3></div>
-            <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Control which pages are visible in the sidebar for each Resource user.</p>
-            ${users.length === 0 ? '<div class="empty-state"><p>No resource users</p></div>' :
-                users.map(u => `<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-                    <div style="font-weight:600;font-size:14px;margin-bottom:8px">${esc(u.username)}</div>
-                    <div style="display:flex;gap:16px;flex-wrap:wrap">
-                        ${pages.map(p => `<label style="display:flex;align-items:center;gap:6px;font-size:13px">
+            <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+                Control which pages are visible in the sidebar for each Resource user. Changes take effect on their next login.
+            </p>
+            ${users.length === 0 ? `<div class="empty-state">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                <p>No resource users to configure</p>
+            </div>` :
+                users.map(u => `<div style="margin-bottom:24px;padding:20px;background:var(--bg3);border-radius:var(--radius-lg);border:1px solid var(--border)">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">${esc(u.username.charAt(0).toUpperCase())}</div>
+                        <div style="font-weight:700;font-size:14px">${esc(u.username)}</div>
+                    </div>
+                    <div style="display:flex;gap:18px;flex-wrap:wrap">
+                        ${pages.map(p => `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);font-weight:500;cursor:pointer">
                             <label class="toggle-switch">
                                 <input type="checkbox" data-user="${u.id}" data-page="${p}" ${u.sidebar[p] !== false ? 'checked' : ''}>
                                 <span class="toggle-slider"></span>
                             </label>
-                            ${p}
+                            ${pageLabels[p] || p}
                         </label>`).join('')}
                     </div>
-                    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="saveSidebarSettings(${u.id})">Save</button>
+                    <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="saveSidebarSettings(${u.id})">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+                        Save Changes
+                    </button>
                 </div>`).join('')}
         </div>
     `;
@@ -1404,11 +1597,19 @@ function showModal(title, bodyHtml, onSave) {
     overlay.innerHTML = `<div class="modal">
         <div class="modal-header"><h3>${title}</h3><button class="modal-close" onclick="closeModal()">&times;</button></div>
         <div class="modal-body">${bodyHtml}</div>
-        <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="modal-save-btn">Save</button></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" id="modal-save-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                Save
+            </button>
+        </div>
     </div>`;
     document.body.appendChild(overlay);
     overlay.querySelector('#modal-save-btn').onclick = onSave;
     overlay.onclick = e => { if (e.target === overlay) closeModal(); };
+    // Focus first input
+    setTimeout(() => { const input = overlay.querySelector('input,select,textarea'); if (input) input.focus(); }, 100);
 }
 function closeModal() { document.getElementById('modal-overlay')?.remove(); }
 
